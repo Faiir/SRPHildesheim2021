@@ -17,3 +17,6 @@ def start_experiment(config_path, log):
     **********************************************
     """
     )
+
+    # initalize the model
+    # init
