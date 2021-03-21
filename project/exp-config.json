@@ -1,0 +1,11 @@
+{
+    "test_size":        10000,
+    "pool_size":        59900,
+    "labelled_size":    100,
+    "OOD_ratio":        0.0,
+    "oracle_stepsize":  50,
+    "oracle_steps":     30,
+    "epochs":           150,
+    "batch_size":       25,
+    "oracle":           ""
+}
