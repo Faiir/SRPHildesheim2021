@@ -1,6 +1,7 @@
 import json
 import torch
 from  datetime import datetime
+import os
 #data imports
 from .data.get_dataloader import get_dataloader get_datamanager
 from .data.get_datamanager import get_datamanager
@@ -93,6 +94,10 @@ def start_experiment(config_path, log):
 
     current_time = datetime.now().strftime("%H-%M-%S")
     log_file_name = "Experiment-from-" + str(current_time) + ".log"
+
+
+    if not os.path.exists("project\log"):
+        os.mkdir(os.path.join(".","log_dir"))
 
     log_dir = os.path.join("project\log")
     log_path = os.path.join(log_dir, log_file_name)
