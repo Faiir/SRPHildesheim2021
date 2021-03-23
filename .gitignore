@@ -10,6 +10,7 @@ __pycache__/
 
 #ignore own log files
 project/log/*
+project/data/dataset/*
 
 # Jupyter Notebook
 .ipynb_checkpoints

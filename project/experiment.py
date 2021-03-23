@@ -1,29 +1,30 @@
 import json
 import torch
-from  datetime import datetime
+from datetime import datetime
 import os
-#data imports
-from .data.get_dataloader import get_dataloader get_datamanager
+
+# data imports
+from .data.get_dataloader import get_dataloader
 from .data.get_datamanager import get_datamanager
+
 # train functions
 from .model.train import train, test
-from .model.train import get_pool_predictions
 from .model.mnist_model import Net
+
 # helpers
 from .helpers.accuracy import accuracy
-
+from .helpers import get_pool_predictions
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def experiment(param_dict, data_manager, verbose=0,net ):
+def experiment(param_dict, data_manager, net, verbose=0):
     oracle_stepsize = param_dict["oracle_stepsize"]
     oracle_steps = param_dict["oracle_steps"]
     epochs = param_dict["epochs"]
     batch_size = param_dict["batch_size"]
     oracle = param_dict["oracle"]
     weight_decay = param_dict["weight_decay"]
-
 
     current_data.reset_pool()
 
@@ -82,22 +83,21 @@ def start_experiment(config_path, log):
 
     with open(config_path, mode="r", encoding="utf-8") as config_f:
         config = json.load(config_f)
+    print(config)
+    data_manager = get_datamanager(dataset=config["dataset"])
 
-    data_manager = get_datamanager(dataset=config.dataset)
-
-    #TODO modulizing NN as config param 
+    # TODO modulizing NN as config param
     net = Net()
 
-    experiment(param_dict=config, data_manager, verbose=0, net=net)
+    experiment(param_dict=config, net=net, verbose=0, data_manager=data_manager)
 
     log_df = data_manager.get_logs()
 
     current_time = datetime.now().strftime("%H-%M-%S")
     log_file_name = "Experiment-from-" + str(current_time) + ".log"
 
-
     if not os.path.exists("project\log"):
-        os.mkdir(os.path.join(".","log_dir"))
+        os.mkdir(os.path.join(".", "log_dir"))
 
     log_dir = os.path.join("project\log")
     log_path = os.path.join(log_dir, log_file_name)
@@ -111,9 +111,9 @@ def start_experiment(config_path, log):
                 logfile.write(str(row[c].item()))
                 logfile.write("\t")
             logfile.write("\n")
-    
+
     print(
-    """
+        """
     **********************************************
         EXPERIMENT DONE
     **********************************************
