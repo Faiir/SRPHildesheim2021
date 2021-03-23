@@ -8,8 +8,12 @@ __pycache__/
 .venv
 .vscode
 
+#ignore own log files
+project/log/*
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/
+
