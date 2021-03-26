@@ -2,7 +2,7 @@
 ## Datahandlers
 from PIL import Image
 from torch.utils.data import Dataset
-
+import numpy as np
 class DataHandler_For_Arrays(Dataset):
   """
   base class for mnist / fashion_mnist

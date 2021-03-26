@@ -10,8 +10,8 @@ from .datamanager import Data_manager
 def get_datamanager(dataset="MNIST-FMNIST"):
 
     if dataset == "MNIST-FMNIST":
-        MNIST_train = MNIST(root="./dataset", train=True, download=True)
-        MNIST_test = MNIST(root="./dataset", train=False, download=True)
+        MNIST_train = MNIST(root=r"./dataset", train=True, download=True)
+        MNIST_test = MNIST(root=r"./dataset", train=False, download=True)
 
         Fashion_MNIST_train = FashionMNIST(root="./dataset", train=True, download=True)
         Fashion_MNIST_test = FashionMNIST(root="./dataset", train=False, download=True)
@@ -42,11 +42,11 @@ def get_datamanager(dataset="MNIST-FMNIST"):
 
     # TODO base_data, base_labels, OOD_data, OOD_labels = get_dataset(dataset)
 
-    Data_manager = Data_manager(
+    data_manager = Data_manager(
         base_data=base_data,
         base_labels=base_labels,
         OOD_data=OOD_data,
         OOD_labels=OOD_labels,
     )
 
-    return Data_manager
+    return data_manager

@@ -1,5 +1,11 @@
 #local notebooks
 *.ipynb
+SRP_Project.ipynb
+
+#single files
+test.py
+todo.txt
+
 
 # chache
 __pycache__/
@@ -9,11 +15,12 @@ __pycache__/
 .vscode
 
 #ignore own log files
-project/log/*
-project/data/dataset/*
+/project/log/*
+/project/data/dataset/*
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/

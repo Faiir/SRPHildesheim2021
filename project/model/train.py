@@ -1,9 +1,10 @@
 import time
 from collections import defaultdict
-from tqdm.notebook import tqdm
+from tqdm import tqdm
+import torch
 
 
-def train(net, train_loader, optimizer, criterion, epochs=5, verbose=0):
+def train(net, train_loader, optimizer, criterion, device,epochs=5, verbose=0):
     if verbose > 0:
         print("training with device:", device)
 
@@ -34,7 +35,7 @@ def train(net, train_loader, optimizer, criterion, epochs=5, verbose=0):
     return net, avg_train_loss
 
 
-def test(model, criterion, test_dataloader, verbose=0):
+def test(model, criterion, test_dataloader,device, verbose=0):
     test_loss = 0
 
     for (t_data, t_target) in test_dataloader:

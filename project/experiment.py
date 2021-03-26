@@ -1,7 +1,12 @@
 import json
 import torch
+
+import torch.nn as nn
+import torch.optim as optim
+
 from datetime import datetime
 import os
+from tqdm import tqdm
 
 # data imports
 from .data.get_dataloader import get_dataloader
@@ -13,7 +18,7 @@ from .model.mnist_model import Net
 
 # helpers
 from .helpers.accuracy import accuracy
-from .helpers import get_pool_predictions
+from .helpers.get_pool_predictions import get_pool_predictions
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -23,10 +28,12 @@ def experiment(param_dict, data_manager, net, verbose=0):
     oracle_steps = param_dict["oracle_steps"]
     epochs = param_dict["epochs"]
     batch_size = param_dict["batch_size"]
-    oracle = param_dict["oracle"]
+    oracle = None#param_dict["oracle"]
     weight_decay = param_dict["weight_decay"]
 
-    current_data.reset_pool()
+
+    
+    data_manager.reset_pool()
 
     for i in tqdm(range(oracle_steps)):
         train_loader, test_loader, pool_loader = get_dataloader(
@@ -40,15 +47,15 @@ def experiment(param_dict, data_manager, net, verbose=0):
         optimizer = optim.Adam(net.parameters(), weight_decay=weight_decay)
 
         trained_net, avg_train_loss = train(
-            net, train_loader, optimizer, criterion, epochs=epochs, verbose=verbose
+            net, train_loader, optimizer, criterion,device=device ,epochs=epochs, verbose=verbose
         )
 
-        avg_test_loss = test(trained_net, criterion, test_loader, verbose=verbose)
+        avg_test_loss = test(trained_net, criterion, test_loader,device=device, verbose=verbose)
         test_predictions, test_labels = get_pool_predictions(
-            trained_net, test_loader, return_labels=True
+            trained_net, test_loader,device=device, return_labels=True
         )
         train_predictions, train_labels = get_pool_predictions(
-            trained_net, train_loader, return_labels=True
+            trained_net, train_loader,device=device, return_labels=True
         )
 
         test_accuracy = accuracy(test_labels, test_predictions)
@@ -65,7 +72,7 @@ def experiment(param_dict, data_manager, net, verbose=0):
         print(dict_to_add)
 
         if oracle is not None:
-            predictions = get_pool_predictions(trained_net, pool_loader)
+            predictions = get_pool_predictions(trained_net, pool_loader,device=device)
             oracle(
                 dataset_manager=data_manager,
                 number_samples=oracle_stepsize,
@@ -85,6 +92,8 @@ def start_experiment(config_path, log):
         config = json.load(config_f)
     print(config)
     data_manager = get_datamanager(dataset=config["dataset"])
+    
+    data_manager.create_merged_data(test_size=config["test_size"], pool_size=config["pool_size"], labelled_size=config["labelled_size"], OOD_ratio=config["OOD_ratio"])
 
     # TODO modulizing NN as config param
     net = Net()

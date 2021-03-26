@@ -1,4 +1,6 @@
-def get_pool_predictions(trained_net, pool_loader, return_labels = False):
+import numpy as np
+
+def get_pool_predictions(trained_net, pool_loader,device, return_labels = False):
   trained_net.eval()
 
   yhat = []
