@@ -1,6 +1,7 @@
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data import random_split
 
+from .datahandler_for_array import DataHandler_For_Arrays
 
 def create_dataloader(current_data, batch_size=128, split_size=0.1):
     """
