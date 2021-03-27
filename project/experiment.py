@@ -105,20 +105,22 @@ def start_experiment(config_path, log):
     current_time = datetime.now().strftime("%H-%M-%S")
     log_file_name = "Experiment-from-" + str(current_time) + ".log"
 
-    if not os.path.exists("project\log"):
-        os.mkdir(os.path.join(".", "log_dir"))
+    log_dir = os.path.join(".", "log_dir")
+    
+    if os.path.exists(log_dir) == False:
+        os.mkdir(os.path.join(".", "log_dir"))        
 
-    log_dir = os.path.join("project\log")
     log_path = os.path.join(log_dir, log_file_name)
 
     with open(log_path, mode="w", encoding="utf-8") as logfile:
         colums = log_df.columns
         for colum in colums:
-            logfile.write(colum + "\t\n")
+            logfile.write(colum + ",")
+        logfile.write("\n")
         for _, row in log_df.iterrows():
             for c in colums:
                 logfile.write(str(row[c].item()))
-                logfile.write("\t")
+                logfile.write(",")
             logfile.write("\n")
 
     print(
