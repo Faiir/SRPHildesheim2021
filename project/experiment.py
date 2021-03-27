@@ -15,12 +15,14 @@ from .data.get_datamanager import get_datamanager
 # train functions
 from .model.train import train, test
 from .model.mnist_model import Net
+from .model.genOdinModel import genOdinModel
 
 # helpers
 from .helpers.accuracy import accuracy
 from .helpers.get_pool_predictions import get_pool_predictions
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 
 def experiment(param_dict, data_manager, net, verbose=0):
@@ -98,12 +100,14 @@ def start_experiment(config_path, log):
     # TODO modulizing NN as config param
     net = Net()
 
+    genOdinModel = genOdinModel()
+
     experiment(param_dict=config, net=net, verbose=0, data_manager=data_manager)
 
     log_df = data_manager.get_logs()
 
     current_time = datetime.now().strftime("%H-%M-%S")
-    log_file_name = "Experiment-from-" + str(current_time) + ".log"
+    log_file_name = "Experiment-from-" + str(current_time) + ".csv"
 
     if not os.path.exists("project\log"):
         os.mkdir(os.path.join(".", "log_dir"))
@@ -114,11 +118,11 @@ def start_experiment(config_path, log):
     with open(log_path, mode="w", encoding="utf-8") as logfile:
         colums = log_df.columns
         for colum in colums:
-            logfile.write(colum + "\t\n")
+            logfile.write(colum + ",")
         for _, row in log_df.iterrows():
             for c in colums:
                 logfile.write(str(row[c].item()))
-                logfile.write("\t")
+                logfile.write(",")
             logfile.write("\n")
 
     print(
