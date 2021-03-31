@@ -195,7 +195,7 @@ class Data_manager:
         self.log[self.iter] = current_iter_log
 
     def get_logs(self):
-        log_df = pd.DataFrame.from_dict(current_data.log, orient="index").set_index(
+        log_df = pd.DataFrame.from_dict(self.log, orient="index").set_index(
             "Iteration"
         )
         for key in self.config.keys():
