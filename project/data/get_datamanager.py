@@ -10,11 +10,11 @@ from .datamanager import Data_manager
 def get_datamanager(dataset="MNIST-FMNIST"):
 
     if dataset == "MNIST-FMNIST":
-        MNIST_train = MNIST(root=r"./dataset", train=True, download=True)
-        MNIST_test = MNIST(root=r"./dataset", train=False, download=True)
+        MNIST_train = MNIST(root=r".", train=True, download=True)
+        MNIST_test = MNIST(root=r".", train=False, download=True)
 
-        Fashion_MNIST_train = FashionMNIST(root="./dataset", train=True, download=True)
-        Fashion_MNIST_test = FashionMNIST(root="./dataset", train=False, download=True)
+        Fashion_MNIST_train = FashionMNIST(root=".", train=True, download=True)
+        Fashion_MNIST_test = FashionMNIST(root=".", train=False, download=True)
 
         MNIST_train_data = MNIST_train.data.numpy()
         MNIST_test_data = MNIST_test.data.numpy()

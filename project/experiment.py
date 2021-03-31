@@ -138,6 +138,7 @@ def start_experiment(config_path, log):
 
             log_df = data_manager.get_logs()
 
+
             current_time = datetime.now().strftime("%H-%M-%S")
             log_file_name = "Experiment-from-" + str(current_time) + ".csv"
 
@@ -158,7 +159,6 @@ def start_experiment(config_path, log):
                         logfile.write(str(row[c].item()))
                         logfile.write(",")
                     logfile.write("\n")
-
     print(
         """
     **********************************************
