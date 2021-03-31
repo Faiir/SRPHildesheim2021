@@ -20,8 +20,8 @@ python -m setup_experiment -c "path\to\config\.json"
 
 
 # TODO
-- Make Net modular with config parameter !high
-- Make it possible to chain multiple experiments !high
+- Make Net modular with config parameter !high -- done
+- Make it possible to chain multiple experiments !high -- done
 - Add config to log file
 - clean up code !medium
-- comment code !low 
+- comment code !low - in progress
