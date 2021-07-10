@@ -24,8 +24,6 @@ from .helpers.get_pool_predictions import get_pool_predictions
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-#from . import test
-
 
 def experiment(param_dict, data_manager, net, verbose=0):
     """experiment [Experiment function which performs the entire acitve learning process based on the predefined config]
