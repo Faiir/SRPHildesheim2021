@@ -17,3 +17,4 @@ Parse all notebook function to .py
 Changes i need to make
     More parameters to param_dict 
         GPU y/N
+    Update experiment setup
