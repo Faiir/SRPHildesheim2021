@@ -1,0 +1,20 @@
+Parse all notebook function to .py
+    Data
+        DataManager class
+        Dataset
+            Create dataloader
+            DataHandler_forArray
+    Helpers
+        Sampling functions
+        Train method 
+    Model
+        Model class
+
+    start experiment 
+        experiment function
+
+
+Changes i need to make
+    More parameters to param_dict 
+        GPU y/N
+    Update experiment setup

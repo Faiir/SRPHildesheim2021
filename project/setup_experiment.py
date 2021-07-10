@@ -15,6 +15,10 @@ from project.experiment import start_experiment
 
 
 def main():
+    """main [main function which is the entry point of this python project, takes command line arguments and sends them to the experiment setup file]
+
+    [extended_summary]
+    """
     # Initiate argument parser
     parser = argparse.ArgumentParser(
         description="Preare run of AL with OoD experiment",
