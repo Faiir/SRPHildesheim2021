@@ -15,7 +15,6 @@ from .data.get_datamanager import get_datamanager
 # train functions
 from .model import train
 
-
 from .model.get_model import get_model
 
 # helpers
@@ -25,7 +24,7 @@ from .helpers.get_pool_predictions import get_pool_predictions
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def experiment(param_dict, data_manager, net, verbose=0):
+def experiment(param_dict, data_manager, oracle, verbose=0):
     """experiment [Experiment function which performs the entire acitve learning process based on the predefined config]
 
     [extended_summary]
@@ -44,10 +43,27 @@ def experiment(param_dict, data_manager, net, verbose=0):
     oracle_steps = param_dict["oracle_steps"]
     epochs = param_dict["epochs"]
     batch_size = param_dict["batch_size"]
-    oracle = None#param_dict["oracle"]
     weight_decay = param_dict["weight_decay"]
 
+    if oracle == "random":
+        from .helpers.sampler import random_sample
+        sampler = random_sample
+    elif oracle == "highest entropy":
+        from .helpers.sampler import uncertainity_sampling_highest_entropy
+        sampler = uncertainity_sampling_highest_entropy
+    elif oracle == "least confidence":
+        from .helpers.sampler import uncertainity_sampling_least_confident
+        sampler = uncertainity_sampling_least_confident
+    elif oracle == "DDU":
+        from .helpers.sampler import DDU_sampler
+        sampler = DDU_sampler
+    elif oracle == "Gen0din":
+        from .helpers.sampler import gen0din_sampler
+        sampler = gen0din_sampler
 
+    net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
+    if torch.cuda.is_available():
+            net.cuda()
     
     data_manager.reset_pool()
 
@@ -55,10 +71,7 @@ def experiment(param_dict, data_manager, net, verbose=0):
         train_loader, test_loader, pool_loader = get_dataloader(
             data_manager, batch_size=batch_size
         )
-
-        net = net
-        if torch.cuda.is_available():
-            net.cuda()
+        
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(net.parameters(), weight_decay=weight_decay)
 
@@ -67,6 +80,20 @@ def experiment(param_dict, data_manager, net, verbose=0):
         )
         
         avg_test_loss = train.test(trained_net, criterion, test_loader,device=device, verbose=verbose)
+
+
+        predictions = get_pool_predictions(trained_net, pool_loader,device=device)
+        
+        samples = sampler(
+            dataset_manager=data_manager,
+            number_samples=oracle_stepsize,
+            net = trained_net,
+            predictions=predictions,
+        )
+        
+        # TODO: Add samples to labelled pool:
+        # ...
+
         test_predictions, test_labels = get_pool_predictions(
             trained_net, test_loader,device=device, return_labels=True
         )
@@ -87,14 +114,7 @@ def experiment(param_dict, data_manager, net, verbose=0):
         data_manager.add_log(log_dict=dict_to_add)
         print(dict_to_add)
 
-        if oracle is not None:
-            predictions = get_pool_predictions(trained_net, pool_loader,device=device)
-            oracle(
-                dataset_manager=data_manager,
-                number_samples=oracle_stepsize,
-                predictions=predictions,
-            )
-
+        
     return None
 
 
@@ -124,39 +144,35 @@ def start_experiment(config_path, log):
         data_manager = get_datamanager(dataset=dataset)
 
         for exp in config["experiment-list"]:
-            try:
-                net = get_model(exp["model_name"])
-            except Exception as e:
-                print(e)
-                continue
+            for oracle in config["oracles"]:
+                                
+                data_manager.create_merged_data(test_size=exp["test_size"], pool_size=exp["pool_size"], labelled_size=exp["labelled_size"], OOD_ratio=exp["OOD_ratio"])
 
-            data_manager.create_merged_data(test_size=exp["test_size"], pool_size=exp["pool_size"], labelled_size=exp["labelled_size"], OOD_ratio=exp["OOD_ratio"])
+                experiment(param_dict=exp, oracle = oracle, verbose=0, data_manager=data_manager)
 
-            experiment(param_dict=exp, net=net, verbose=0, data_manager=data_manager)
-
-            log_df = data_manager.get_logs()
+                log_df = data_manager.get_logs()
 
 
-            current_time = datetime.now().strftime("%H-%M-%S")
-            log_file_name = "Experiment-from-" + str(current_time) + ".csv"
+                current_time = datetime.now().strftime("%H-%M-%S")
+                log_file_name = "Experiment-from-" + str(current_time) + ".csv"
 
-            log_dir = os.path.join(".", "log_dir")
-            
-            if os.path.exists(log_dir) == False:
-                os.mkdir(os.path.join(".", "log_dir"))        
+                log_dir = os.path.join(".", "log_dir")
+                
+                if os.path.exists(log_dir) == False:
+                    os.mkdir(os.path.join(".", "log_dir"))        
 
-            log_path = os.path.join(log_dir, log_file_name)
+                log_path = os.path.join(log_dir, log_file_name)
 
-            with open(log_path, mode="w", encoding="utf-8") as logfile:
-                colums = log_df.columns
-                for colum in colums:
-                    logfile.write(colum + ",")
-                logfile.write("\n")
-                for _, row in log_df.iterrows():
-                    for c in colums:
-                        logfile.write(str(row[c].item()))
-                        logfile.write(",")
+                with open(log_path, mode="w", encoding="utf-8") as logfile:
+                    colums = log_df.columns
+                    for colum in colums:
+                        logfile.write(colum + ",")
                     logfile.write("\n")
+                    for _, row in log_df.iterrows():
+                        for c in colums:
+                            logfile.write(str(row[c].item()))
+                            logfile.write(",")
+                        logfile.write("\n")
     print(
         """
     **********************************************

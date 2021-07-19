@@ -1,4 +1,6 @@
-def random_sample(dataset_manager, number_samples, predictions=None):
+# TODO implement Gen0ding & DDU sampler
+
+def random_sample(dataset_manager, number_samples, net, predictions=None):
     ## This function selects num_samples from the pool of  all the unlabelled data at random
     ## and add them to labelled training data
 
@@ -22,7 +24,7 @@ def random_sample(dataset_manager, number_samples, predictions=None):
 
 
 def uncertainity_sampling_least_confident(
-    dataset_manager, number_samples, predictions=None
+    dataset_manager, number_samples, net, predictions=None
 ):
     ## This function selects num_samples from the pool of  all the unlabelled data at random
     ## and add them to labelled training data
@@ -45,7 +47,7 @@ def uncertainity_sampling_least_confident(
 
 
 def uncertainity_sampling_highest_entropy(
-    dataset_manager, number_samples, predictions=None
+    dataset_manager, number_samples, net, predictions=None
 ):
     ## This function selects num_samples from the pool of  all the unlabelled data at random
     ## and add them to labelled training data
@@ -65,4 +67,12 @@ def uncertainity_sampling_highest_entropy(
     iteration = 1 + status_manager["status"].max()
     status_manager.iloc[inds, -1] = iteration * status_manager.iloc[inds, -2]
 
+    return None
+
+def gen0din_sampler(dataset_manager, number_samples, net, predictions=None):
+
+    return None
+
+def DDU_sampler(dataset_manager, number_samples, net, predictions=None):
+    
     return None

@@ -1,5 +1,5 @@
 import numpy as np
-from torchvision.datasets import MNIST, FashionMNIST
+from torchvision.datasets import MNIST, FashionMNIST, CIFAR10, CIFAR100, SVHN
 
 # own files
 from .datamanager import Data_manager
@@ -7,14 +7,14 @@ from .datamanager import Data_manager
 # TODO from .datamanager import getdataset
 
 
-def get_datamanager(dataset="MNIST-FMNIST"):
+def get_datamanager(dataset="CIFAR10-MNIST"):
 
-    if dataset == "MNIST-FMNIST":
+    if dataset == "CIFAR10-MNIST":
         MNIST_train = MNIST(root=r".", train=True, download=True)
         MNIST_test = MNIST(root=r".", train=False, download=True)
 
-        Fashion_MNIST_train = FashionMNIST(root=".", train=True, download=True)
-        Fashion_MNIST_test = FashionMNIST(root=".", train=False, download=True)
+        CIFAR10_train = CIFAR10(root=".", train=True, download=True)
+        CIFAR10_test = CIFAR10(root=".", train=False, download=True)
 
         MNIST_train_data = MNIST_train.data.numpy()
         MNIST_test_data = MNIST_test.data.numpy()
@@ -22,25 +22,65 @@ def get_datamanager(dataset="MNIST-FMNIST"):
         MNIST_train_labels = MNIST_train.targets.numpy()
         MNIST_test_labels = MNIST_test.targets.numpy()
 
-        Fashion_MNIST_train_data = Fashion_MNIST_train.data.numpy()
-        Fashion_MNIST_test_data = Fashion_MNIST_test.data.numpy()
+        CIFAR10_train_data = CIFAR10_train.data.numpy()
+        CIFAR10_test_data = CIFAR10_test.data.numpy()
 
-        Fashion_MNIST_train_labels = Fashion_MNIST_train.targets.numpy()
-        Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
+        CIFAR10_train_labels = CIFAR10_train.targets.numpy()
+        CIFAR10_test_labels = CIFAR10_test.targets.numpy()
 
-        base_data = np.concatenate([MNIST_train_data, MNIST_test_data])
-        base_labels = np.concatenate([MNIST_train_labels, MNIST_test_labels])
+        base_data = np.concatenate([CIFAR10_train_data, CIFAR10_test_data])
+        base_labels = np.concatenate([CIFAR10_train_labels, CIFAR10_test_labels])
+        
+        OOD_data = np.concatenate([MNIST_train_data, MNIST_test_data])
+        OOD_labels = np.concatenate([MNIST_train_labels, MNIST_test_labels])
+    elif dataset == "CIFAR10-CIFAR100":
+        CIFAR100_train = CIFAR100(root=r".", train=True, download=True)
+        CIFAR100_test = CIFAR100(root=r".", train=False, download=True)
 
-        OOD_data = np.concatenate([Fashion_MNIST_train_data, Fashion_MNIST_test_data])
-        OOD_labels = np.concatenate(
-            [Fashion_MNIST_train_labels, Fashion_MNIST_test_labels]
-        )
+        CIFAR10_train = CIFAR10(root=".", train=True, download=True)
+        CIFAR10_test = CIFAR10(root=".", train=False, download=True)
 
-    if dataset == "CHIFAR":
-        base_data = "chifar"
-        pass
+        CIFAR100_train_data = CIFAR100_train.data.numpy()
+        CIFAR100_test_data = CIFAR100_test.data.numpy()
 
-    # TODO base_data, base_labels, OOD_data, OOD_labels = get_dataset(dataset)
+        CIFAR100_train_labels = CIFAR100_train.targets.numpy()
+        CIFAR100_test_labels = CIFAR100_test.targets.numpy()
+
+        CIFAR10_train_data = CIFAR10_train.data.numpy()
+        CIFAR10_test_data = CIFAR10_test.data.numpy()
+
+        CIFAR10_train_labels = CIFAR10_train.targets.numpy()
+        CIFAR10_test_labels = CIFAR10_test.targets.numpy()
+
+        base_data = np.concatenate([CIFAR10_train_data, CIFAR10_test_data])
+        base_labels = np.concatenate([CIFAR10_train_labels, CIFAR10_test_labels])
+        
+        OOD_data = np.concatenate([CIFAR100_train_data, CIFAR100_test_data])
+        OOD_labels = np.concatenate([CIFAR100_train_labels, CIFAR100_test_labels])
+    elif dataset == "CIFAR10-SVHN":
+        SVHN_train = SVHN(root=r".", train=True, download=True)
+        SVHN_test = SVHN(root=r".", train=False, download=True)
+
+        CIFAR10_train = CIFAR10(root=".", train=True, download=True)
+        CIFAR10_test = CIFAR10(root=".", train=False, download=True)
+
+        SVHN_train_data = SVHN_train.data.numpy()
+        SVHN_test_data = SVHN_test.data.numpy()
+
+        SVHN_train_labels = SVHN_train.targets.numpy()
+        SVHN_test_labels = SVHN_test.targets.numpy()
+
+        CIFAR10_train_data = CIFAR10_train.data.numpy()
+        CIFAR10_test_data = CIFAR10_test.data.numpy()
+
+        CIFAR10_train_labels = CIFAR10_train.targets.numpy()
+        CIFAR10_test_labels = CIFAR10_test.targets.numpy()
+
+        base_data = np.concatenate([CIFAR10_train_data, CIFAR10_test_data])
+        base_labels = np.concatenate([CIFAR10_train_labels, CIFAR10_test_labels])
+        
+        OOD_data = np.concatenate([SVHN_train_data, SVHN_test_data])
+        OOD_labels = np.concatenate([SVHN_train_labels, SVHN_test_labels])
 
     data_manager = Data_manager(
         base_data=base_data,
