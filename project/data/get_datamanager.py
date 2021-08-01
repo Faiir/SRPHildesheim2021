@@ -5,7 +5,7 @@ from torchvision.datasets import MNIST, FashionMNIST, CIFAR10, CIFAR100, SVHN
 from .datamanager import Data_manager
 
 # TODO from .datamanager import getdataset
-
+import torchvision.transforms as transforms
 
 def get_datamanager(dataset="CIFAR10-MNIST"):
 
@@ -22,11 +22,11 @@ def get_datamanager(dataset="CIFAR10-MNIST"):
         MNIST_train_labels = MNIST_train.targets.numpy()
         MNIST_test_labels = MNIST_test.targets.numpy()
 
-        CIFAR10_train_data = CIFAR10_train.data.numpy()
-        CIFAR10_test_data = CIFAR10_test.data.numpy()
+        CIFAR10_train_data = CIFAR10_train.data#.numpy()
+        CIFAR10_test_data = CIFAR10_test.data#.numpy()
 
-        CIFAR10_train_labels = CIFAR10_train.targets.numpy()
-        CIFAR10_test_labels = CIFAR10_test.targets.numpy()
+        CIFAR10_train_labels = CIFAR10_train.targets#.numpy()
+        CIFAR10_test_labels = CIFAR10_test.targets#.numpy()
 
         base_data = np.concatenate([CIFAR10_train_data, CIFAR10_test_data])
         base_labels = np.concatenate([CIFAR10_train_labels, CIFAR10_test_labels])
@@ -40,17 +40,17 @@ def get_datamanager(dataset="CIFAR10-MNIST"):
         CIFAR10_train = CIFAR10(root=".", train=True, download=True)
         CIFAR10_test = CIFAR10(root=".", train=False, download=True)
 
-        CIFAR100_train_data = CIFAR100_train.data.numpy()
-        CIFAR100_test_data = CIFAR100_test.data.numpy()
+        CIFAR100_train_data = CIFAR100_train.data#.numpy()
+        CIFAR100_test_data = CIFAR100_test.data#.numpy()
 
-        CIFAR100_train_labels = CIFAR100_train.targets.numpy()
-        CIFAR100_test_labels = CIFAR100_test.targets.numpy()
+        CIFAR100_train_labels = CIFAR100_train.targets#.numpy()
+        CIFAR100_test_labels = CIFAR100_test.targets#.numpy()
 
-        CIFAR10_train_data = CIFAR10_train.data.numpy()
-        CIFAR10_test_data = CIFAR10_test.data.numpy()
+        CIFAR10_train_data = CIFAR10_train.data#.numpy()
+        CIFAR10_test_data = CIFAR10_test.data#.numpy()
 
-        CIFAR10_train_labels = CIFAR10_train.targets.numpy()
-        CIFAR10_test_labels = CIFAR10_test.targets.numpy()
+        CIFAR10_train_labels = CIFAR10_train.targets#.numpy()
+        CIFAR10_test_labels = CIFAR10_test.targets#.numpy()
 
         base_data = np.concatenate([CIFAR10_train_data, CIFAR10_test_data])
         base_labels = np.concatenate([CIFAR10_train_labels, CIFAR10_test_labels])

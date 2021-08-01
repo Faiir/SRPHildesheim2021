@@ -7,10 +7,10 @@ class Net(nn.Module):
 
     def __init__(self, activation=F.relu):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 4, 5)
+        self.conv1 = nn.Conv2d(3, 4, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(4, 12, 5)
-        self.fc1 = nn.Linear(12 * 4 * 4, 120)
+        self.fc1 = nn.Linear(12 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 64)
         self.fc3 = nn.Linear(64, 10)
 
@@ -19,7 +19,8 @@ class Net(nn.Module):
     def forward(self, x):
         x = self.pool(self.activation(self.conv1(x)))
         x = self.pool(self.activation(self.conv2(x)))
-        x = x.view(-1, 12 * 4 * 4)
+        
+        x = x.reshape(-1, 12 * 5 * 5)
         x = self.activation(self.fc1(x))
         x = self.activation(self.fc2(x))
         x = self.fc3(x)

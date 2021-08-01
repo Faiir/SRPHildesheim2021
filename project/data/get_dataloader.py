@@ -31,7 +31,7 @@ def create_dataloader(current_data, batch_size=128, split_size=0.1):
     )
 
     pool_loader = DataLoader(pool_dataset, batch_size=batch_size)
-
+    
     return train_loader, test_loader, pool_loader  # , train_dataset, test_dataset
 
 

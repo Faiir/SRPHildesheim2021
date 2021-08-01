@@ -1,42 +1,16 @@
 { "experiment-list": [
     {
-        "test_size":        10000,
-        "pool_size":        59900,
+        "test_size":        200,
+        "pool_size":        1000,
         "labelled_size":    100,
-        "OOD_ratio":        10.0,
+        "OOD_ratio":        0.1,
         "oracle_stepsize":  10,
         "oracle_steps":     10,
         "epochs":           5,
         "batch_size":       25,
-        "oracles":          ["random", "highest entropy", "least confidence", "DDU", "Gen0din"],
+        "oracles":          ["random", "highest entropy", "least confidence"],
         "weight_decay":     1e-5,
-        "metric":           "Lift on Accuracy"
-    },
-    {
-        "test_size":        10000,
-        "pool_size":        59900,
-        "labelled_size":    100,
-        "OOD_ratio":        10.0,
-        "oracle_stepsize":  10,
-        "oracle_steps":     10,
-        "epochs":           5,
-        "batch_size":       25,
-        "oracles":          ["random", "highest entropy", "least confidence", "DDU", "Gen0din"],
-        "weight_decay":     1e-5,
-        "metric":           "Lift on F1"
-    },
-    {
-        "test_size":        10000,
-        "pool_size":        59900,
-        "labelled_size":    1000,
-        "OOD_ratio":        10.0,
-        "oracle_stepsize":  100,
-        "oracle_steps":     10,
-        "epochs":           5,
-        "batch_size":       25,
-        "oracles":          ["random", "highest entropy", "least confidence", "DDU", "Gen0din"],
-        "weight_decay":     1e-5,
-        "metric":           "AUROC of predicted OoD/In-dist"
+        "metric":           "f1"
     }],
-    "datasets":          ["CIFAR10-MNIST", "CIFAR10-CIFAR100", "CIFAR10-SVHN"]
+    "datasets":          ["CIFAR10-CIFAR100"]
 }

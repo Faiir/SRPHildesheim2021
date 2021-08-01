@@ -5,3 +5,5 @@ tqdm
 torch
 torchvision
 torchaudio
+seaborn
+matplotlib

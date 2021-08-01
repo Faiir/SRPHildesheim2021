@@ -24,7 +24,7 @@ class Data_manager:
 
         assert (
             test_size + base_pool_size + labelled_size <= self.base_data.shape[0]
-        ), f"Insufficient Samples in Base Dataset: test_size + unlabelled_pool_size + labelled_size > base_data_size : {test_size} + {unlabelled_pool_size} + {labelled_size} > {self.base_data.shape[0]}"
+        ), f"Insufficient Samples in Base Dataset: test_size + unlabelled_pool_size + labelled_size > base_data_size : {test_size} + {base_pool_size} + {labelled_size} > {self.base_data.shape[0]}"
 
         train_data, self.test_data, train_labels, self.test_labels = train_test_split(
             self.base_data,
@@ -102,7 +102,7 @@ class Data_manager:
             source_list.append(-np.ones_like(OOD_labels))
         else:
             pass
-
+        
         self.pool_data = np.concatenate(data_list)
         pool_labels = np.concatenate(label_list)
         pool_status = np.concatenate(status_list)
@@ -162,7 +162,7 @@ class Data_manager:
         return self.test_data, self.test_labels
 
     def get_unlabelled_pool_data(self):
-        ## Returns all data in pooll, None is returned instead of labels.
+        ## Returns all data in pool, None is returned instead of labels.
 
         assert (
             self.iter is not None
@@ -175,8 +175,9 @@ class Data_manager:
             self.status_manager.iloc[unlabelled_mask]["target"].values,
         )
 
-    def add_log(self, log_dict=None):
+    def add_log(self, writer, oracle, dataset, metric, log_dict=None):
         self.iter += 1
+
         current_iter_log = {
             "Iteration": self.iter,
             "Base_examples_labelled": len(
@@ -189,7 +190,11 @@ class Data_manager:
                 self.status_manager[self.status_manager["status"] == 0]
             ),
         }
+
+        writer.add_scalars(f"{metric}/{dataset}/{oracle}/examples_labelled", current_iter_log, self.iter)
+        
         if log_dict is not None:
+            writer.add_scalars(f"{metric}/{dataset}/{oracle}/{metric}", log_dict, self.iter)
             current_iter_log.update(log_dict)
 
         self.log[self.iter] = current_iter_log

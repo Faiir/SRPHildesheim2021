@@ -1,4 +1,4 @@
-# TODO implement Gen0ding & DDU sampler
+import numpy as np
 
 def random_sample(dataset_manager, number_samples, net, predictions=None):
     ## This function selects num_samples from the pool of  all the unlabelled data at random

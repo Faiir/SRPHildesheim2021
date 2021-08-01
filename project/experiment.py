@@ -1,4 +1,5 @@
 import json
+#from typing_extensions import ParamSpecArgs
 import torch
 
 import torch.nn as nn
@@ -8,6 +9,9 @@ from datetime import datetime
 import os
 from tqdm import tqdm
 
+import pandas as pd
+from torch.utils.tensorboard import SummaryWriter
+
 # data imports
 from .data.get_dataloader import get_dataloader
 from .data.get_datamanager import get_datamanager
@@ -16,15 +20,17 @@ from .data.get_datamanager import get_datamanager
 from .model import train
 
 from .model.get_model import get_model
-
+import torchvision
 # helpers
 from .helpers.accuracy import accuracy
+from .helpers.f1 import f1
 from .helpers.get_pool_predictions import get_pool_predictions
+from .helpers.get_tsne_plot import get_tsne_plot
+from .helpers.auroc import auroc
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-
-def experiment(param_dict, data_manager, oracle, verbose=0):
+def experiment(param_dict, oracle, data_manager, writer, dataset, verbose=0):
     """experiment [Experiment function which performs the entire acitve learning process based on the predefined config]
 
     [extended_summary]
@@ -44,6 +50,7 @@ def experiment(param_dict, data_manager, oracle, verbose=0):
     epochs = param_dict["epochs"]
     batch_size = param_dict["batch_size"]
     weight_decay = param_dict["weight_decay"]
+    metric = param_dict["metric"]
 
     if oracle == "random":
         from .helpers.sampler import random_sample
@@ -61,13 +68,17 @@ def experiment(param_dict, data_manager, oracle, verbose=0):
         from .helpers.sampler import gen0din_sampler
         sampler = gen0din_sampler
 
-    net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
+    #net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
+    net = get_model("base")#torchvision.models.resnet18(pretrained=False)
     if torch.cuda.is_available():
             net.cuda()
-    
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     data_manager.reset_pool()
 
     for i in tqdm(range(oracle_steps)):
+        tsne_plot = get_tsne_plot(data_manager, dataset, net, device)
+        writer.add_figure(tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot)
+
         train_loader, test_loader, pool_loader = get_dataloader(
             data_manager, batch_size=batch_size
         )
@@ -81,40 +92,50 @@ def experiment(param_dict, data_manager, oracle, verbose=0):
         
         avg_test_loss = train.test(trained_net, criterion, test_loader,device=device, verbose=verbose)
 
-
-        predictions = get_pool_predictions(trained_net, pool_loader,device=device)
+        # unlabelled pool predictions
+        pool_predictions, pool_labels_list = get_pool_predictions(trained_net, pool_loader,device=device, return_labels = True)
         
-        samples = sampler(
-            dataset_manager=data_manager,
-            number_samples=oracle_stepsize,
-            net = trained_net,
-            predictions=predictions,
+        # samples from unlabelled pool predictions
+        sampler(
+           dataset_manager=data_manager,
+           number_samples=oracle_stepsize,
+           net = trained_net,
+           predictions = pool_predictions
         )
         
-        # TODO: Add samples to labelled pool:
-        # ...
-
         test_predictions, test_labels = get_pool_predictions(
             trained_net, test_loader,device=device, return_labels=True
         )
         train_predictions, train_labels = get_pool_predictions(
             trained_net, train_loader,device=device, return_labels=True
         )
+        
+        if metric.lower() == "accuracy":
+            test_accuracy = accuracy(test_labels, test_predictions)
+            train_accuracy = accuracy(train_labels, train_predictions)
 
-        test_accuracy = accuracy(test_labels, test_predictions)
-        train_accuracy = accuracy(train_labels, train_predictions)
-
-        dict_to_add = {
+            dict_to_add = {
             "test_loss": avg_test_loss,
             "train_loss": avg_train_loss,
             "test_accuracy": test_accuracy,
             "train_accuracy": train_accuracy,
         }
+            
+        elif metric.lower() == "f1":
+            f1_score = f1(test_labels, test_predictions)
+            dict_to_add = {
+            "f1": f1_score
+        }
+        elif metric.lower() == "auroc":
+            auroc_score = auroc(data_manager, i)
 
-        data_manager.add_log(log_dict=dict_to_add)
+            dict_to_add = {
+            "auroc": auroc_score
+        }
+
+        data_manager.add_log(writer=writer, oracle=oracle, dataset=dataset, metric=metric, log_dict=dict_to_add)
         print(dict_to_add)
 
-        
     return None
 
 
@@ -135,6 +156,8 @@ def start_experiment(config_path, log):
 
     config_path = os.path.join(config_path)
 
+    writer = SummaryWriter()
+
     with open(config_path, mode="r", encoding="utf-8") as config_f:
         config = json.load(config_f)
 
@@ -144,11 +167,13 @@ def start_experiment(config_path, log):
         data_manager = get_datamanager(dataset=dataset)
 
         for exp in config["experiment-list"]:
-            for oracle in config["oracles"]:
+            metric = exp["metric"]
+            
+            for oracle in exp["oracles"]:
                                 
                 data_manager.create_merged_data(test_size=exp["test_size"], pool_size=exp["pool_size"], labelled_size=exp["labelled_size"], OOD_ratio=exp["OOD_ratio"])
 
-                experiment(param_dict=exp, oracle = oracle, verbose=0, data_manager=data_manager)
+                experiment(param_dict=exp, oracle = oracle, data_manager=data_manager, writer = writer, dataset=dataset, verbose=0)
 
                 log_df = data_manager.get_logs()
 

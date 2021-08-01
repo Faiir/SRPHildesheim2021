@@ -17,9 +17,16 @@ __pycache__/
 #ignore own log files
 project/log/*
 project/data/dataset/*
-
+project/runs/*
 project/log_dir/*
-
+project\log\*
+project\data\dataset\*
+project\runs\*
+project\log_dir\*
+cifar*
+t10k*
+train-images*
+train-labels*
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -27,3 +34,4 @@ project/log_dir/*
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/
 
+project/test.png
