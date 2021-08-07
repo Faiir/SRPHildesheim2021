@@ -11,6 +11,7 @@ from .tinyimagenetloader import TrainTinyImageNetDataset, TestTinyImageNetDatase
 
 
 class Data_manager:
+
     ## DataManager would either get the extact data (array/tensors) or it'll have a df of filenames
 
     def __init__(self, base_data, base_labels, OOD_data, OOD_labels):
@@ -253,6 +254,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
     Returns:
         [datamager]: [Experiment datamanager for for logging and the active learning cycle]
     """
+
+    # TODO ADD Target transform?
     base_data = np.array()
     base_labels = np.array()
 
@@ -396,10 +399,10 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 (122.4786, 114.2755, 101.3963), (70.4924, 68.5679, 71.8127)
             )
             train_t_imagenet = TrainTinyImageNetDataset(
-                id=id_dict, transform=[normalize_imagenet, resize]
+                id=id_dict, transform=transforms.Compose([normalize_imagenet, resize])
             )
             test_t_imagenet = TestTinyImageNetDataset(
-                id=id_dict, transform=[normalize_imagenet, resize]
+                id=id_dict, transform=transforms.Compose([normalize_imagenet, resize])
             )
 
     data_manager = Data_manager(

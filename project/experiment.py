@@ -9,8 +9,8 @@ import os
 from tqdm import tqdm
 
 # data imports
-from .data.get_dataloader import get_dataloader
-from .data.get_datamanager import get_datamanager
+from .data.datahandler_for_array import get_dataloader
+from .data.datamanager import get_datamanager
 
 # train functions
 from .model import train
@@ -19,7 +19,7 @@ from .model import train
 from .model.get_model import get_model
 
 # helpers
-from .helpers.accuracy import accuracy
+from .helpers.measures import accuracy
 from .helpers.get_pool_predictions import get_pool_predictions
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -46,11 +46,9 @@ def experiment(param_dict, data_manager, net, verbose=0):
     oracle_steps = param_dict["oracle_steps"]
     epochs = param_dict["epochs"]
     batch_size = param_dict["batch_size"]
-    oracle = None#param_dict["oracle"]
+    oracle = None  # param_dict["oracle"]
     weight_decay = param_dict["weight_decay"]
 
-
-    
     data_manager.reset_pool()
 
     for i in tqdm(range(oracle_steps)):
@@ -65,15 +63,23 @@ def experiment(param_dict, data_manager, net, verbose=0):
         optimizer = optim.Adam(net.parameters(), weight_decay=weight_decay)
 
         trained_net, avg_train_loss = train.train(
-            net, train_loader, optimizer, criterion,device=device ,epochs=epochs, verbose=verbose
+            net,
+            train_loader,
+            optimizer,
+            criterion,
+            device=device,
+            epochs=epochs,
+            verbose=verbose,
         )
-        
-        avg_test_loss = train.test(trained_net, criterion, test_loader,device=device, verbose=verbose)
+
+        avg_test_loss = train.test(
+            trained_net, criterion, test_loader, device=device, verbose=verbose
+        )
         test_predictions, test_labels = get_pool_predictions(
-            trained_net, test_loader,device=device, return_labels=True
+            trained_net, test_loader, device=device, return_labels=True
         )
         train_predictions, train_labels = get_pool_predictions(
-            trained_net, train_loader,device=device, return_labels=True
+            trained_net, train_loader, device=device, return_labels=True
         )
 
         test_accuracy = accuracy(test_labels, test_predictions)
@@ -90,7 +96,7 @@ def experiment(param_dict, data_manager, net, verbose=0):
         print(dict_to_add)
 
         if oracle is not None:
-            predictions = get_pool_predictions(trained_net, pool_loader,device=device)
+            predictions = get_pool_predictions(trained_net, pool_loader, device=device)
             oracle(
                 dataset_manager=data_manager,
                 number_samples=oracle_stepsize,
@@ -108,7 +114,7 @@ def start_experiment(config_path, log):
     Args:
         config_path ([String]): [path to the json config]
         log ([String]): [path to log folder]
-    """    
+    """
 
     # print(config_path)
     # print(log)
@@ -122,7 +128,7 @@ def start_experiment(config_path, log):
 
     datasets = config["datasets"]
     for dataset in datasets:
-        
+
         data_manager = get_datamanager(dataset=dataset)
 
         for exp in config["experiment-list"]:
@@ -132,20 +138,24 @@ def start_experiment(config_path, log):
                 print(e)
                 continue
 
-            data_manager.create_merged_data(test_size=exp["test_size"], pool_size=exp["pool_size"], labelled_size=exp["labelled_size"], OOD_ratio=exp["OOD_ratio"])
+            data_manager.create_merged_data(
+                test_size=exp["test_size"],
+                pool_size=exp["pool_size"],
+                labelled_size=exp["labelled_size"],
+                OOD_ratio=exp["OOD_ratio"],
+            )
 
             experiment(param_dict=exp, net=net, verbose=0, data_manager=data_manager)
 
             log_df = data_manager.get_logs()
 
-
             current_time = datetime.now().strftime("%H-%M-%S")
             log_file_name = "Experiment-from-" + str(current_time) + ".csv"
 
             log_dir = os.path.join(".", "log_dir")
-            
+
             if os.path.exists(log_dir) == False:
-                os.mkdir(os.path.join(".", "log_dir"))        
+                os.mkdir(os.path.join(".", "log_dir"))
 
             log_path = os.path.join(log_dir, log_file_name)
 
