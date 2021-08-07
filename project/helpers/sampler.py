@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def random_sample(dataset_manager, number_samples, predictions=None):
     ## This function selects num_samples from the pool of  all the unlabelled data at random
     ## and add them to labelled training data

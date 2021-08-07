@@ -14,11 +14,12 @@ __pycache__/
 .venv
 .vscode
 
-#ignore own log files
-project/log/*
-project/data/dataset/*
 
-project/log_dir/*
+#ignore own log files
+log/*
+dataset/*
+
+log_dir/*
 
 # Jupyter Notebook
 .ipynb_checkpoints

@@ -18,3 +18,22 @@ Changes i need to make
     More parameters to param_dict 
         GPU y/N
     Update experiment setup
+
+
+Markus & Niklas 
+    1. 
+        Update experiment setup 
+        based on feedback 
+
+        Active Learning Setup with different models and pool sizes / oracle stepsizes / pool composition, sampler -- important logging 
+
+            Markus: Checken welche einstellungen schon vorhanden sind 
+
+
+
+        11 class - before second interim 
+
+        Possibly After second interim 
+            Lift - increase with 2 models 
+            retrain, - keep the trained model 
+

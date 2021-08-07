@@ -2,6 +2,14 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+import torchvision.transforms as transforms
+
+from torchvision.datasets import MNIST, FashionMNIST, SVHN, CIFAR10, CIFAR100
+import copy
+import time
+from .tinyimagenetloader import TrainTinyImageNetDataset, TestTinyImageNetDataset
+
+
 class Data_manager:
     ## DataManager would either get the extact data (array/tensors) or it'll have a df of filenames
 
@@ -14,7 +22,9 @@ class Data_manager:
         self.iter = None
         self.config = {}
 
-    def create_merged_data(self, test_size, pool_size, labelled_size, OOD_ratio):
+    def create_merged_data(
+        self, test_size, pool_size, labelled_size, OOD_ratio, save_csv=False
+    ):
 
         print("Creating New Dataset")
 
@@ -24,7 +34,7 @@ class Data_manager:
 
         assert (
             test_size + base_pool_size + labelled_size <= self.base_data.shape[0]
-        ), f"Insufficient Samples in Base Dataset: test_size + unlabelled_pool_size + labelled_size > base_data_size : {test_size} + {unlabelled_pool_size} + {labelled_size} > {self.base_data.shape[0]}"
+        ), f"Insufficient Samples in Base Dataset: test_size + labelled_size > base_data_size : {test_size} + {labelled_size} > {self.base_data.shape[0]}"
 
         train_data, self.test_data, train_labels, self.test_labels = train_test_split(
             self.base_data,
@@ -130,14 +140,39 @@ class Data_manager:
             "Total_OOD_examples": len(
                 self.status_manager[self.status_manager["source"] < 0]
             ),
-            "Initail_examples_labelled": len(
+            "Initial_examples_labelled": len(
                 self.status_manager[self.status_manager["status"] == 1]
             ),
         }
 
         self.log = {}
 
+        self.save_experimsent_start(csv=save_csv)
+        print("Status_manager intialised")
         return None
+
+    def save_experiment_start(self, csv=False):
+        assert (
+            self.status_manager is not None
+        ), "Initialise Experiment first Call create_merged_data()"
+
+        self.experiment_setup = copy.deepcopy(self.status_manager)
+        self.experiment_config = copy.deepcopy(self.config)
+        print("Experiment_Setup saved")
+
+        if csv != False:
+            self.experiment_config.to_csv(f"Expermimentsetup_{time.today()}")
+
+    def restore_experiment_start(self):
+        toe = self.config["Total_overall_examples"]
+        tbe = self.config["Total_base_examples"]
+        toode = self.config["Total_OOD_examples"]
+        iel = self.config["Initial_examples_labelled"]
+
+        self.status_manager = self.experiment_setup
+        print(
+            f"Restored following config \nTotal_overall_examples: {toe} \nTotal_base_examples: {tbe} \nTotal_OOD_examples: {toode}\n Initial_examples_labelled: {iel}   "
+        )
 
     def get_train_data(self):
         ## Returns all data that has been labelled so far
@@ -195,9 +230,7 @@ class Data_manager:
         self.log[self.iter] = current_iter_log
 
     def get_logs(self):
-        log_df = pd.DataFrame.from_dict(self.log, orient="index").set_index(
-            "Iteration"
-        )
+        log_df = pd.DataFrame.from_dict(self.log, orient="index").set_index("Iteration")
         for key in self.config.keys():
             log_df[key] = self.config[key]
         return log_df
@@ -206,3 +239,221 @@ class Data_manager:
         self.log = {}
         self.iter = 0
         self.status_manager.loc[self.status_manager["status"] != 1, "status"] = 0
+
+
+def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "SVHN"]):
+    """get_datamanager [Creates a datamanager instance with the In-/Out-of-Distribution Data]
+
+    [List based processing of Datasets. Images are resized / croped on 32x32]
+
+    Args:
+        indistribution (list, optional): [description]. Defaults to ["Cifar10"].
+        ood (list, optional): [description]. Defaults to ["MNIST", "Fashion_MNIST", "SVHN"].
+
+    Returns:
+        [datamager]: [Experiment datamanager for for logging and the active learning cycle]
+    """
+    base_data = np.array()
+    base_labels = np.array()
+
+    OOD_data = np.array()
+    OOD_labels = np.array()
+
+    resize = transforms.Resize(size=(32, 32))
+    random_crop = transforms.RandomCrop(size=(32, 32))
+
+    for dataset in indistribution:
+        if dataset == "Chifar10":
+
+            CIFAR10_train = CIFAR10(
+                root=r"/dataset/CHIFAR10/", train=True, download=True, transforms=None
+            )
+            CIFAR10_test = CIFAR10(
+                root=r"/dataset/CHIFAR10/", train=False, download=True, transforms=None
+            )
+            CIFAR10_train_data = CIFAR10_train.data.numpy()
+            CIFAR10_test_data = CIFAR10_test.data.numpy()
+            CIFAR10_train_labels = CIFAR10_train.targets.numpy()
+            CIFAR10_test_labels = CIFAR10_test.targets.numpy()
+
+            base_data = np.concatenate(
+                [base_data, CIFAR10_train_data, CIFAR10_test_data]
+            )
+            base_labels = np.concatenate(
+                [base_labels, CIFAR10_train_labels, CIFAR10_test_labels]
+            )
+        elif dataset == "MNIST":
+
+            MNIST_train = MNIST(
+                root=r"/dataset/MNIST", train=True, download=True, transform=resize
+            )
+            MNIST_test = MNIST(
+                root=r"/dataset/MNIST", train=False, download=True, transform=resize
+            )
+            MNIST_train_data = MNIST_train.data.numpy()
+            MNIST_test_data = MNIST_test.data.numpy()
+            MNIST_train_labels = MNIST_train.targets.numpy()
+            MNIST_test_labels = MNIST_test.targets.numpy()
+
+            base_data = np.concatenate([base_data, MNIST_train_data, MNIST_test_data])
+            base_labels = np.concatenate(
+                [base_labels, MNIST_train_labels, MNIST_test_labels]
+            )
+
+        elif dataset == "Fashion_MNIST":
+
+            Fashion_MNIST_train = FashionMNIST(
+                root="/dataset/FashionMNIST",
+                train=True,
+                download=True,
+                transform=resize,
+            )
+            Fashion_MNIST_test = FashionMNIST(
+                root="/dataset/FashionMNIST",
+                train=False,
+                download=True,
+                transform=resize,
+            )
+            Fashion_MNIST_train_data = Fashion_MNIST_train.data.numpy()
+            Fashion_MNIST_test_data = Fashion_MNIST_test.data.numpy()
+            Fashion_MNIST_train_labels = Fashion_MNIST_train.targets.numpy()
+            Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
+
+            base_data = np.concatenate(
+                [base_data, Fashion_MNIST_train_data, Fashion_MNIST_test_data]
+            )
+            base_labels = np.concatenate(
+                [base_labels, Fashion_MNIST_train_labels, Fashion_MNIST_test_labels]
+            )
+
+    for ood_dataset in ood:
+        if ood_dataset == "MNIST":
+
+            MNIST_train = MNIST(
+                root=r"/dataset/MNIST", train=True, download=True, transform=resize
+            )
+            MNIST_test = MNIST(
+                root=r"/dataset/MNIST", train=False, download=True, transform=resize
+            )
+            MNIST_train_data = MNIST_train.data.numpy()
+            MNIST_test_data = MNIST_test.data.numpy()
+            MNIST_train_labels = MNIST_train.targets.numpy()
+            MNIST_test_labels = MNIST_test.targets.numpy()
+
+            OOD_data = np.concatenate([OOD_data, MNIST_train_data, MNIST_test_data])
+            OOD_labels = np.concatenate(
+                [OOD_labels, MNIST_train_labels, MNIST_test_labels]
+            )
+
+        elif ood_dataset == "Fasion_MNIST":
+
+            Fashion_MNIST_train = FashionMNIST(
+                root="/dataset/FashionMNIST",
+                train=True,
+                download=True,
+                transform=resize,
+            )
+            Fashion_MNIST_test = FashionMNIST(
+                root="/dataset/FashionMNIST",
+                train=False,
+                download=True,
+                transform=resize,
+            )
+            Fashion_MNIST_train_data = Fashion_MNIST_train.data.numpy()
+            Fashion_MNIST_test_data = Fashion_MNIST_test.data.numpy()
+            Fashion_MNIST_train_labels = Fashion_MNIST_train.targets.numpy()
+            Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
+
+            OOD_data = np.concatenate(
+                [OOD_data, Fashion_MNIST_train_data, Fashion_MNIST_test_data]
+            )
+            OOD_labels = np.concatenate(
+                [OOD_labels, Fashion_MNIST_train_labels, Fashion_MNIST_test_labels]
+            )
+        elif ood_dataset == "SVHN":
+            SVHN_train = SVHN(
+                root=r"/dataset/SVHN", train=True, download=True, transform=resize
+            )
+            SVHN_test = SVHN(
+                root=r"/dataset/SVHN", train=False, download=True, transform=resize
+            )
+            SVHN_train_data = SVHN_train.data.numpy()
+            SVHN_test_data = SVHN_test.data.numpy()
+            SVHN_train_labels = SVHN_train.targets.numpy()
+            SVHN_test_labels = SVHN_test.targets.numpy()
+
+            OOD_data = np.concatenate([OOD_data, SVHN_train_data, SVHN_test_data])
+            OOD_labels = np.concatenate(
+                [OOD_labels, SVHN_test_labels, SVHN_test_labels]
+            )
+
+            pass
+        elif ood_dataset == "TinyImageNet":
+            id_dict = {}
+            for i, line in enumerate(open("/dataset/tinyimagenet-200/wnids.txt", "r")):
+                id_dict[line.replace("\n", "")] = i
+            normalize_imagenet = transforms.Normalize(
+                (122.4786, 114.2755, 101.3963), (70.4924, 68.5679, 71.8127)
+            )
+            train_t_imagenet = TrainTinyImageNetDataset(
+                id=id_dict, transform=[normalize_imagenet, resize]
+            )
+            test_t_imagenet = TestTinyImageNetDataset(
+                id=id_dict, transform=[normalize_imagenet, resize]
+            )
+
+    # TODO base_data, base_labels, OOD_data, OOD_labels = get_dataset(dataset)
+
+    data_manager = Data_manager(
+        base_data=base_data,
+        base_labels=base_labels,
+        OOD_data=OOD_data,
+        OOD_labels=OOD_labels,
+    )
+
+    return data_manager
+
+
+# def get_datamanager(dataset="MNIST-FMNIST"):
+
+#     if dataset == "MNIST-FMNIST":
+#         MNIST_train = MNIST(root=r".", train=True, download=True)
+#         MNIST_test = MNIST(root=r".", train=False, download=True)
+
+#         Fashion_MNIST_train = FashionMNIST(root=".", train=True, download=True)
+#         Fashion_MNIST_test = FashionMNIST(root=".", train=False, download=True)
+
+#         MNIST_train_data = MNIST_train.data.numpy()
+#         MNIST_test_data = MNIST_test.data.numpy()
+
+#         MNIST_train_labels = MNIST_train.targets.numpy()
+#         MNIST_test_labels = MNIST_test.targets.numpy()
+
+#         Fashion_MNIST_train_data = Fashion_MNIST_train.data.numpy()
+#         Fashion_MNIST_test_data = Fashion_MNIST_test.data.numpy()
+
+#         Fashion_MNIST_train_labels = Fashion_MNIST_train.targets.numpy()
+#         Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
+
+#         base_data = np.concatenate([MNIST_train_data, MNIST_test_data])
+#         base_labels = np.concatenate([MNIST_train_labels, MNIST_test_labels])
+
+#         OOD_data = np.concatenate([Fashion_MNIST_train_data, Fashion_MNIST_test_data])
+#         OOD_labels = np.concatenate(
+#             [Fashion_MNIST_train_labels, Fashion_MNIST_test_labels]
+#         )
+
+#     if dataset == "CHIFAR":
+#         base_data = "chifar"
+#         pass
+
+#     # TODO base_data, base_labels, OOD_data, OOD_labels = get_dataset(dataset)
+
+#     data_manager = Data_manager(
+#         base_data=base_data,
+#         base_labels=base_labels,
+#         OOD_data=OOD_data,
+#         OOD_labels=OOD_labels,
+#     )
+
+#     return data_manager
