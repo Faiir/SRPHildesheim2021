@@ -402,8 +402,6 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 id=id_dict, transform=[normalize_imagenet, resize]
             )
 
-    # TODO base_data, base_labels, OOD_data, OOD_labels = get_dataset(dataset)
-
     data_manager = Data_manager(
         base_data=base_data,
         base_labels=base_labels,
