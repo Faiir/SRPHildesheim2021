@@ -11,7 +11,7 @@
       "batch_size": 25,
       "oracle": "",
       "weight_decay": 1e-5,
-      "model_name": "base"
+      "model_name": "gen_odin"
     }
   ],
   "datasets": ["MNIST-FMNIST"]

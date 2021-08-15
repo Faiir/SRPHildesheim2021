@@ -56,7 +56,6 @@ def experiment(param_dict, data_manager, net, verbose=0):
             data_manager, batch_size=batch_size
         )
 
-        net = net
         if torch.cuda.is_available():
             net.cuda()
         criterion = nn.CrossEntropyLoss()
@@ -134,11 +133,7 @@ def start_experiment(config_path, log):
         )
 
         for exp in config["experiment-list"]:
-            try:
-                net = get_model(exp["model_name"])
-            except Exception as e:
-                print(e)
-                continue
+            net = get_model(exp["model_name"])
 
             data_manager.create_merged_data(
                 test_size=exp["test_size"],

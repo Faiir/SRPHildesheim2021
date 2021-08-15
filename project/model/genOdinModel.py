@@ -16,11 +16,15 @@ import torch
 class euc_dist_layer(nn.Module):
     def __init__(self, out_classes, dimensions):
         super().__init__()
-        weigths = torch.Tensor([1, out_classes, dimensions], dtype=torch.float64)
+        # weigths = torch.Tensor((1, out_classes, dimensions), dtype=torch.float64)
+        weigths = torch.rand(
+            (1, out_classes, dimensions), dtype=torch.float32, requires_grad=True
+        )
+
         self.weigths = nn.Parameter(weigths)  # size num_classes, weight
 
     def forward(self, x):
-        # https://pytorch.org/docs/stable/generated/torch.linalg.norm.html#torch.linalg.norm
+        # https://pytorch.org/docs/stable/generated/torch.lisnalg.norm.html#torch.linalg.norm
         x = x.unsqueeze(dim=-2)  # (batch, extra dim, data)
         x -= self.weigths
         return torch.linalg.norm(x, dim=-1)
@@ -29,17 +33,20 @@ class euc_dist_layer(nn.Module):
 class cosine_layer(nn.Module):
     def __init__(self, out_classes, dimensions):
         super().__init__()
-        weigths = torch.Tensor([out_classes, dimensions], dtype=torch.float64)
-        self.weigths = nn.Parameter(weigths)
+        # weigths = torch.Tensor((out_classes, dimensions), dtype=torch.float64)
+        weights = torch.rand(
+            (out_classes, dimensions), dtype=torch.float32, requires_grad=True
+        )
+        self.weigths = nn.Parameter(weights)
 
     def forward(self, x, eps=1e-08):
         # https://pytorch.org/docs/stable/generated/torch.nn.CosineSimilarity.html
         # x =>  batch , D
         x_norm = torch.linalg.norm(x, dim=-1)
-        w_norm = torch.linalg.norm(self.weigths, dim=-1).unsequeeze(dim=0)
+        w_norm = torch.linalg.norm(self.weigths, dim=-1).unsqueeze(dim=0)
 
         return torch.div(
-            torch.matmul(x, self.weights.T),
+            torch.matmul(x, self.weigths.T),
             torch.max((torch.matmul(x_norm, w_norm)), eps),
         )
 
@@ -50,7 +57,7 @@ class genOdinModel(nn.Module):
     def __init__(
         self,
         activation=F.relu,
-        similarity="C",
+        similarity="E",
         out_classes=10,
         include_bn=False,
         channel_input=3,
@@ -69,14 +76,13 @@ class genOdinModel(nn.Module):
         self.bn2 = nn.BatchNorm1d(self.fc1.out_features)
         self.out_classes = out_classes
 
+        self.activation = activation
         self.similarity = similarity
         self.include_bn = include_bn
 
-        self.g_norm = nn.BatchNorm1d(self.fc2.out_features)
-        self.g_activation = F.sigmoid()
+        self.g_activation = nn.Sigmoid()
         self.g_func = nn.Linear(self.fc2.out_features, 1)
-
-        self.activation = activation
+        self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
         if self.similarity == "I":
             self.dropout_3 = nn.Dropout(p=0.6)

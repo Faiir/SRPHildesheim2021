@@ -13,7 +13,7 @@ class DataHandler_For_Arrays(Dataset):
     """
 
     def __init__(self, X, Y, transform=None, num_classes=10):
-        self.X = np.expand_dims(X, axis=1)  # X[np.newaxis,...] # x[:, np.newaxis]:
+        self.X = X  # X[np.newaxis,...] # x[:, np.newaxis]:
         self.Y = Y
         # self.Y = torch.as_tensor(self.Y)
         # self.Y = torch.nn.functional.one_hot(self.Y, num_classes=10)

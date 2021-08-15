@@ -259,10 +259,10 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
     """
 
     # TODO ADD Target transform?
-    base_data = np.empty(shape=(1, 32, 32, 3))
+    base_data = np.empty(shape=(1, 3, 32, 32))
     base_labels = np.empty(shape=(1,))
 
-    OOD_data = np.empty(shape=(1, 32, 32, 3))
+    OOD_data = np.empty(shape=(1, 3, 32, 32))
     OOD_labels = np.empty(shape=(1,))
 
     resize = transforms.Resize(32)
@@ -277,11 +277,11 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             CIFAR10_test = CIFAR10(
                 root=r"/dataset/CHIFAR10/", train=False, download=True, transform=None
             )
-            CIFAR10_train_data = CIFAR10_train.data
-            CIFAR10_test_data = CIFAR10_test.data
+            CIFAR10_train_data = CIFAR10_train.data.reshape(-1, 3, 32, 32)
+            CIFAR10_test_data = CIFAR10_test.data.reshape(-1, 3, 32, 32)
             CIFAR10_train_labels = np.array(CIFAR10_train.targets)
             CIFAR10_test_labels = np.array(CIFAR10_test.targets)
-            print(CIFAR10_test_labels.shape)
+
             base_data = np.concatenate(
                 [base_data, CIFAR10_train_data, CIFAR10_test_data]
             )
@@ -314,8 +314,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                     ]
                 ),
             )
-            MNIST_train_data = np.array([i.numpy().T for i, _ in MNIST_train_data])
-            MNIST_test_data = np.array([i.numpy().T for i, _ in MNIST_test])
+            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train_data])
+            MNIST_test_data = np.array([i.numpy() for i, _ in MNIST_test])
             MNIST_train_labels = MNIST_train.targets
             MNIST_test_labels = MNIST_test.targets
 
@@ -351,10 +351,10 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 ),
             )
             Fashion_MNIST_train_data = np.array(
-                [i.numpy().T for i, _ in Fashion_MNIST_train]
+                [i.numpy() for i, _ in Fashion_MNIST_train]
             )
             Fashion_MNIST_test_data = np.array(
-                [i.numpy().T for i, _ in Fashion_MNIST_test]
+                [i.numpy() for i, _ in Fashion_MNIST_test]
             )
             Fashion_MNIST_train_labels = Fashion_MNIST_train.targets.numpy()
             Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
@@ -394,8 +394,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 ),
             )
 
-            MNIST_train_data = np.array([i.numpy().T for i, _ in MNIST_train_data])
-            MNIST_test_data = np.array([i.numpy().T for i, _ in MNIST_test])
+            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train_data])
+            MNIST_test_data = np.array([i.numpy() for i, _ in MNIST_test])
 
             MNIST_train_labels = MNIST_train.targets.numpy()
             MNIST_test_labels = MNIST_test.targets.numpy()
@@ -431,10 +431,10 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 ),
             )
             Fashion_MNIST_train_data = np.array(
-                [i.numpy().T for i, _ in Fashion_MNIST_train]
+                [i.numpy() for i, _ in Fashion_MNIST_train]
             )
             Fashion_MNIST_test_data = np.array(
-                [i.numpy().T for i, _ in Fashion_MNIST_test]
+                [i.numpy() for i, _ in Fashion_MNIST_test]
             )
             Fashion_MNIST_train_labels = Fashion_MNIST_train.targets.numpy()
             Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()

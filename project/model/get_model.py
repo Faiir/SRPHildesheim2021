@@ -1,5 +1,5 @@
 from .mnist_model import Net
-
+from .genOdinModel import genOdinModel
 
 
 def get_model(model_name):
@@ -21,6 +21,7 @@ def get_model(model_name):
         net = Net()
         return net
     elif model_name == "gen_odin":
-        raise NotImplementedError("This model type is not implemented yet")
+        genOdin = genOdinModel()
+        return genOdin
     else:
         raise ValueError(f"Model {model_name} not found")
