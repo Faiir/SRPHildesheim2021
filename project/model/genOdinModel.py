@@ -48,10 +48,16 @@ class genOdinModel(nn.Module):
     """Net [General Odin implementation following: ]"""
 
     def __init__(
-        self, activation=F.relu, similarity="C", out_classes=10, include_bn=False
+        self,
+        activation=F.relu,
+        similarity="C",
+        out_classes=10,
+        include_bn=False,
+        channel_input=3,
     ):
         super(genOdinModel, self).__init__()
-        self.conv1 = nn.Conv2d(1, 4, 5)
+
+        self.conv1 = nn.Conv2d(channel_input, 4, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(4, 12, 5)
         self.fc1 = nn.Linear(12 * 4 * 4, 120)

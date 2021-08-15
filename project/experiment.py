@@ -129,7 +129,9 @@ def start_experiment(config_path, log):
     datasets = config["datasets"]
     for dataset in datasets:
 
-        data_manager = get_datamanager(dataset=dataset)
+        data_manager = get_datamanager(
+            indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST"]
+        )
 
         for exp in config["experiment-list"]:
             try:
