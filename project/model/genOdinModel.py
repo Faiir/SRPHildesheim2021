@@ -1,31 +1,38 @@
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 import torch
 
 
 class euc_dist_layer(nn.Module):
-    def __init__(self, out_classes):
+    def __init__(self, out_classes, dimensions):
         super().__init__()
-        self.out_classes = torch.arange(out_classes)
+        weigths = torch.Tensor([1, out_classes, dimensions], dtype=torch.float64)
+        self.weigths = nn.Parameter(weigths)  # size num_classes, weight
 
     def forward(self, x):
         # https://pytorch.org/docs/stable/generated/torch.linalg.norm.html#torch.linalg.norm
-        pass
+        x = x.unsqueeze(dim=-2)  # (batch, extra dim, data)
+        x -= self.weigths
+        return torch.linalg.norm(x, dim=-1)
 
 
 class cosine_layer(nn.Module):
-    def __init__(self, out_classes):
+    def __init__(self, out_classes, dimensions):
         super().__init__()
-        self.out_classes = out_classes
+        weigths = torch.Tensor([out_classes, dimensions], dtype=torch.float64)
+        self.weigths = nn.Parameter(weigths)
 
-    def forward(self, x):
+    def forward(self, x, eps=1e-08):
         # https://pytorch.org/docs/stable/generated/torch.nn.CosineSimilarity.html
-        pass
+        # x =>  batch , D
+        x_norm = torch.linalg.norm(x, dim=-1)
+        w_norm = torch.linalg.norm(self.weigths, dim=-1).unsequeeze(dim=0)
 
-
-class genOdinModel(nn.module):
-    def __init__(self):
-        pass
+        return torch.div(
+            torch.matmul(x, self.weights.T),
+            torch.max((torch.matmul(x_norm, w_norm)), eps),
+        )
 
 
 class genOdinModel(nn.Module):
