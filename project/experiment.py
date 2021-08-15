@@ -122,7 +122,7 @@ def start_experiment(config_path, log):
     config = ""
 
     config_path = os.path.join(config_path)
-
+    print(config_path)
     with open(config_path, mode="r", encoding="utf-8") as config_f:
         config = json.load(config_f)
 
@@ -130,7 +130,7 @@ def start_experiment(config_path, log):
     for dataset in datasets:
 
         data_manager = get_datamanager(
-            indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST"]
+            indistribution=["Cifar10"], ood=["Fashion_MNIST"]
         )
 
         for exp in config["experiment-list"]:

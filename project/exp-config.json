@@ -1,29 +1,18 @@
-{ "experiment-list": [
+{
+  "experiment-list": [
     {
-        "test_size":        10000,
-        "pool_size":        59900,
-        "labelled_size":    100,
-        "OOD_ratio":        0.0,
-        "oracle_stepsize":  100,
-        "oracle_steps":     1,
-        "epochs":           5,
-        "batch_size":       25,
-        "oracle":           "",
-        "weight_decay":     1e-5,
-        "model_name":       "base"
-    },
-    {
-        "test_size":        0,
-        "pool_size":        0,
-        "labelled_size":    0,
-        "OOD_ratio":        0.0,
-        "oracle_stepsize":  0,
-        "oracle_steps":     0,
-        "epochs":           0,
-        "batch_size":       0,
-        "oracle":           "",
-        "weight_decay":     1e-5,
-        "model_name":       "gen_odin"
-    }],
-    "datasets":          ["MNIST-FMNIST"]
+      "test_size": 3000,
+      "pool_size": 10000,
+      "labelled_size": 1000,
+      "OOD_ratio": 0.1,
+      "oracle_stepsize": 100,
+      "oracle_steps": 1,
+      "epochs": 5,
+      "batch_size": 25,
+      "oracle": "",
+      "weight_decay": 1e-5,
+      "model_name": "base"
+    }
+  ],
+  "datasets": ["MNIST-FMNIST"]
 }
