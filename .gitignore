@@ -7,6 +7,9 @@ test.py
 todo.txt
 
 
+
+
+
 # chache
 __pycache__/
 
@@ -14,19 +17,27 @@ __pycache__/
 .venv
 .vscode
 
+
 #ignore own log files
-project/log/*
-project/data/dataset/*
-project/runs/*
-project/log_dir/*
-project\log\*
-project\data\dataset\*
-project\runs\*
-project\log_dir\*
+log/*
+dataset/*
+runs/*
+log_dir/*
+log\*
+dataset\*
+runs\*
+log_dir\*
 cifar*
 t10k*
 train-images*
 train-labels*
+log/*
+dataset/*
+log_dir/*
+
+*.log
+*.csv
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

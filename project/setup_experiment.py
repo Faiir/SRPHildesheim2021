@@ -19,6 +19,7 @@ def main():
 
     [extended_summary]
     """
+
     # Initiate argument parser
     parser = argparse.ArgumentParser(
         description="Preare run of AL with OoD experiment",
@@ -39,8 +40,6 @@ def main():
         default=os.path.join("./logs"),
     )
     args = parser.parse_args()
-
-    print(args)
 
     if args.config is None:
         args.config = os.path.join(".\exp-config.json")

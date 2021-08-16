@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def random_sample(dataset_manager, number_samples, net, predictions=None):
     ## This function selects num_samples from the pool of  all the unlabelled data at random
     ## and add them to labelled training data
@@ -69,10 +70,12 @@ def uncertainity_sampling_highest_entropy(
 
     return None
 
+
 def gen0din_sampler(dataset_manager, number_samples, net, predictions=None):
 
     return None
 
+
 def DDU_sampler(dataset_manager, number_samples, net, predictions=None):
-    
+
     return None

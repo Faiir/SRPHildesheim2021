@@ -4,7 +4,7 @@ from tqdm import tqdm
 import torch
 
 
-def train(net, train_loader, optimizer, criterion, device,epochs=5, verbose=0):
+def train(net, train_loader, optimizer, criterion, device,do_fgsm=False, epochs=5, verbose=1):
     if verbose > 0:
         print("training with device:", device)
 
@@ -13,14 +13,15 @@ def train(net, train_loader, optimizer, criterion, device,epochs=5, verbose=0):
     for epoch in tqdm(range(0, epochs)):
         train_loss = 0
         for batch_idx, (data, target) in enumerate(train_loader):
-            
+
             net.train()
-            data, target = data.to(device).squeeze().permute(0,3, 1, 2).float(), target.to(device, dtype=torch.int64)
-            
+            data, target = data.to(device).float(), target.to(device).long()
+                if do_fgsm:
+                    data.re
+
             optimizer.zero_grad()
             yhat = net(data)
-            yhat.to(device)
-            
+            yhat.to(device).long()
             loss = criterion(yhat, target)
             train_loss += loss.item()
 
@@ -38,18 +39,18 @@ def train(net, train_loader, optimizer, criterion, device,epochs=5, verbose=0):
     return net, avg_train_loss
 
 
-def test(model, criterion, test_dataloader,device, verbose=0):
+def test(model, criterion, test_dataloader, device, verbose=0):
     test_loss = 0
 
     for (t_data, t_target) in test_dataloader:
         model.eval()
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        t_data, t_target = t_data.to(device).squeeze().permute(0,3, 1, 2).float(), t_target.to(device, dtype=torch.int64)
+        t_data, t_target = t_data.to(device).float(), t_target.to(device).long()
 
         with torch.no_grad():
             yhat = model(t_data)
-            yhat.to(device)
+            yhat.to(device).long()
             t_loss = criterion(yhat, t_target)
             test_loss += t_loss
 
