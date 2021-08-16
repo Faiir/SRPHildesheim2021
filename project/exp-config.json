@@ -1,18 +1,19 @@
 {
   "experiment-list": [
     {
-      "test_size": 3000,
-      "pool_size": 10000,
-      "labelled_size": 1000,
+      "test_size": 200,
+      "pool_size": 1000,
+      "labelled_size": 100,
       "OOD_ratio": 0.1,
-      "oracle_stepsize": 100,
-      "oracle_steps": 1,
+      "oracle_stepsize": 10,
+      "oracle_steps": 10,
       "epochs": 5,
       "batch_size": 25,
-      "oracle": "",
+      "oracles": ["random", "highest entropy", "least confidence"],
       "weight_decay": 1e-5,
+      "metric": "f1",
       "model_name": "gen_odin"
     }
   ],
-  "datasets": ["MNIST-FMNIST"]
+  "datasets": ["CIFAR10-CIFAR100"]
 }

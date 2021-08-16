@@ -1,12 +1,17 @@
-import json
+# torch
 import torch
-
 import torch.nn as nn
 import torch.optim as optim
+import torchvision
+from torch.utils.tensorboard import SummaryWriter
 
+# python imports
 from datetime import datetime
 import os
 from tqdm import tqdm
+import json
+import pandas as pd
+
 
 # data imports
 from .data.datahandler_for_array import get_dataloader
@@ -15,18 +20,17 @@ from .data.datamanager import get_datamanager
 # train functions
 from .model import train
 
-
 from .model.get_model import get_model
 
+
 # helpers
-from .helpers.measures import accuracy
+from .helpers.measures import accuracy, f1, auroc
 from .helpers.get_pool_predictions import get_pool_predictions
 
+from .helpers.get_tsne_plot import get_tsne_plot
 
-from . import test
 
-
-def experiment(param_dict, data_manager, net, verbose=0):
+def experiment(param_dict, oracle, data_manager, writer, dataset, verbose=0):
     """experiment [Experiment function which performs the entire acitve learning process based on the predefined config]
 
     [extended_summary]
@@ -45,14 +49,43 @@ def experiment(param_dict, data_manager, net, verbose=0):
     oracle_steps = param_dict["oracle_steps"]
     epochs = param_dict["epochs"]
     batch_size = param_dict["batch_size"]
-    oracle = None  # param_dict["oracle"]
     weight_decay = param_dict["weight_decay"]
+    metric = param_dict["metric"]
 
+    if oracle == "random":
+        from .helpers.sampler import random_sample
+
+        sampler = random_sample
+    elif oracle == "highest entropy":
+        from .helpers.sampler import uncertainity_sampling_highest_entropy
+
+        sampler = uncertainity_sampling_highest_entropy
+    elif oracle == "least confidence":
+        from .helpers.sampler import uncertainity_sampling_least_confident
+
+        sampler = uncertainity_sampling_least_confident
+    elif oracle == "DDU":
+        from .helpers.sampler import DDU_sampler
+
+        sampler = DDU_sampler
+    elif oracle == "Gen0din":
+        from .helpers.sampler import gen0din_sampler
+
+        sampler = gen0din_sampler
+
+    # net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
+    net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
+    if torch.cuda.is_available():
+        net.cuda()
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     data_manager.reset_pool()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for i in tqdm(range(oracle_steps)):
+        tsne_plot = get_tsne_plot(data_manager, dataset, net, device)
+        writer.add_figure(tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot)
+
         train_loader, test_loader, pool_loader = get_dataloader(
             data_manager, batch_size=batch_size
         )
@@ -75,6 +108,24 @@ def experiment(param_dict, data_manager, net, verbose=0):
         avg_test_loss = train.test(
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
+
+        avg_test_loss = train.test(
+            trained_net, criterion, test_loader, device=device, verbose=verbose
+        )
+
+        # unlabelled pool predictions
+        pool_predictions, pool_labels_list = get_pool_predictions(
+            trained_net, pool_loader, device=device, return_labels=True
+        )
+
+        # samples from unlabelled pool predictions
+        sampler(
+            dataset_manager=data_manager,
+            number_samples=oracle_stepsize,
+            net=trained_net,
+            predictions=pool_predictions,
+        )
+
         test_predictions, test_labels = get_pool_predictions(
             trained_net, test_loader, device=device, return_labels=True
         )
@@ -82,26 +133,43 @@ def experiment(param_dict, data_manager, net, verbose=0):
             trained_net, train_loader, device=device, return_labels=True
         )
 
-        test_accuracy = accuracy(test_labels, test_predictions)
-        train_accuracy = accuracy(train_labels, train_predictions)
+        if metric.lower() == "accuracy":
+            test_accuracy = accuracy(test_labels, test_predictions)
+            train_accuracy = accuracy(train_labels, train_predictions)
 
-        dict_to_add = {
-            "test_loss": avg_test_loss,
-            "train_loss": avg_train_loss,
-            "test_accuracy": test_accuracy,
-            "train_accuracy": train_accuracy,
-        }
+            dict_to_add = {
+                "test_loss": avg_test_loss,
+                "train_loss": avg_train_loss,
+                "test_accuracy": test_accuracy,
+                "train_accuracy": train_accuracy,
+            }
 
-        data_manager.add_log(log_dict=dict_to_add)
+        elif metric.lower() == "f1":
+            f1_score = f1(test_labels, test_predictions)
+            dict_to_add = {"f1": f1_score}
+        elif metric.lower() == "auroc":
+            auroc_score = auroc(data_manager, i)
+
+            dict_to_add = {"auroc": auroc_score}
+
+        data_manager.add_log(
+            writer=writer,
+            oracle=oracle,
+            dataset=dataset,
+            metric=metric,
+            log_dict=dict_to_add,
+        )
+
+        # data_manager.add_log(log_dict=dict_to_add)
         # print(dict_to_add)
 
-        if oracle is not None:
-            predictions = get_pool_predictions(trained_net, pool_loader, device=device)
-            oracle(
-                dataset_manager=data_manager,
-                number_samples=oracle_stepsize,
-                predictions=predictions,
-            )
+        # if oracle is not None:
+        #     predictions = get_pool_predictions(trained_net, pool_loader, device=device)
+        #     oracle(
+        #         dataset_manager=data_manager,
+        #         number_samples=oracle_stepsize,
+        #         predictions=predictions,
+        #     )
 
     return net
 
@@ -122,7 +190,9 @@ def start_experiment(config_path, log):
     config = ""
 
     config_path = os.path.join(config_path)
-    print(config_path)
+
+    writer = SummaryWriter()
+
     with open(config_path, mode="r", encoding="utf-8") as config_f:
         config = json.load(config_f)
 
@@ -134,51 +204,61 @@ def start_experiment(config_path, log):
         )
 
         for exp in config["experiment-list"]:
-            net = get_model(
-                exp["model_name"],
-                similarity="C",
-                out_classes=10,
-                include_bn=False,
-                channel_input=3,
-            )
+            metric = exp["metric"]
 
-            data_manager.create_merged_data(
-                test_size=exp["test_size"],
-                pool_size=exp["pool_size"],
-                labelled_size=exp["labelled_size"],
-                OOD_ratio=exp["OOD_ratio"],
-            )
+            for oracle in exp["oracles"]:
 
-            net = experiment(
-                param_dict=exp, net=net, verbose=0, data_manager=data_manager
-            )
+                net = get_model(
+                    exp["model_name"],
+                    similarity="C",
+                    out_classes=10,
+                    include_bn=False,
+                    channel_input=3,
+                )
 
-            log_df = data_manager.get_logs()
+                data_manager.create_merged_data(
+                    test_size=exp["test_size"],
+                    pool_size=exp["pool_size"],
+                    labelled_size=exp["labelled_size"],
+                    OOD_ratio=exp["OOD_ratio"],
+                )
 
-            current_time = datetime.now().strftime("%H-%M-%S")
-            log_file_name = "Experiment-from-" + str(current_time) + ".csv"
+                net = experiment(
+                    param_dict=exp,
+                    oracle=oracle,
+                    data_manager=data_manager,
+                    writer=writer,
+                    dataset=dataset,
+                    verbose=0,
+                )
 
-            log_dir = os.path.join(".", "log_dir")
+                log_df = data_manager.get_logs()
 
-            if os.path.exists(log_dir) == False:
-                os.mkdir(os.path.join(".", "log_dir"))
+                current_time = datetime.now().strftime("%H-%M-%S")
+                log_file_name = "Experiment-from-" + str(current_time) + ".csv"
 
-            log_path = os.path.join(log_dir, log_file_name)
+                log_dir = os.path.join(".", "log_dir")
 
-            with open(log_path, mode="w", encoding="utf-8") as logfile:
-                colums = log_df.columns
-                for colum in colums:
-                    logfile.write(colum + ",")
-                logfile.write("\n")
-                for _, row in log_df.iterrows():
-                    for c in colums:
-                        logfile.write(str(row[c].item()))
-                        logfile.write(",")
+                if os.path.exists(log_dir) == False:
+                    os.mkdir(os.path.join(".", "log_dir"))
+
+                log_path = os.path.join(log_dir, log_file_name)
+
+                with open(log_path, mode="w", encoding="utf-8") as logfile:
+                    colums = log_df.columns
+                    for colum in colums:
+                        logfile.write(colum + ",")
                     logfile.write("\n")
+                    for _, row in log_df.iterrows():
+                        for c in colums:
+                            logfile.write(str(row[c].item()))
+                            logfile.write(",")
+                        logfile.write("\n")
     print(
         """
     **********************************************
-                  
+
+
                   EXPERIMENT DONE
 
     **********************************************

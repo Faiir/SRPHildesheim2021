@@ -201,7 +201,7 @@ class Data_manager:
         return self.test_data, self.test_labels
 
     def get_unlabelled_pool_data(self):
-        ## Returns all data in pooll, None is returned instead of labels.
+        ## Returns all data in pool, None is returned instead of labels.
 
         assert (
             self.iter is not None
@@ -214,8 +214,9 @@ class Data_manager:
             self.status_manager.iloc[unlabelled_mask]["target"].values,
         )
 
-    def add_log(self, log_dict=None):
+    def add_log(self, writer, oracle, dataset, metric, log_dict=None):
         self.iter += 1
+
         current_iter_log = {
             "Iteration": self.iter,
             "Base_examples_labelled": len(
@@ -228,7 +229,17 @@ class Data_manager:
                 self.status_manager[self.status_manager["status"] == 0]
             ),
         }
+
+        writer.add_scalars(
+            f"{metric}/{dataset}/{oracle}/examples_labelled",
+            current_iter_log,
+            self.iter,
+        )
+
         if log_dict is not None:
+            writer.add_scalars(
+                f"{metric}/{dataset}/{oracle}/{metric}", log_dict, self.iter
+            )
             current_iter_log.update(log_dict)
 
         self.log[self.iter] = current_iter_log

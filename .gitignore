@@ -7,6 +7,9 @@ test.py
 todo.txt
 
 
+
+
+
 # chache
 __pycache__/
 
@@ -18,8 +21,22 @@ __pycache__/
 #ignore own log files
 log/*
 dataset/*
-
+runs/*
 log_dir/*
+log\*
+dataset\*
+runs\*
+log_dir\*
+cifar*
+t10k*
+train-images*
+train-labels*
+log/*
+dataset/*
+log_dir/*
+
+*.log
+*.csv
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -28,3 +45,4 @@ log_dir/*
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/
 
+project/test.png
