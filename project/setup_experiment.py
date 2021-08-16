@@ -40,8 +40,6 @@ def main():
     )
     args = parser.parse_args()
 
-    print(args)
-
     if args.config is None:
         args.config = os.path.join(".\exp-config.json")
 
