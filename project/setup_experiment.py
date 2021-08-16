@@ -19,6 +19,7 @@ def main():
 
     [extended_summary]
     """
+
     # Initiate argument parser
     parser = argparse.ArgumentParser(
         description="Preare run of AL with OoD experiment",

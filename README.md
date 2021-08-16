@@ -20,8 +20,8 @@ python -m setup_experiment -c "path\to\config\.json"
 
 
 # TODO
-- Make Net modular with config parameter !high -- done
-- Make it possible to chain multiple experiments !high -- done
-- Add config to log file
-- clean up code !medium
-- comment code !low - in progress
+- Test more datasets !low (Whoever feels like doing it)
+- Include spectral norm -res / jacobian penalty -conv - medium (Abdur Niklas)
+- Merge Branches !High (Niklas)
+- include DDU Experiment Setup !medium (Era & Sam)
+- Include density plots !medium (Markus)

@@ -1,0 +1,2 @@
+Base_examples_labelled,OOD_examples_labelled,Remaining_pool_samples,test_loss,train_loss,test_accuracy,train_accuracy,Total_overall_examples,Total_base_examples,Total_OOD_examples,Initial_examples_labelled,
+0.0,0.0,11111.0,2.377373218536377,2.377201348543167,8.266666666666666,8.3,12111.0,11000.0,1111.0,1000.0,

@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+#!TODO ADD Spectral Norm 
 
 class BasicBlock(nn.Module):
     expansion = 1

@@ -16,45 +16,44 @@ import torch
 class euc_dist_layer(nn.Module):
     def __init__(self, out_classes, dimensions):
         super().__init__()
-        # weigths = torch.Tensor((1, out_classes, dimensions), dtype=torch.float64)
-        weigths = torch.rand(
-            (1, out_classes, dimensions), dtype=torch.float32, requires_grad=True
-        )  # 1 10 64
+        weights = torch.rand(
+            (1, dimensions, out_classes), dtype=torch.float32, requires_grad=True
+        )
 
-        self.weigths = nn.Parameter(weigths)  # size num_classes, weight  1 10 64
+        self.weights = nn.Parameter(weights)
 
-    def forward(self, x):  # 128 64
+    def forward(self, x):
         # https://pytorch.org/docs/stable/generated/torch.lisnalg.norm.html#torch.linalg.norm
-        x = x.unsqueeze(
-            dim=0
-        )  # (batch, extra dim, data) dim=0 1 128 64 / dim=-2 128 1 64
-        x -= self.weigths
-        return torch.linalg.norm(x, dim=-1)
+        x = x.unsqueeze(dim=-1)
+        # x -= self.weights
+        # return torch.linalg.norm(x, dim=-1)
+
+        pw_dist = torch.nn.PairwiseDistance(keepdim=False)
+
+        return pw_dist(x, self.weights)  # 128 10
 
 
 class cosine_layer(nn.Module):
     def __init__(self, out_classes, dimensions):
         super().__init__()
-        # weigths = torch.Tensor((out_classes, dimensions), dtype=torch.float64)
-        weigths = torch.rand(
+        # weights = torch.Tensor((out_classes, dimensions), dtype=torch.float64)
+        weights = torch.rand(
             (out_classes, dimensions), dtype=torch.float32, requires_grad=True
         )
-        self.weigths = nn.Parameter(weigths)  # 10 64
+        self.weights = nn.Parameter(weights)
 
-    def forward(self, x, eps=1e-08):  # 128 64
+    def forward(self, x, eps=1e-08):
         # https://pytorch.org/docs/stable/generated/torch.nn.CosineSimilarity.html
         # x =>  batch , D
         eps = torch.tensor(eps, dtype=torch.float32)
 
-        x_norm = torch.linalg.norm(x, dim=0)  # -1:128 -- now 0:64
-        w_norm = torch.linalg.norm(
-            self.weigths, dim=0
-        )  # .unsqueeze(dim=0) # -1:0:1 10 -- 0:64
+        x_norm = torch.linalg.norm(x, dim=0)
+        w_norm = torch.linalg.norm(self.weights, dim=0)
 
-        nominator = torch.matmul(x, self.weigths.T)  # 128 10
-        denominator = torch.max((torch.matmul(x_norm, w_norm)), eps)  # empty (1?)
+        nominator = torch.matmul(x, self.weights.T)
+        denominator = torch.max((torch.matmul(x_norm, w_norm)), eps)
 
-        return torch.div(nominator, denominator)
+        return torch.div(nominator, denominator)  # 128 10
 
 
 class genOdinModel(nn.Module):
@@ -63,7 +62,7 @@ class genOdinModel(nn.Module):
     def __init__(
         self,
         activation=F.relu,
-        similarity="C",
+        similarity="E",
         out_classes=10,
         include_bn=False,
         channel_input=3,
@@ -75,7 +74,7 @@ class genOdinModel(nn.Module):
         self.conv2 = nn.Conv2d(4, 12, 5)
         self.fc1 = nn.Linear(12 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 64)
-        self.fc3 = nn.Linear(64, 10)
+        # self.fc3 = nn.Linear(64, 10)
         self.dropout1 = nn.Dropout(p=0.4)
         self.dropout2 = nn.Dropout(p=0.4)
         self.bn1 = nn.BatchNorm1d(self.fc1.in_features)
@@ -83,6 +82,7 @@ class genOdinModel(nn.Module):
         self.out_classes = out_classes
         self.flatten = nn.Flatten()
 
+        self.softmax = nn.Softmax(dim=-1)
         self.activation = activation
         self.similarity = similarity
         self.include_bn = include_bn
@@ -123,7 +123,8 @@ class genOdinModel(nn.Module):
         g = self.g_activation(self.g_norm(self.g_func(x)))  # scalar
         h = self.h_func(x)  # 128 10
         out = torch.div(g, h)
+        pred = self.softmax(out)
         if get_test_model:
-            return out
+            return pred
         else:
-            return out, g, h  # 128,10 ; 1 : 128,10
+            return pred, out, g, h  # 128,10 ; 1 : 128,10

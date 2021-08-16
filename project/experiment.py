@@ -22,7 +22,6 @@ from .model.get_model import get_model
 from .helpers.measures import accuracy
 from .helpers.get_pool_predictions import get_pool_predictions
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 from . import test
 
@@ -50,6 +49,8 @@ def experiment(param_dict, data_manager, net, verbose=0):
     weight_decay = param_dict["weight_decay"]
 
     data_manager.reset_pool()
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for i in tqdm(range(oracle_steps)):
         train_loader, test_loader, pool_loader = get_dataloader(
@@ -92,7 +93,7 @@ def experiment(param_dict, data_manager, net, verbose=0):
         }
 
         data_manager.add_log(log_dict=dict_to_add)
-        print(dict_to_add)
+        # print(dict_to_add)
 
         if oracle is not None:
             predictions = get_pool_predictions(trained_net, pool_loader, device=device)
@@ -102,7 +103,7 @@ def experiment(param_dict, data_manager, net, verbose=0):
                 predictions=predictions,
             )
 
-    return None
+    return net
 
 
 def start_experiment(config_path, log):
@@ -133,7 +134,13 @@ def start_experiment(config_path, log):
         )
 
         for exp in config["experiment-list"]:
-            net = get_model(exp["model_name"])
+            net = get_model(
+                exp["model_name"],
+                similarity="C",
+                out_classes=10,
+                include_bn=False,
+                channel_input=3,
+            )
 
             data_manager.create_merged_data(
                 test_size=exp["test_size"],
@@ -142,7 +149,9 @@ def start_experiment(config_path, log):
                 OOD_ratio=exp["OOD_ratio"],
             )
 
-            experiment(param_dict=exp, net=net, verbose=0, data_manager=data_manager)
+            net = experiment(
+                param_dict=exp, net=net, verbose=0, data_manager=data_manager
+            )
 
             log_df = data_manager.get_logs()
 
