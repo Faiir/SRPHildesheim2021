@@ -14,9 +14,7 @@
       "metric": "f1",
       "model_name": "gen_odin_conv",
       "similarity": "C",
-      "out_classes": 10,
-      "include_bn": false,
-      "channel_input": 3
+      "include_bn": false
     }
   ],
   "datasets": ["CIFAR10-CIFAR100"]
