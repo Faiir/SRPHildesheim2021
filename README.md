@@ -39,7 +39,7 @@ python -m setup_experiment -c "path\to\config\.json"
 
 - Test more datasets !low (Whoever feels like doing it)
 - Include spectral norm -res / jacobian penalty -conv - medium (Abdur Niklas)
-- Merge Branches !High (Niklas)
+- Merge Branches !High (Niklas) ---
 - include DDU Experiment Setup !medium (Era & Sam)
 - Include density plots !medium (Markus)
 - sampler class (Abdur)
