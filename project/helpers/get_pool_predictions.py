@@ -6,7 +6,7 @@ def get_pool_predictions(trained_net, pool_loader,device, return_labels = False)
   yhat = []
   labels_list = []
   for (data,labels) in pool_loader:
-    pred = trained_net(data.to(device).squeeze().permute(0,3, 1, 2).float())
+    pred = trained_net(data.to(device).float())
     yhat.append(pred.to("cpu").detach().numpy())
     labels_list.append(labels)
   

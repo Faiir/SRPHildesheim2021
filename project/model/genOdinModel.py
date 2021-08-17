@@ -51,7 +51,7 @@ class cosine_layer(nn.Module):
         w_norm = torch.linalg.norm(self.weights, dim=0)
 
         nominator = torch.matmul(x, self.weights.T)
-        denominator = torch.max((torch.matmul(x_norm, w_norm)), eps)
+        denominator = torch.max((torch.mul(x_norm, w_norm)), eps)
 
         return torch.div(nominator, denominator)  # 128 10
 
@@ -62,13 +62,13 @@ class genOdinModel(nn.Module):
     def __init__(
         self,
         activation=F.relu,
-        similarity="E",
+        similarity="C",
         out_classes=10,
         include_bn=False,
         channel_input=3,
     ):
         super(genOdinModel, self).__init__()
-
+        print("similarity: ", similarity)
         self.conv1 = nn.Conv2d(channel_input, 4, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(4, 12, 5)

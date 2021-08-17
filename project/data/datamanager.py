@@ -288,8 +288,15 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             CIFAR10_test = CIFAR10(
                 root=r"/dataset/CHIFAR10/", train=False, download=True, transform=None
             )
-            CIFAR10_train_data = CIFAR10_train.data.reshape(-1, 3, 32, 32)
-            CIFAR10_test_data = CIFAR10_test.data.reshape(-1, 3, 32, 32)
+            # CIFAR10_train_data = CIFAR10_train.data.permute(
+            #     0, 3, 1, 2
+            # )  # .reshape(-1, 3, 32, 32)
+            # CIFAR10_test_data = CIFAR10_test.data.permute(
+            #     0, 3, 1, 2
+            # )  # .reshape(-1, 3, 32, 32)
+
+            CIFAR10_train_data = np.swapaxes(CIFAR10_train.data, 1, 3)
+            CIFAR10_test_data = np.swapaxes(CIFAR10_test.data, 1, 3)
             CIFAR10_train_labels = np.array(CIFAR10_train.targets)
             CIFAR10_test_labels = np.array(CIFAR10_test.targets)
 
@@ -327,8 +334,12 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             )
             MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train_data])
             MNIST_test_data = np.array([i.numpy() for i, _ in MNIST_test])
-            MNIST_train_labels = MNIST_train.targets
-            MNIST_test_labels = MNIST_test.targets
+            if len(dataset) > 1:
+                MNIST_train_labels = MNIST_train.targets + np.max(base_labels)
+                MNIST_test_labels = MNIST_test.targets + np.max(base_labels)
+            else:
+                MNIST_train_labels = MNIST_train.targets
+                MNIST_test_labels = MNIST_test.targets
 
             base_data = np.concatenate([base_data, MNIST_train_data, MNIST_test_data])
             base_labels = np.concatenate(
@@ -367,8 +378,17 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             Fashion_MNIST_test_data = np.array(
                 [i.numpy() for i, _ in Fashion_MNIST_test]
             )
-            Fashion_MNIST_train_labels = Fashion_MNIST_train.targets.numpy()
-            Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
+
+            if len(dataset) > 1:
+                Fashion_MNIST_train_labels = (
+                    Fashion_MNIST_train.targets.numpy() + np.max(base_labels)
+                )
+                Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy() + np.max(
+                    base_labels
+                )
+            else:
+                Fashion_MNIST_train_labels = Fashion_MNIST_train.targets.numpy()
+                Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
 
             base_data = np.concatenate(
                 [base_data, Fashion_MNIST_train_data, Fashion_MNIST_test_data]

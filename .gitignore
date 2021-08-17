@@ -34,9 +34,11 @@ train-labels*
 log/*
 dataset/*
 log_dir/*
-
+runs/*
+runs\*
 *.log
 *.csv
+events*
 
 # Jupyter Notebook
 .ipynb_checkpoints

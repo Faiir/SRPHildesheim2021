@@ -18,7 +18,7 @@ from .data.datahandler_for_array import get_dataloader
 from .data.datamanager import get_datamanager
 
 # train functions
-from .model import train
+from .model.train import train, test
 
 from .model.get_model import get_model
 
@@ -28,6 +28,8 @@ from .helpers.measures import accuracy, f1, auroc
 from .helpers.get_pool_predictions import get_pool_predictions
 
 from .helpers.get_tsne_plot import get_tsne_plot
+
+do_tsne = False
 
 
 def experiment(param_dict, oracle, data_manager, writer, dataset, verbose=0):
@@ -83,8 +85,11 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, verbose=0):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for i in tqdm(range(oracle_steps)):
-        tsne_plot = get_tsne_plot(data_manager, dataset, net, device)
-        writer.add_figure(tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot)
+        if do_tsne:
+            tsne_plot = get_tsne_plot(data_manager, dataset, net, device)
+            writer.add_figure(
+                tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot
+            )
 
         train_loader, test_loader, pool_loader = get_dataloader(
             data_manager, batch_size=batch_size
@@ -95,7 +100,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, verbose=0):
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(net.parameters(), weight_decay=weight_decay)
 
-        trained_net, avg_train_loss = train.train(
+        trained_net, avg_train_loss = train(
             net,
             train_loader,
             optimizer,
@@ -105,11 +110,11 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, verbose=0):
             verbose=verbose,
         )
 
-        avg_test_loss = train.test(
+        avg_test_loss = test(
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
 
-        avg_test_loss = train.test(
+        avg_test_loss = test(
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
 
@@ -210,7 +215,7 @@ def start_experiment(config_path, log):
 
                 net = get_model(
                     exp["model_name"],
-                    similarity="C",
+                    similarity="E",
                     out_classes=10,
                     include_bn=False,
                     channel_input=3,

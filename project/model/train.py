@@ -23,7 +23,7 @@ def train(
 
             optimizer.zero_grad()
             yhat = net(data)
-            yhat.to(device).long()
+            yhat.to(device)
             loss = criterion(yhat, target)
             train_loss += loss.item()
 
