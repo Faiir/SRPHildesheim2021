@@ -1,13 +1,14 @@
 import seaborn
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def _transform(x):
     if x > 0:
         return 1
     else:
-        return 0
+        return -1
 
 
 def density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, oracle_step):
@@ -38,16 +39,21 @@ def density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, oracle_step):
     df_perturbed["g_s*e"] = df_perturbed["g_s"] * df_perturbed["entropies"]
     # fig, ax = plt.subplots(1, 1, figsize=(8, 8))
 
-    fig, ax = plt.subplots(1)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 16))
     plot = seaborn.kdeplot(
         data=df_perturbed[df_perturbed["source"] != 0],
         x="g_s",
         y="entropies",
         hue="source_names",
-        fill=True,
-        ax=ax,
+        fill=False,
+        ax=ax1,
     )
-
+    seaborn.histplot(
+        data=df_perturbed[df_perturbed["source"] != 0],
+        x="g_s",
+        hue="source_names",
+        ax=ax2,
+    )
     writer.add_figure(tag=f"density_oracle_step_{oracle_step}", figure=fig)
 
 
