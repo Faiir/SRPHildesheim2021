@@ -141,7 +141,7 @@ class ResNet(nn.Module):
         coeff=3,
         n_power_iterations=1,
         mnist=False,
-        similarity="C",
+        similarity="E",
     ):
         """
         If the "mod" parameter is set to True, the architecture uses 2 modifications:
@@ -150,7 +150,7 @@ class ResNet(nn.Module):
         """
         super(ResNet, self).__init__()
         self.in_planes = 64
-
+        self.softmax = nn.Softmax(dim=-1)
         self.mod = mod
 
         def wrapped_conv(input_size, in_c, out_c, kernel_size, stride):
@@ -250,7 +250,7 @@ class ResNet(nn.Module):
         g = self.g_activation(self.g_norm(self.g_func(f_out)))
         h = self.h_func(f_out)
         pred = self.softmax(torch.div(g, h))
-        if get_test_model:
+        if not get_test_model:
             return pred
         else:
             return pred, g, h

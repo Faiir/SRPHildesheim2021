@@ -8,12 +8,12 @@
       "oracle_stepsize": 50,
       "oracle_steps": 2,
       "epochs": 25,
-      "batch_size": 128,
+      "batch_size": 50,
       "oracles": ["least confidence"],
       "weight_decay": 1e-5,
       "metric": "f1",
       "model_name": "gen_odin_res",
-      "similarity": "C",
+      "similarity": "E",
       "include_bn": false
     }
   ],

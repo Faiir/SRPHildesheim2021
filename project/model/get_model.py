@@ -39,6 +39,6 @@ def get_model(
         )
         return genOdin
     elif model_name == "gen_odin_res":
-        return resnet18()
+        return resnet18(similarity=similarity)
     else:
         raise ValueError(f"Model {model_name} not found")

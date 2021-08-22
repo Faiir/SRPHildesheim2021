@@ -32,7 +32,7 @@ from .helpers.get_tsne_plot import get_tsne_plot
 do_tsne = False
 
 
-def experiment(param_dict, oracle, data_manager, writer, dataset, verbose=0):
+def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0):
     """experiment [Experiment function which performs the entire acitve learning process based on the predefined config]
 
     [extended_summary]
@@ -76,7 +76,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, verbose=0):
         sampler = gen0din_sampler
 
     # net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
-    net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
+    # net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
     if torch.cuda.is_available():
         net.cuda()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -215,7 +215,7 @@ def start_experiment(config_path, log):
 
                 net = get_model(
                     exp["model_name"],
-                    similarity="E",
+                    similarity=exp["similarity"],
                     out_classes=10,
                     include_bn=False,
                     channel_input=3,
@@ -228,13 +228,14 @@ def start_experiment(config_path, log):
                     OOD_ratio=exp["OOD_ratio"],
                 )
 
-                net = experiment(
+                trained_net = experiment(
                     param_dict=exp,
                     oracle=oracle,
                     data_manager=data_manager,
                     writer=writer,
                     dataset=dataset,
                     verbose=0,
+                    net=net,
                 )
 
                 log_df = data_manager.get_logs()
