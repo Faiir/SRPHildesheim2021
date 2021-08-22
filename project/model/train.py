@@ -82,7 +82,7 @@ def get_density_vals(
 
     eps = epsi_list[np.argmax(scores)]
     pert_imgs = []
-
+    targets = []
     for batch_idx, (data, target) in enumerate(pool_loader):
         backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
         data, target = data.to(device).float(), target.to(device).long()
@@ -91,18 +91,21 @@ def get_density_vals(
         pred, _ = output.max(dim=-1, keepdim=True)
         trained_net.zero_grad()
         pred.backward(backward_tensor)
-        pert_imgs.append(fgsm_attack(data, epsilon=eps, data_grad=data.grad.data))
-
+        pert_imgs.append(
+            fgsm_attack(data, epsilon=eps, data_grad=data.grad.data).to("cpu")
+        )
+        targets.append(target.to("cpu").numpy())
     gs = []
     hs = []
     pert_preds = []
     for p_img in pert_imgs:
         pert_pred, g, h = trained_net(p_img, get_test_model=True)
-        gs.append(g)
-        hs.append(h)
-        pert_preds.append(pert_pred)
+        gs.append(g.detach().to("cpu").numpy())
+        hs.append(h.detach().to("cpu").numpy())
+        pert_preds.append(pert_pred.to("cpu").numpy())
+        p_img.to("cpu").numpy()
 
-    return pert_imgs, pert_preds, gs, hs
+    return pert_imgs, pert_preds, gs, hs, targets
 
 
 def fgsm_attack(image, epsilon, data_grad):

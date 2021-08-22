@@ -28,6 +28,8 @@ from .helpers.measures import accuracy, f1, auroc
 from .helpers.get_pool_predictions import get_pool_predictions
 
 from .helpers.get_tsne_plot import get_tsne_plot
+from .helpers.get_density_plot import density_plot
+
 
 do_tsne = False
 
@@ -114,10 +116,10 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
 
-        pert_imgs, pert_preds, gs, hs = get_density_vals(
+        pert_imgs, pert_preds, gs, hs, targets = get_density_vals(
             pool_loader, test_loader, trained_net
         )
-
+        density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, i)
         # unlabelled pool predictions
         pool_predictions, pool_labels_list = get_pool_predictions(
             trained_net, pool_loader, device=device, return_labels=True
