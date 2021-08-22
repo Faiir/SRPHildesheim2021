@@ -15,6 +15,7 @@ def density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, oracle_step):
     pert_preds = np.concatenate(pert_preds, axis=0)
     gs = np.concatenate(gs, axis=0)
     hs = np.concatenate(hs, axis=0)
+
     source = np.array([_transform(xi) for xi in np.array(targets)])
     entropies = -np.sum(pert_preds * np.log(pert_preds), axis=1)
     df_perturbed = pd.DataFrame(
@@ -36,15 +37,18 @@ def density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, oracle_step):
     df_perturbed["source_names"] = df_perturbed.source.astype(int).map(source_labels)
     df_perturbed["g_s*e"] = df_perturbed["g_s"] * df_perturbed["entropies"]
     # fig, ax = plt.subplots(1, 1, figsize=(8, 8))
-    plot = seaborn.jointplot(
+
+    fig, ax = plt.subplots(1)
+    plot = seaborn.kdeplot(
         data=df_perturbed[df_perturbed["source"] != 0],
         x="g_s",
         y="entropies",
         hue="source_names",
-        height=8,
-        joint_kws={"alpha": 0.7},
+        fill=True,
+        ax=ax,
     )
-    writer.add_figure(tag=f"density_oracle_step_{oracle_step}", figure=plot)
+
+    writer.add_figure(tag=f"density_oracle_step_{oracle_step}", figure=fig)
 
 
 # for c,predictions_perturbed in enumerate(pretubed_preds):
