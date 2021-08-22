@@ -1,5 +1,6 @@
 from .mnist_model import Net
 from .genOdinModel import genOdinModel
+from .resnet import resnet18
 
 
 def get_model(
@@ -38,6 +39,6 @@ def get_model(
         )
         return genOdin
     elif model_name == "gen_odin_res":
-        raise NotImplementedError  # soonTM
+        return resnet18()
     else:
         raise ValueError(f"Model {model_name} not found")
