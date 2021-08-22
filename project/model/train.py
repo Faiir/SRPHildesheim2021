@@ -99,11 +99,11 @@ def get_density_vals(
     hs = []
     pert_preds = []
     for p_img in pert_imgs:
-        pert_pred, g, h = trained_net(p_img, get_test_model=True)
+        pert_pred, g, h = trained_net(p_img.to(device), get_test_model=True)
         gs.append(g.detach().to("cpu").numpy())
         hs.append(h.detach().to("cpu").numpy())
-        pert_preds.append(pert_pred.to("cpu").numpy())
-        p_img.to("cpu").numpy()
+        pert_preds.append(pert_pred.detach().to("cpu").numpy())
+        p_img.detach().to("cpu").numpy()
 
     return pert_imgs, pert_preds, gs, hs, targets
 
