@@ -18,7 +18,7 @@ from .data.datahandler_for_array import get_dataloader
 from .data.datamanager import get_datamanager
 
 # train functions
-from .model.train import train, test
+from .model.train import train, test, get_density_vals
 
 from .model.get_model import get_model
 
@@ -114,8 +114,8 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
 
-        avg_test_loss = test(
-            trained_net, criterion, test_loader, device=device, verbose=verbose
+        pert_imgs, pert_preds, gs, hs = get_density_vals(
+            pool_loader, test_loader, trained_net
         )
 
         # unlabelled pool predictions

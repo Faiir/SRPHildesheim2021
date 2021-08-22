@@ -2,6 +2,8 @@ import time
 from collections import defaultdict
 from tqdm import tqdm
 import torch
+import numpy as np
+import torch.nn.functional as F
 
 
 def train(
@@ -18,43 +20,13 @@ def train(
 
             net.train()
             data, target = data.to(device).float(), target.to(device).long()
-            if do_fgsm:
-                data.requires_grad = True
 
             optimizer.zero_grad()
-            yhat = net(data)
-            yhat.to(device)
+            yhat = net(data).to(device)
             loss = criterion(yhat, target)
             train_loss += loss.item()
 
             loss.backward()
-
-            if do_fgsm:
-                data_grad = data.grad.data
-                pertubed_image = fgsm_attack(data, epsilon=0.0025, data_grad=data_grad)
-
-                # TODO make this into a function / routine based on do_fgsm
-                # epsi_list = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]
-
-                # scores = []
-
-                # for epsi in tqdm(epsi_list):
-                #     ii = CIFAR_test_data.copy()
-                #     grads = create_pertubation(ii,training_net)
-                #     ii = ii - epsi*(grads.numpy())
-                #     ii[ii<0]=0
-                #     ii[ii>1]=1
-                #     preds = create_pertubation(ii,training_net,return_preds=True)
-                #     scores.append(np.sum(preds))
-
-                # perturbed_inputs = []
-                # epsi = epsi_list[np.argmax(scores)]
-                # for ii in tqdm([Pool_data]):
-                #     grads = create_pertubation(ii,training_net)
-                #     ii = ii - epsi*(grads.numpy())
-                #     ii[ii<0]=0
-                #     ii[ii>1]=1
-                #     perturbed_inputs.append(ii)
             optimizer.step()
 
         avg_train_loss = train_loss / len(train_loader)
@@ -86,6 +58,51 @@ def test(model, criterion, test_dataloader, device, verbose=0):
     return test_loss.to("cpu").detach().numpy() / len(
         test_dataloader
     )  # return avg testloss
+
+
+def get_density_vals(
+    pool_loader,
+    val_loader,
+    trained_net,
+):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    epsi_list = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]
+    best_eps = 0
+    scores = []
+    for eps in tqdm(epsi_list):
+        preds = 0
+        for batch_idx, (data, target) in enumerate(val_loader):
+            data, target = data.to(device).float(), target.to(device).long()
+            data.requires_grad = True
+            yhat = trained_net(data)
+            pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
+
+            preds += torch.sum(pred)
+        scores.append(preds.detach().cpu().numpy())
+
+    eps = epsi_list[np.argmax(scores)]
+    pert_imgs = []
+
+    for batch_idx, (data, target) in enumerate(pool_loader):
+        backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
+        data, target = data.to(device).float(), target.to(device).long()
+        data.requires_grad = True
+        output = trained_net(data)
+        pred, _ = output.max(dim=-1, keepdim=True)
+        trained_net.zero_grad()
+        pred.backward(backward_tensor)
+        pert_imgs.append(fgsm_attack(data, epsilon=eps, data_grad=data.grad.data))
+
+    gs = []
+    hs = []
+    pert_preds = []
+    for p_img in pert_imgs:
+        pert_pred, g, h = trained_net(p_img, get_test_model=True)
+        gs.append(g)
+        hs.append(h)
+        pert_preds.append(pert_pred)
+
+    return pert_imgs, pert_preds, gs, hs
 
 
 def fgsm_attack(image, epsilon, data_grad):
