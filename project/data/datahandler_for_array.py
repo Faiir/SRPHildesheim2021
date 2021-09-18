@@ -132,10 +132,13 @@ def get_ood_dataloader(data_manager, batch_size=16):
     )
 
     outlier_data = DataHandler_For_Arrays(
-        train_X, train_y, transform=transform_ood, num_classes=1
+        train_X, train_y, transform=transform_ood, num_classes=1, num_workers=2
     )
 
     outlier_loader = DataLoader(
-        outlier_data, sampler=RandomSampler, batch_size=batch_size
+        outlier_data,
+        sampler=RandomSampler(outlier_data),
+        batch_size=batch_size,
+        num_workers=2,
     )
     return train_loader, outlier_loader
