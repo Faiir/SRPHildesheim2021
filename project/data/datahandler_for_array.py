@@ -6,6 +6,7 @@ import numpy as np
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data import random_split
 from torchvision.transforms import transforms
+import torch
 
 
 class DataHandler_For_Arrays(Dataset):
@@ -45,6 +46,14 @@ def create_dataloader(data_manager, batch_size=128, split_size=0.1):
     train_X, train_y = data_manager.get_train_data()
     test_X, test_y = data_manager.get_test_data()
     pool_X, pool_y = data_manager.get_unlabelled_pool_data()
+
+    train_X, train_y = train_X.astype(np.float32), train_y.astype(np.float32)
+    test_X, test_y = test_X.astype(np.float32), test_y.astype(np.float32)
+    pool_X, pool_y = pool_X.astype(np.float32), pool_y.astype(np.float32)
+
+    train_X, train_y = torch.from_numpy(train_X), torch.from_numpy(train_y)
+    test_X, test_y = torch.from_numpy(test_X), torch.from_numpy(test_y)
+    pool_X, pool_y = torch.from_numpy(pool_X), torch.from_numpy(pool_y)
 
     transform_train = transforms.Compose(
         [
