@@ -61,47 +61,50 @@ def get_density_vals(
     val_loader,
     trained_net,
 ):
-    with torch.no_grad():
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        epsi_list = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]
-        best_eps = 0
-        scores = []
-        for eps in tqdm(epsi_list):
-            preds = 0
-            for batch_idx, (data, target) in enumerate(val_loader):
-                data, target = data.to(device).float(), target.to(device).long()
-                data.requires_grad = True
-                yhat = trained_net(data)
-                pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
 
-                preds += torch.sum(pred)
-            scores.append(preds.detach().cpu().numpy())
-
-        eps = epsi_list[np.argmax(scores)]
-        pert_imgs = []
-        targets = []
-        for batch_idx, (data, target) in enumerate(pool_loader):
-            backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    epsi_list = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]
+    best_eps = 0
+    scores = []
+    for eps in tqdm(epsi_list):
+        preds = 0
+        for batch_idx, (data, target) in enumerate(val_loader):
             data, target = data.to(device).float(), target.to(device).long()
             data.requires_grad = True
-            output = trained_net(data)
-            pred, _ = output.max(dim=-1, keepdim=True)
-            trained_net.zero_grad()
-            pred.backward(backward_tensor)
-            pert_imgs.append(
-                fgsm_attack(data, epsilon=eps, data_grad=data.grad.data).to("cpu")
-            )
-            targets.append(target.to("cpu").numpy())
-        gs = []
-        hs = []
-        pert_preds = []
+            yhat = trained_net(data)
+            pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
+
+            preds += torch.sum(pred)
+        scores.append(preds.detach().cpu().numpy())
+
+    eps = epsi_list[np.argmax(scores)]
+    pert_imgs = []
+    targets = []
+    for batch_idx, (data, target) in enumerate(pool_loader):
+        backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
+        data, target = data.to(device).float(), target.to(device).long()
+        data.requires_grad = True
+        output = trained_net(data)
+        pred, _ = output.max(dim=-1, keepdim=True)
+        trained_net.zero_grad()
+        pred.backward(backward_tensor)
+        pert_imgs.append(
+            fgsm_attack(data, epsilon=eps, data_grad=data.grad.data).to("cpu")
+        )
+        targets.append(target.to("cpu").numpy())
+        del data, output, target
+    torch.cuda.empty_cache()
+    gs = []
+    hs = []
+    pert_preds = []
+    with torch.no_grad():
         for p_img in pert_imgs:
             pert_pred, g, h = trained_net(p_img.to(device), get_test_model=True)
             gs.append(g.detach().to("cpu").numpy())
             hs.append(h.detach().to("cpu").numpy())
             pert_preds.append(pert_pred.detach().to("cpu").numpy())
             p_img.detach().to("cpu").numpy()
-    torch.cuda.empty_cache()
+
     return pert_imgs, pert_preds, gs, hs, targets
 
 
