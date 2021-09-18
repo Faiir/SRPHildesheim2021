@@ -111,6 +111,12 @@ def get_ood_dataloader(data_manager, batch_size=16):
     train_y = np.ones_like(train_y)
     ood_y = np.zeros_like(ood_y)
 
+    train_X, train_y = train_X.astype(np.float32), train_y.astype(np.float32)
+    ood_X, ood_y = ood_X.astype(np.float32), ood_y.astype(np.float32)
+
+    train_X, train_y = torch.from_numpy(train_X), torch.from_numpy(train_y)
+    ood_X, ood_y = torch.from_numpy(ood_X), torch.from_numpy(ood_y)
+
     train_dataset = DataHandler_For_Arrays(train_X, train_y)
 
     transform_ood = transforms.Compose(
