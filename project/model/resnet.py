@@ -234,7 +234,7 @@ class ResNet(nn.Module):
             input_size = math.ceil(input_size / stride)
         return nn.Sequential(*layers)
 
-    def forward(self, x, get_test_model=False):
+    def forward(self, x, get_test_model=False, train_g=False):
         out = self.activation(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
@@ -248,6 +248,8 @@ class ResNet(nn.Module):
         self.feature = out.clone().detach()
         # out = self.fc(out) / self.temp
         g = self.g_activation(self.g_norm(self.g_func(f_out)))
+        if train_g:
+            return g
         h = self.h_func(f_out)
         pred = self.softmax(torch.div(g, h))
         if not get_test_model:
