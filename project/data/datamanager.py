@@ -191,6 +191,17 @@ class Data_manager:
 
         return train_data, train_labels
 
+    def get_ood_data(self):
+        assert (
+            self.iter is not None
+        ), "Dataset not initialized. Call create_merged_data()"
+
+        labelled_ood_mask = self.status_manager[self.status_manager["status"] < 0].index
+        ood_train_data = self.pool_data[labelled_ood_mask]
+        ood_train_labels = self.status_manager.iloc[labelled_ood_mask]["target"].values
+
+        return ood_train_data, ood_train_labels
+
     def get_test_data(self):
         ## Returns all test data with labels
 
@@ -332,7 +343,7 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                     ]
                 ),
             )
-            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train_data])
+            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train])
             MNIST_test_data = np.array([i.numpy() for i, _ in MNIST_test])
             if len(dataset) > 1:
                 MNIST_train_labels = MNIST_train.targets + np.max(base_labels)
@@ -425,7 +436,7 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 ),
             )
 
-            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train_data])
+            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train])
             MNIST_test_data = np.array([i.numpy() for i, _ in MNIST_test])
 
             MNIST_train_labels = MNIST_train.targets.numpy()

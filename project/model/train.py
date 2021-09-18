@@ -6,13 +6,9 @@ import numpy as np
 import torch.nn.functional as F
 
 
-def train(
-    net, train_loader, optimizer, criterion, device, do_fgsm=False, epochs=5, verbose=1
-):
+def train(net, train_loader, optimizer, criterion, device, epochs=5, verbose=1):
     if verbose > 0:
         print("training with device:", device)
-
-    train_log = defaultdict(list)
 
     for epoch in tqdm(range(0, epochs)):
         train_loss = 0
@@ -117,3 +113,47 @@ def fgsm_attack(image, epsilon, data_grad):
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     # Return the perturbed image
     return perturbed_image
+
+
+def train_g(net, train_loader_in, train_loader_out, optimizer):
+    """train_g [summary]
+
+    [Outlier exposure for g-head - https://arxiv.org/pdf/1812.04606.pdf]
+
+
+    """
+    net.train()  # enter train mode
+    loss_avg = 0.0
+
+    for in_set, out_set in zip(train_loader_in, train_loader_out):
+        data = torch.cat((in_set[0], out_set[0]), 0)
+        target = in_set[1]
+
+        data, target = data.cuda(), target.cuda()
+
+        # forward
+        x = net(data, train_g=True)
+
+        # backward
+        optimizer.zero_grad()
+
+        loss = F.cross_entropy(x[: len(in_set[0])], target)
+        # cross-entropy from softmax distribution to uniform distribution
+        loss += (
+            0.5
+            * -(
+                x[len(in_set[0]) :].mean(1)
+                - torch.logsumexp(x[len(in_set[0]) :], dim=1)
+            ).mean()
+        )
+
+        loss.backward()
+        optimizer.step()
+
+        # exponential moving average
+        loss_avg = loss_avg * 0.8 + float(loss) * 0.2  # maybe log?
+
+
+def pretrain_self_sup(net, loader, optimizer):
+
+    pass
