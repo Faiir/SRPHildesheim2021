@@ -20,6 +20,7 @@ from tqdm import tqdm
 import json
 import pandas as pd
 from tqdm import tqdm
+from project.data.datahandler_for_array import get_dataloader
 
 
 def outlier_exposure_experiment(data_manager, writer, net, verbose=0):
@@ -81,7 +82,7 @@ def outlier_exposure_experiment(data_manager, writer, net, verbose=0):
             )
             net = train_g(net, g_optim, data_manager, epochs=10)
 
-        trained_net, avg_train_loss = train(
+        net, avg_train_loss = train(
             net,
             train_loader,
             optimizer,
@@ -90,33 +91,33 @@ def outlier_exposure_experiment(data_manager, writer, net, verbose=0):
             epochs=epochs,
             verbose=verbose,
         )
-
+        net.eval()
         avg_test_loss = test(
-            trained_net, criterion, test_loader, device=device, verbose=verbose
+            net, criterion, test_loader, device=device, verbose=verbose
         )
         print(f"avg.test loss: {avg_test_loss} oracle step {i}")
         pert_imgs, pert_preds, gs, hs, targets = get_density_vals(
-            pool_loader, test_loader, trained_net
+            pool_loader, test_loader, net
         )
         # density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, i)
         # unlabelled pool predictions
         pool_predictions, pool_labels_list = get_pool_predictions(
-            trained_net, pool_loader, device=device, return_labels=True
+            net, pool_loader, device=device, return_labels=True
         )
 
         # samples from unlabelled pool predictions
         sampler(
             dataset_manager=data_manager,
             number_samples=oracle_stepsize,
-            net=trained_net,
+            net=net,
             predictions=pool_predictions,
         )
 
         test_predictions, test_labels = get_pool_predictions(
-            trained_net, test_loader, device=device, return_labels=True
+            net, test_loader, device=device, return_labels=True
         )
         train_predictions, train_labels = get_pool_predictions(
-            trained_net, train_loader, device=device, return_labels=True
+            net, train_loader, device=device, return_labels=True
         )
 
         if metric.lower() == "accuracy":

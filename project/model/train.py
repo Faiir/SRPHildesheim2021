@@ -67,6 +67,7 @@ def get_density_vals(
     epsi_list = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]
     best_eps = 0
     scores = []
+    trained_net.eval()
     for eps in tqdm(epsi_list):
         preds = 0
         for batch_idx, (data, target) in enumerate(val_loader):

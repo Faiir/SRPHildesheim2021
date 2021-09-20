@@ -234,7 +234,7 @@ class ResNet(nn.Module):
             input_size = math.ceil(input_size / stride)
         return nn.Sequential(*layers)
 
-    def forward(self, x, get_test_model=False, train_g=False):
+    def forward(self, x, get_test_model=False, train_g=False, self_supervision=False):
         out = self.activation(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
@@ -244,6 +244,9 @@ class ResNet(nn.Module):
         out = out.view(out.size(0), -1)
         out = self.activation(self.fc(out))
         f_out = self.fc1(out)
+
+        if self_supervision:
+            return f_out, out  # (128,10) (n,128)
 
         self.feature = out.clone().detach()
         # out = self.fc(out) / self.temp
@@ -330,3 +333,17 @@ def resnet152(spectral_normalization=True, mod=True, temp=1.0, mnist=False, **kw
         **kwargs,
     )
     return model
+
+
+def add_rot_heads(net, pernumile_layer_size=128):
+    net.x_trans_head = nn.Linear(pernumile_layer_size, 3)
+    net.y_trans_head = nn.Linear(pernumile_layer_size, 3)
+    net.rot_head = nn.Linear(pernumile_layer_size, 4)
+
+    return net
+
+
+def remove_rot_heads(net):
+    # https://stackoverflow.com/questions/52548174/how-to-remove-the-last-fc-layer-from-a-resnet-model-in-pytorch
+    # TODO
+    return net

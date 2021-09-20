@@ -1,6 +1,9 @@
 from .mnist_model import Net
 from .genOdinModel import genOdinModel
 from .resnet import resnet18
+from datetime import datetime
+import torch
+import os
 
 
 def get_model(
@@ -42,3 +45,8 @@ def get_model(
         return resnet18(similarity=similarity)
     else:
         raise ValueError(f"Model {model_name} not found")
+
+
+def save_model(net, path, desc_str="pretrained_net"):
+    time = datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
+    torch.save(net.state_dict(), os.path.join(path, desc_str, time))
