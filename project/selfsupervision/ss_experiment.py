@@ -10,6 +10,12 @@ from .pertubed_dataset import create_pert_dataloader
 from ..model.resnet import add_rot_heads
 from ..model.get_model import get_model, save_model
 
+""" 
+Code From: https://github.com/hendrycks/ss-ood
+Title: Using Self-Supervised Learning Can Improve Model Robustness and Uncertainty
+Author:Dan Hendrycks and Mantas Mazeika and Saurav Kadavath and Dawn Song
+"""
+
 
 def cosine_annealing(step, total_steps, lr_max, lr_min):
     return lr_min + (lr_max - lr_min) * 0.5 * (1 + np.cos(step / total_steps * np.pi))
