@@ -1,7 +1,7 @@
+import argparse
+from tqdm import tqdm
 import numpy as np
 import torch
-from tqdm import tqdm
-
 import torch.nn as nn
 import torchvision.transforms.functional as trnF
 import torchvision.datasets as dset
@@ -9,6 +9,8 @@ import torch.nn.functional as F
 from .pertubed_dataset import create_pert_dataloader
 from ..model.resnet import add_rot_heads
 from ..model.get_model import get_model, save_model
+from ..data.datamanager import get_datamanager
+
 
 """ 
 Code From: https://github.com/hendrycks/ss-ood
@@ -153,3 +155,52 @@ def ss_experiment(
         save_model(resnet18, kwargs["path"], kwargs["desc_string"])
 
     return resnet18
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("argument for training")
+
+    parser.add_argument("--batchsize", type=int, default=256, help="batchsize")
+    parser.add_argument("--epochs", type=int, default=50, help="save frequency")
+    parser.add_argument("--lr", type=float, default=0.0001, help="learning rate")
+    parser.add_argument("--momentum", type=float, default=0.7, help="momentum")
+    parser.add_argument(
+        "--weight_decay", type=float, default=0.0001, help="weight_decay"
+    )
+    parser.add_argument(
+        "--rot_loss_weight", type=float, default=0.5, help="rot_loss_weight"
+    )
+    parser.add_argument(
+        "--transl_loss_weight", type=float, default=0.5, help="transl_loss_weight"
+    )
+    parser.add_argument(
+        "--output", type=str, default=0.5, help=r"..\model\saved_models"
+    )
+    parser.add_argument("--in_dist", type=str, default="Cifar10", help=r"Cifar10")
+    parser.add_argument(
+        "--oo_dist", nargs="+", type=str, default="MNIST", help=r"OOD datasets"
+    )
+    parser.add_argument("--ood_ratio", type=float, default=0.2, help=r"% of ood sample")
+    parser.add_argument("--pool_size", type=int, default=250000, help="pool_size")
+    parser.add_argument("--train_size", type=int, default=2000, help="train_size")
+    opt = parser.parse_args()
+
+    datamanager = get_datamanager([opt["in_dist"]], ood=opt["ood_ratio"])
+    datamanager.create_merged_data(
+        test_size=opt["train_size"],
+        pool_size=opt["pool_size"],
+        labelled_size=opt["train_size"],
+        OOD_ratio=opt["ood_ratio"],
+    )
+    ss_experiment(
+        datamanager,
+        opt["batchsize"],
+        opt["epochs"],
+        opt["lr"],
+        opt["momentum"],
+        opt["weight_decay"],
+        opt["rot_loss_weight"],
+        opt["transl_loss_weight"],
+        True,
+        opt["output"],
+    )
