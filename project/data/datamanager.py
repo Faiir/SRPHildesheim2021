@@ -290,6 +290,14 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
     resize = transforms.Resize(32)
     random_crop = transforms.RandomCrop(32)
 
+    standard_transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            resize,
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ]
+    )
+
     for dataset in indistribution:
         if dataset == "Cifar10":
 
@@ -489,15 +497,21 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             )
         elif ood_dataset == "SVHN":
             SVHN_train = SVHN(
-                root=r"/dataset/SVHN", train=True, download=True, transform=resize
+                root=r"/dataset/SVHN",
+                split="train",
+                download=True,
+                transform=standard_transform,
             )
             SVHN_test = SVHN(
-                root=r"/dataset/SVHN", train=False, download=True, transform=resize
+                root=r"/dataset/SVHN",
+                split="test",
+                download=True,
+                transform=standard_transform,
             )
             SVHN_train_data = SVHN_train.data
             SVHN_test_data = SVHN_test.data
-            SVHN_train_labels = SVHN_train.targets
-            SVHN_test_labels = SVHN_test.targets
+            SVHN_train_labels = SVHN_train.labels
+            SVHN_test_labels = SVHN_test.labels
 
             OOD_data = np.concatenate([OOD_data, SVHN_train_data, SVHN_test_data])
             OOD_labels = np.concatenate(
