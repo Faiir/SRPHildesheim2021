@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import sys
 import os
 
+
 PACKAGE_PARENT = ".."
 SCRIPT_DIR = os.path.dirname(
     os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__)))
@@ -17,11 +18,11 @@ SCRIPT_DIR = os.path.dirname(
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 
+from project.model.resnet import add_rot_heads
 from project.selfsupervision.pertubed_dataset import create_pert_dataloader
-from .model.resnet import add_rot_heads
-from .model.get_model import get_model, save_model
-from .data.datamanager import get_datamanager
 
+from project.model.get_model import get_model, save_model
+from project.data.datamanager import get_datamanager
 
 """ 
 Code From: https://github.com/hendrycks/ss-ood
@@ -162,13 +163,17 @@ def ss_experiment(
         rot_loss_weight,
         transl_loss_weight,
     )
-    if save_net:
-        save_model(resnet18, kwargs["path"], kwargs["desc_string"])
 
+    if save_net:
+        if kwargs["desc_string"] is not None:
+            save_model(resnet18, kwargs["path"], kwargs["desc_string"])
+        else:
+            save_model(resnet18, kwargs["path"])
     return resnet18
 
 
 if __name__ == "__main__":
+    #!python -m ss_experiment --batchsize 128 --epochs 1 --lr 0.0001 --momentum 0.8 --weight_decay 0.00001 --rot_loss_weight 1.0 --trans_loss_weight 1.0 --oodratio 0.3 --poolsize 20000 --trainsize 1500 --oo_dist MNIST --oo_dist Fashion_MNIST
     parser = argparse.ArgumentParser("argument for training")
 
     parser.add_argument("--batchsize", type=int, default=256, help="batchsize")
@@ -176,42 +181,42 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.0001, help="learning rate")
     parser.add_argument("--momentum", type=float, default=0.7, help="momentum")
     parser.add_argument(
-        "--weight-decay", type=float, default=0.0001, help="weight_decay"
+        "--weight_decay", type=float, default=0.0001, help="weight_decay"
     )
     parser.add_argument(
-        "--rot-loss-weight", type=float, default=0.5, help="rot_loss_weight"
+        "--rot_loss_weight", type=float, default=0.5, help="rot_loss_weight"
     )
     parser.add_argument(
-        "--trans-loss-weight", type=float, default=0.5, help="transl_loss_weight"
+        "--trans_loss_weight", type=float, default=0.5, help="transl_loss_weight"
     )
     parser.add_argument(
         "--output", type=str, default=0.5, help=r"..\model\saved_models"
     )
-    parser.add_argument("--in-dist", type=str, default="Cifar10", help=r"Cifar10")
+    parser.add_argument("--in_dist", type=str, default="Cifar10", help=r"Cifar10")
     parser.add_argument(
-        "--oo-dist", nargs="+", type=str, default="MNIST", help=r"OOD datasets"
+        "--oo_dist", nargs="+", type=str, default="MNIST", help=r"OOD datasets"
     )
     parser.add_argument("--oodratio", type=float, default=0.2, help=r"% of ood sample")
     parser.add_argument("--poolsize", type=int, default=250000, help="pool_size")
     parser.add_argument("--trainsize", type=int, default=2000, help="train_size")
     opt = parser.parse_args()
 
-    datamanager = get_datamanager([opt["in-dist"]], ood=opt["ood-ratio"])
+    datamanager = get_datamanager([opt.in_dist], ood=opt.oo_dist)
     datamanager.create_merged_data(
-        test_size=opt["trainsize"],
-        pool_size=opt["poolsize"],
-        labelled_size=opt["trainsize"],
-        OOD_ratio=opt["oodratio"],
+        test_size=opt.trainsize,
+        pool_size=opt.poolsize,
+        labelled_size=opt.trainsize,
+        OOD_ratio=opt.oodratio,
     )
     ss_experiment(
         datamanager,
-        opt["batchsize"],
-        opt["epochs"],
-        opt["lr"],
-        opt["momentum"],
-        opt["weight_decay"],
-        opt["rot-loss-weight"],
-        -opt["trans-loss-weight"],
+        opt.batchsize,
+        opt.epochs,
+        opt.lr,
+        opt.momentum,
+        opt.weight_decay,
+        opt.rot_loss_weight,
+        opt.trans_loss_weight,
         True,
-        opt["output"],
+        path=opt.output,
     )
