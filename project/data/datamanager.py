@@ -191,6 +191,17 @@ class Data_manager:
 
         return train_data, train_labels
 
+    def get_ood_data(self):
+        assert (
+            self.iter is not None
+        ), "Dataset not initialized. Call create_merged_data()"
+
+        labelled_ood_mask = self.status_manager[self.status_manager["status"] < 0].index
+        ood_train_data = self.pool_data[labelled_ood_mask]
+        ood_train_labels = self.status_manager.iloc[labelled_ood_mask]["target"].values
+
+        return ood_train_data, ood_train_labels
+
     def get_test_data(self):
         ## Returns all test data with labels
 
@@ -279,6 +290,14 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
     resize = transforms.Resize(32)
     random_crop = transforms.RandomCrop(32)
 
+    standard_transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            resize,
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ]
+    )
+
     for dataset in indistribution:
         if dataset == "Cifar10":
 
@@ -332,7 +351,7 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                     ]
                 ),
             )
-            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train_data])
+            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train])
             MNIST_test_data = np.array([i.numpy() for i, _ in MNIST_test])
             if len(dataset) > 1:
                 MNIST_train_labels = MNIST_train.targets + np.max(base_labels)
@@ -425,7 +444,7 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 ),
             )
 
-            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train_data])
+            MNIST_train_data = np.array([i.numpy() for i, _ in MNIST_train])
             MNIST_test_data = np.array([i.numpy() for i, _ in MNIST_test])
 
             MNIST_train_labels = MNIST_train.targets.numpy()
@@ -478,15 +497,21 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             )
         elif ood_dataset == "SVHN":
             SVHN_train = SVHN(
-                root=r"/dataset/SVHN", train=True, download=True, transform=resize
+                root=r"/dataset/SVHN",
+                split="train",
+                download=True,
+                transform=standard_transform,
             )
             SVHN_test = SVHN(
-                root=r"/dataset/SVHN", train=False, download=True, transform=resize
+                root=r"/dataset/SVHN",
+                split="test",
+                download=True,
+                transform=standard_transform,
             )
             SVHN_train_data = SVHN_train.data
             SVHN_test_data = SVHN_test.data
-            SVHN_train_labels = SVHN_train.targets
-            SVHN_test_labels = SVHN_test.targets
+            SVHN_train_labels = SVHN_train.labels
+            SVHN_test_labels = SVHN_test.labels
 
             OOD_data = np.concatenate([OOD_data, SVHN_train_data, SVHN_test_data])
             OOD_labels = np.concatenate(
