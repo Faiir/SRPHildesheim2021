@@ -1,0 +1,5 @@
+experimentcall.txt
+
+
+
+python -m ss_experiment --batchsize 128 --epochs 1 --lr 0.0001 --momentum 0.8 --weight-decay 0.00001 --rot-loss-weight 1.0 --trans_loss_weight 1.0 ´--oodratio 0.3 --poolsize 20000 --trainsize --1500

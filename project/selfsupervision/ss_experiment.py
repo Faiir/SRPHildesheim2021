@@ -165,32 +165,32 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.0001, help="learning rate")
     parser.add_argument("--momentum", type=float, default=0.7, help="momentum")
     parser.add_argument(
-        "--weight_decay", type=float, default=0.0001, help="weight_decay"
+        "--weight-decay", type=float, default=0.0001, help="weight_decay"
     )
     parser.add_argument(
-        "--rot_loss_weight", type=float, default=0.5, help="rot_loss_weight"
+        "--rot-loss-weight", type=float, default=0.5, help="rot_loss_weight"
     )
     parser.add_argument(
-        "--transl_loss_weight", type=float, default=0.5, help="transl_loss_weight"
+        "--trans-loss-weight", type=float, default=0.5, help="transl_loss_weight"
     )
     parser.add_argument(
         "--output", type=str, default=0.5, help=r"..\model\saved_models"
     )
-    parser.add_argument("--in_dist", type=str, default="Cifar10", help=r"Cifar10")
+    parser.add_argument("--in-dist", type=str, default="Cifar10", help=r"Cifar10")
     parser.add_argument(
-        "--oo_dist", nargs="+", type=str, default="MNIST", help=r"OOD datasets"
+        "--oo-dist", nargs="+", type=str, default="MNIST", help=r"OOD datasets"
     )
-    parser.add_argument("--ood_ratio", type=float, default=0.2, help=r"% of ood sample")
-    parser.add_argument("--pool_size", type=int, default=250000, help="pool_size")
-    parser.add_argument("--train_size", type=int, default=2000, help="train_size")
+    parser.add_argument("--oodratio", type=float, default=0.2, help=r"% of ood sample")
+    parser.add_argument("--poolsize", type=int, default=250000, help="pool_size")
+    parser.add_argument("--trainsize", type=int, default=2000, help="train_size")
     opt = parser.parse_args()
 
-    datamanager = get_datamanager([opt["in_dist"]], ood=opt["ood_ratio"])
+    datamanager = get_datamanager([opt["in-dist"]], ood=opt["ood-ratio"])
     datamanager.create_merged_data(
-        test_size=opt["train_size"],
-        pool_size=opt["pool_size"],
-        labelled_size=opt["train_size"],
-        OOD_ratio=opt["ood_ratio"],
+        test_size=opt["trainsize"],
+        pool_size=opt["poolsize"],
+        labelled_size=opt["trainsize"],
+        OOD_ratio=opt["oodratio"],
     )
     ss_experiment(
         datamanager,
@@ -199,8 +199,8 @@ if __name__ == "__main__":
         opt["lr"],
         opt["momentum"],
         opt["weight_decay"],
-        opt["rot_loss_weight"],
-        opt["transl_loss_weight"],
+        opt["rot-loss-weight"],
+        -opt["trans-loss-weight"],
         True,
         opt["output"],
     )
