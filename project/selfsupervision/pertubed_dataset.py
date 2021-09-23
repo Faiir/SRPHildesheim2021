@@ -9,15 +9,14 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from PIL import Image
 import itertools
-import cv2
 import random
 from PIL import Image, ImageOps, ImageEnhance, PILLOW_VERSION
 import math
-
+import cv2
 from .cv2utils import affine
 
 
-normalize = trn.Normalize([0.5] * 3, [0.5] * 3)
+normalize = trn.Normalize(0.5, 0.5)
 randomly_crop = trn.RandomCrop(32, padding=4)
 
 
@@ -37,15 +36,15 @@ class PerturbDataset(torch.utils.data.Dataset):
         else:
             x_orig = np.copy(x_orig)
 
-        if self.train_mode == True:
-            # x_orig = Image.fromarray(x_orig)
-            x_orig = randomly_crop(x_orig)
-            x_orig = np.asarray(x_orig)
+        # if self.train_mode == True:
+        #     # x_orig = Image.fromarray(x_orig)
+        #     x_orig = randomly_crop(x_orig)
+        #     x_orig = np.asarray(x_orig)
 
         x_tf_0 = np.copy(x_orig)
-        x_tf_90 = np.rot90(x_orig.copy(), k=1).copy()
-        x_tf_180 = np.rot90(x_orig.copy(), k=2).copy()
-        x_tf_270 = np.rot90(x_orig.copy(), k=3).copy()
+        x_tf_90 = np.rot90(x_orig.copy(), k=1, axes=(1, 2)).copy()
+        x_tf_180 = np.rot90(x_orig.copy(), k=2, axes=(1, 2)).copy()
+        x_tf_270 = np.rot90(x_orig.copy(), k=3, axes=(1, 2)).copy()
 
         possible_translations = list(itertools.product([0, 8, -8], [0, 8, -8]))
         num_possible_translations = len(possible_translations)
@@ -63,15 +62,26 @@ class PerturbDataset(torch.utils.data.Dataset):
         )
 
         return (
-            normalize(trnF.to_tensor(x_tf_0)),
-            normalize(trnF.to_tensor(x_tf_90)),
-            normalize(trnF.to_tensor(x_tf_180)),
-            normalize(trnF.to_tensor(x_tf_270)),
-            normalize(trnF.to_tensor(x_tf_trans)),
+            normalize(randomly_crop(torch.tensor(x_tf_0))),
+            normalize(randomly_crop(torch.tensor(x_tf_90))),
+            normalize(randomly_crop(torch.tensor(x_tf_180))),
+            normalize(randomly_crop(torch.tensor(x_tf_270))),
+            normalize(randomly_crop(torch.tensor(x_tf_trans))),
             torch.tensor(tx_target),
             torch.tensor(ty_target),
             torch.tensor(classifier_target),
         )
+
+        # return (
+        #     torch.tensor(x_tf_0),
+        #     torch.tensor(x_tf_90),
+        #     torch.tensor(x_tf_180),
+        #     torch.tensor(x_tf_270),
+        #     torch.tensor(x_tf_trans),
+        #     torch.tensor(tx_target),
+        #     torch.tensor(ty_target),
+        #     torch.tensor(classifier_target),
+        # )
 
     def __len__(self):
         return self.num_points

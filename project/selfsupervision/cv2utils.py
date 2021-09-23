@@ -3,7 +3,7 @@ import os
 import torch
 
 import torchvision.transforms as trn
-
+import cv2
 import itertools
 import random
 from PIL import Image, ImageOps, ImageEnhance, PILLOW_VERSION
