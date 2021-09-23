@@ -139,7 +139,7 @@ class ResNet(nn.Module):
         mod=True,
         coeff=3,
         n_power_iterations=1,
-        simiarity="E",
+        similarity="E",
     ):
         super(ResNet, self).__init__()
         self.in_planes = 16
@@ -167,13 +167,13 @@ class ResNet(nn.Module):
 
         self.wrapped_conv = wrapped_conv
 
-        self.conv1 = wrapped_conv(32, 3, 64, kernel_size=3, stride=1)
+        self.conv1 = wrapped_conv(32, 3, 16, kernel_size=3, stride=1)
         self.bn1 = nn.BatchNorm2d(16)
-        self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
-        self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
-        self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
-        self.fc = nn.Linear(64 * block.expansion, 32)
-        self.fc1 = nn.Linear(32, num_classes)
+        self.layer1 = self._make_layer(block, 32, 16, num_blocks[0], stride=1)
+        self.layer2 = self._make_layer(block, 32, 32, num_blocks[1], stride=2)
+        self.layer3 = self._make_layer(block, 16, 64, num_blocks[2], stride=2)
+        self.fc = nn.Linear(256 * block.expansion, 128)
+        self.fc1 = nn.Linear(128, num_classes)
 
         self.apply(_weights_init)
 
@@ -218,6 +218,15 @@ class ResNet(nn.Module):
             input_size = math.ceil(input_size / stride)
         return nn.Sequential(*layers)
 
+    # def _make_layer(self, block, planes, num_blocks, stride):
+    #     strides = [stride] + [1]*(num_blocks-1)
+    #     layers = []
+    #     for stride in strides:
+    #         layers.append(block(self.in_planes, planes, stride))
+    #         self.in_planes = planes * block.expansion
+
+    #     return nn.Sequential(*layers)
+
     def forward(self, x, get_test_model=False, train_g=False, self_supervision=False):
         out = self.activation(self.bn1(self.conv1(x)))
         out = self.layer1(out)
@@ -245,89 +254,52 @@ class ResNet(nn.Module):
             return pred, g, h
 
 
-def resnet20(
-    spectral_normalization=True,
-    mod=True,
-    temp=1.0,
-    mnist=False,
-    similarity="C",
-    **kwargs
-):
+def resnet20(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs):
     return ResNet(
         BasicBlock,
-        [3, 3, 3],
+        num_blocks=[3, 3, 3],
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
-        mnist=mnist,
         **kwargs,
     )
 
 
-def resnet32(
-    spectral_normalization=True,
-    mod=True,
-    temp=1.0,
-    mnist=False,
-    similarity="C",
-    **kwargs
-):
+def resnet32(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs):
     return ResNet(
         BasicBlock,
         [5, 5, 5],
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
-        mnist=mnist,
         **kwargs,
     )
 
 
-def resnet44(
-    spectral_normalization=True,
-    mod=True,
-    temp=1.0,
-    mnist=False,
-    similarity="C",
-    **kwargs
-):
+def resnet44(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs):
     return ResNet(
         BasicBlock,
         [7, 7, 7],
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
-        mnist=mnist,
         **kwargs,
     )
 
 
-def resnet56(
-    spectral_normalization=True,
-    mod=True,
-    temp=1.0,
-    mnist=False,
-    similarity="C",
-    **kwargs
-):
+def resnet56(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs):
     return ResNet(
         BasicBlock,
         [9, 9, 9],
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
-        mnist=mnist,
         **kwargs,
     )
 
 
 def resnet110(
-    spectral_normalization=True,
-    mod=True,
-    temp=1.0,
-    mnist=False,
-    similarity="C",
-    **kwargs
+    spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs
 ):
     return ResNet(
         BasicBlock,
@@ -335,18 +307,12 @@ def resnet110(
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
-        mnist=mnist,
         **kwargs,
     )
 
 
 def resnet1202(
-    spectral_normalization=True,
-    mod=True,
-    temp=1.0,
-    mnist=False,
-    similarity="C",
-    **kwargs
+    spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs
 ):
     return ResNet(
         BasicBlock,
@@ -354,7 +320,6 @@ def resnet1202(
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
-        mnist=mnist,
         **kwargs,
     )
 
