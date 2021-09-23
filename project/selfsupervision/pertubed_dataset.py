@@ -38,7 +38,7 @@ class PerturbDataset(torch.utils.data.Dataset):
             x_orig = np.copy(x_orig)
 
         if self.train_mode == True:
-            x_orig = Image.fromarray(x_orig)
+            # x_orig = Image.fromarray(x_orig)
             x_orig = randomly_crop(x_orig)
             x_orig = np.asarray(x_orig)
 
