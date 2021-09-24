@@ -143,6 +143,8 @@ class ResNet(nn.Module):
     ):
         super(ResNet, self).__init__()
         self.in_planes = 16
+        self.softmax = nn.Softmax(dim=-1)
+        self.mod = mod
 
         def wrapped_conv(input_size, in_c, out_c, kernel_size, stride):
             padding = 1 if kernel_size == 3 else 0
@@ -218,23 +220,14 @@ class ResNet(nn.Module):
             input_size = math.ceil(input_size / stride)
         return nn.Sequential(*layers)
 
-    # def _make_layer(self, block, planes, num_blocks, stride):
-    #     strides = [stride] + [1]*(num_blocks-1)
-    #     layers = []
-    #     for stride in strides:
-    #         layers.append(block(self.in_planes, planes, stride))
-    #         self.in_planes = planes * block.expansion
-
-    #     return nn.Sequential(*layers)
-
     def forward(self, x, get_test_model=False, train_g=False, self_supervision=False):
         out = self.activation(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = self.layer4(out)
         out = F.avg_pool2d(out, 4)
         out = out.view(out.size(0), -1)
+        # print("flatten", out.size())  # 4x256
         out = self.activation(self.fc(out))
         f_out = self.fc1(out)
 
@@ -265,41 +258,70 @@ def resnet20(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **
     )
 
 
-def resnet32(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs):
+def resnet32(
+    spectral_normalization=True,
+    mod=True,
+    temp=1.0,
+    mnist=False,
+    similarity="C",
+    **kwargs
+):
     return ResNet(
         BasicBlock,
         [5, 5, 5],
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
+        mnist=mnist,
         **kwargs,
     )
 
 
-def resnet44(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs):
+def resnet44(
+    spectral_normalization=True,
+    mod=True,
+    temp=1.0,
+    mnist=False,
+    similarity="C",
+    **kwargs
+):
     return ResNet(
         BasicBlock,
         [7, 7, 7],
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
+        mnist=mnist,
         **kwargs,
     )
 
 
-def resnet56(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs):
+def resnet56(
+    spectral_normalization=True,
+    mod=True,
+    temp=1.0,
+    mnist=False,
+    similarity="C",
+    **kwargs
+):
     return ResNet(
         BasicBlock,
         [9, 9, 9],
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
+        mnist=mnist,
         **kwargs,
     )
 
 
 def resnet110(
-    spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs
+    spectral_normalization=True,
+    mod=True,
+    temp=1.0,
+    mnist=False,
+    similarity="C",
+    **kwargs
 ):
     return ResNet(
         BasicBlock,
@@ -307,12 +329,18 @@ def resnet110(
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
+        mnist=mnist,
         **kwargs,
     )
 
 
 def resnet1202(
-    spectral_normalization=True, mod=True, temp=1.0, similarity="C", **kwargs
+    spectral_normalization=True,
+    mod=True,
+    temp=1.0,
+    mnist=False,
+    similarity="C",
+    **kwargs
 ):
     return ResNet(
         BasicBlock,
@@ -320,6 +348,7 @@ def resnet1202(
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
+        mnist=mnist,
         **kwargs,
     )
 
