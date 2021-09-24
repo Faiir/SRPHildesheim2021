@@ -37,12 +37,20 @@ python -m setup_experiment -c "path\to\config\.json"
 
 # TODO
 
-- Test more datasets !low (Whoever feels like doing it)
-- Include spectral norm -res / jacobian penalty -conv - !medium (Abdur Niklas)
+- Test more datasets !low (Whoever feels like doing it) --
+- Include spectral norm -res / jacobian penalty -conv - !medium (Abdur Niklas) --
 - Merge Branches !High (Niklas) ---
-- include DDU Experiment Setup !medium (Era & Sam)
-- Include density plots !medium (Markus)
-- sampler class !high (Abdur)
-- stratified sampling datamager !high
-- dataset selection modular !medium (Niklas)
+- include DDU Experiment Setup !medium (Era & Sam) --
+- Include density plots !medium (Markus) --
+- stratified sampling datamager !high ---
+- dataset selection modular !medium (Niklas) --
 - 11 Class integration in different exp setup !low (Niklas)
+
+
+- sampler class !high (Abdur) 
+- G Softmax (Abdur & Niklas)
+- Functioning Selfsupervision (Niklas)
+- Smaller Resnet -- (Niklas)
+- Additional Oracle (Abdur)
+- Layer Changes GenOdin (Abdur)
+- Outlier Exposure (Niklas)
