@@ -11,6 +11,9 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, verbose=1):
     if verbose > 0:
         print("training with device:", device)
 
+    if device == "cuda":
+        torch.backends.cudnn.benchmark = True
+
     for epoch in tqdm(range(0, epochs)):
         train_loss = 0
         for batch_idx, (data, target) in enumerate(train_loader):
@@ -18,7 +21,7 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, verbose=1):
             net.train()
             data, target = data.to(device).float(), target.to(device).long()
 
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
             yhat = net(data).to(device)
             loss = criterion(yhat, target)
             train_loss += loss.item()
@@ -71,24 +74,28 @@ def get_density_vals(
     for eps in tqdm(epsi_list):
         preds = 0
         for batch_idx, (data, target) in enumerate(val_loader):
+            trained_net.zero_grad(set_to_none=True)
             data, target = data.to(device).float(), target.to(device).long()
             data.requires_grad = True
             yhat = trained_net(data)
             pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
 
             preds += torch.sum(pred)
+
+            del data, target, pred
         scores.append(preds.detach().cpu().numpy())
 
     eps = epsi_list[np.argmax(scores)]
     pert_imgs = []
     targets = []
     for batch_idx, (data, target) in enumerate(pool_loader):
+        trained_net.zero_grad(set_to_none=True)
         backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
         data, target = data.to(device).float(), target.to(device).long()
         data.requires_grad = True
         output = trained_net(data)
         pred, _ = output.max(dim=-1, keepdim=True)
-        trained_net.zero_grad()
+
         pred.backward(backward_tensor)
         pert_imgs.append(
             fgsm_attack(data, epsilon=eps, data_grad=data.grad.data).to("cpu")
@@ -153,7 +160,7 @@ def train_g(net, optimizer, datamanager, epochs=10):
 
     data, target = data.cuda(), target.cuda()
 
-    optimizer.zero_grad()
+    optimizer.zero_grad(set_to_none=True)
     x = net(data, train_g=True)
 
     loss = F.binary_cross_entropy(x, target)

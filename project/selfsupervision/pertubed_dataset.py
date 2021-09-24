@@ -93,5 +93,5 @@ def create_pert_dataloader(datamanager, batchsize):
     p_data = PerturbDataset(pooldata, pooltarget, train_mode=True)
 
     return torch.utils.data.DataLoader(
-        p_data, batch_size=batchsize, shuffle=True, num_workers=2, pin_memory=False
+        p_data, batch_size=batchsize, shuffle=True, num_workers=2, pin_memory=True
     )

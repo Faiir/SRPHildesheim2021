@@ -96,7 +96,7 @@ def train_ss(
         ).long()
 
         lr_scheduler.step()
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
 
         # Forward together
         logits, pen = net(batch, self_supervision=True)
