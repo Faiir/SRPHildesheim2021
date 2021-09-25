@@ -53,3 +53,17 @@ def get_model(
 def save_model(net, path, desc_str="pretrained_net"):
     time = datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
     torch.save(net.state_dict(), os.path.join(path, desc_str, time))
+
+
+def add_rot_heads(net, pernumile_layer_size=128):
+    net.x_trans_head = nn.Linear(pernumile_layer_size, 3)
+    net.y_trans_head = nn.Linear(pernumile_layer_size, 3)
+    net.rot_head = nn.Linear(pernumile_layer_size, 4)
+
+    return net
+
+
+def remove_rot_heads(net):
+    # https://stackoverflow.com/questions/52548174/how-to-remove-the-last-fc-layer-from-a-resnet-model-in-pytorch
+    # TODO
+    return net

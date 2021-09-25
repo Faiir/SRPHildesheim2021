@@ -18,7 +18,7 @@ SCRIPT_DIR = os.path.dirname(
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 
-from project.model.resnet import add_rot_heads
+from project.model.get_model import add_rot_heads
 from project.selfsupervision.pertubed_dataset import create_pert_dataloader
 
 from project.model.get_model import get_model, save_model

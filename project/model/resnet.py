@@ -335,15 +335,4 @@ def resnet152(spectral_normalization=True, mod=True, temp=1.0, mnist=False, **kw
     return model
 
 
-def add_rot_heads(net, pernumile_layer_size=128):
-    net.x_trans_head = nn.Linear(pernumile_layer_size, 3)
-    net.y_trans_head = nn.Linear(pernumile_layer_size, 3)
-    net.rot_head = nn.Linear(pernumile_layer_size, 4)
 
-    return net
-
-
-def remove_rot_heads(net):
-    # https://stackoverflow.com/questions/52548174/how-to-remove-the-last-fc-layer-from-a-resnet-model-in-pytorch
-    # TODO
-    return net
