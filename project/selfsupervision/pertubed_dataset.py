@@ -29,7 +29,7 @@ class PerturbDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         x_orig = self.data[index]
-        classifier_target = self.targets[index]
+        classifier_target = self.targets[index] + 1
 
         if self.train_mode == True and np.random.uniform() < 0.5:
             x_orig = np.copy(x_orig)[:, ::-1]
