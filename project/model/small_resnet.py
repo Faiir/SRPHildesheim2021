@@ -261,7 +261,7 @@ class ResNet(nn.Module):
             rot = self.rot_head(out[: 4 * self.batch_size])  # 512 4
             return pred, x_trans, y_trans, rot
 
-        if not self.selfsupervision:
+        if self.selfsupervision:
             return self.softmax(pred_layer(pred))
 
         if not get_test_model:
