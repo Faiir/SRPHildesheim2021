@@ -5,6 +5,15 @@ from .small_resnet import resnet20
 from datetime import datetime
 import torch
 import os
+from torch import nn
+
+
+def add_rot_heads(net, pernumile_layer_size=128):
+    net.x_trans_head = nn.Linear(pernumile_layer_size, 3)
+    net.y_trans_head = nn.Linear(pernumile_layer_size, 3)
+    net.rot_head = nn.Linear(pernumile_layer_size, 4)
+
+    return net
 
 
 def get_model(
@@ -13,6 +22,7 @@ def get_model(
     out_classes=10,
     include_bn=False,
     channel_input=3,
+    **kwargs,
 ):
     """get_model [[function which returns instance of the experiments model]]
 
@@ -45,7 +55,11 @@ def get_model(
     elif model_name == "gen_odin_res":
         return resnet18(similarity=similarity)
     elif model_name == "small_gen_odin_res":
-        return resnet20(similarity=similarity)
+        return resnet20(
+            similarity=similarity,
+            selfsupervision=kwargs.get("selfsupervision", False),
+            num_classes=kwargs.get("num_classes", 10),
+        )
     else:
         raise ValueError(f"Model {model_name} not found")
 
@@ -53,3 +67,9 @@ def get_model(
 def save_model(net, path, desc_str="pretrained_net"):
     time = datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
     torch.save(net.state_dict(), os.path.join(path, desc_str, time))
+
+
+def remove_rot_heads(net):
+    # https://stackoverflow.com/questions/52548174/how-to-remove-the-last-fc-layer-from-a-resnet-model-in-pytorch
+    # TODO
+    return net

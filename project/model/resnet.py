@@ -142,6 +142,7 @@ class ResNet(nn.Module):
         n_power_iterations=1,
         mnist=False,
         similarity="E",
+        selfsupervision=False,
     ):
         """
         If the "mod" parameter is set to True, the architecture uses 2 modifications:
@@ -198,6 +199,10 @@ class ResNet(nn.Module):
         self.g_func = nn.Linear(self.fc1.out_features, 1)
         self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
+        self.selfsupervision = selfsupervision
+
+        self.pred_layer = nn.Linear(num_classes, num_classes - 1)
+
         if self.similarity == "I":
             self.dropout_3 = nn.Dropout(p=0.6)
             self.h_func = nn.Linear(self.fc1.out_features, num_classes)
@@ -234,7 +239,7 @@ class ResNet(nn.Module):
             input_size = math.ceil(input_size / stride)
         return nn.Sequential(*layers)
 
-    def forward(self, x, get_test_model=False, train_g=False, self_supervision=False):
+    def forward(self, x, get_test_model=False, train_g=False, self_sup_train=False):
         out = self.activation(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
@@ -245,8 +250,8 @@ class ResNet(nn.Module):
         out = self.activation(self.fc(out))
         f_out = self.fc1(out)
 
-        if self_supervision:
-            return f_out, out  # (128,10) (n,128)
+        # if self_supervision:
+        #     return f_out, out  # (128,10) (n,128)
 
         self.feature = out.clone().detach()
         # out = self.fc(out) / self.temp
@@ -255,6 +260,13 @@ class ResNet(nn.Module):
             return g
         h = self.h_func(f_out)
         pred = self.softmax(torch.div(g, h))
+
+        if self_sup_train:
+            return pred, out
+
+        if not self.selfsupervision:
+            return self.softmax(pred_layer(pred))
+
         if not get_test_model:
             return pred
         else:
@@ -333,17 +345,3 @@ def resnet152(spectral_normalization=True, mod=True, temp=1.0, mnist=False, **kw
         **kwargs,
     )
     return model
-
-
-def add_rot_heads(net, pernumile_layer_size=128):
-    net.x_trans_head = nn.Linear(pernumile_layer_size, 3)
-    net.y_trans_head = nn.Linear(pernumile_layer_size, 3)
-    net.rot_head = nn.Linear(pernumile_layer_size, 4)
-
-    return net
-
-
-def remove_rot_heads(net):
-    # https://stackoverflow.com/questions/52548174/how-to-remove-the-last-fc-layer-from-a-resnet-model-in-pytorch
-    # TODO
-    return net

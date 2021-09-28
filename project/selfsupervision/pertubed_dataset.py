@@ -29,7 +29,7 @@ class PerturbDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         x_orig = self.data[index]
-        classifier_target = self.targets[index]
+        classifier_target = self.targets[index]  # + 1
 
         if self.train_mode == True and np.random.uniform() < 0.5:
             x_orig = np.copy(x_orig)[:, ::-1]
@@ -89,9 +89,10 @@ class PerturbDataset(torch.utils.data.Dataset):
 
 def create_pert_dataloader(datamanager, batchsize):
     pooldata, pooltarget = datamanager.get_unlabelled_pool_data()
+    pooltarget += 1
 
     p_data = PerturbDataset(pooldata, pooltarget, train_mode=True)
 
     return torch.utils.data.DataLoader(
-        p_data, batch_size=batchsize, shuffle=True, num_workers=2, pin_memory=False
+        p_data, batch_size=batchsize, shuffle=True, num_workers=2, pin_memory=True
     )

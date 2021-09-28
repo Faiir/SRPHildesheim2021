@@ -81,6 +81,7 @@ def create_dataloader(data_manager, batch_size=128, split_size=0.1):
         sampler=RandomSampler(train_dataset),
         batch_size=batch_size,
         num_workers=2,
+        pin_memory=True,
     )
 
     test_loader = DataLoader(
@@ -88,9 +89,12 @@ def create_dataloader(data_manager, batch_size=128, split_size=0.1):
         sampler=SequentialSampler(test_dataset),
         batch_size=batch_size,
         num_workers=2,
+        pin_memory=True,
     )
 
-    pool_loader = DataLoader(pool_dataset, batch_size=batch_size, num_workers=2)
+    pool_loader = DataLoader(
+        pool_dataset, batch_size=batch_size, num_workers=2, pin_memory=True
+    )
 
     return train_loader, test_loader, pool_loader  # , train_dataset, test_dataset
 
@@ -136,6 +140,7 @@ def get_ood_dataloader(data_manager, batch_size=16):
         sampler=RandomSampler(train_dataset),
         batch_size=batch_size * 4,
         num_workers=2,
+        pin_memory=True,
     )
 
     outlier_loader = DataLoader(
@@ -143,5 +148,6 @@ def get_ood_dataloader(data_manager, batch_size=16):
         sampler=RandomSampler(outlier_data),
         batch_size=batch_size,
         num_workers=2,
+        pin_memory=True,
     )
     return train_loader, outlier_loader
