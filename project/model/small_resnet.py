@@ -16,6 +16,8 @@ Reference:
 [1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
     Deep Residual Learning for Image Recognition. arXiv:1512.03385
 [2] https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
+
+~~Added bogus comment to check
 """
 
 from .spectral_normalization.spectral_norm_conv_inplace import spectral_norm_conv
