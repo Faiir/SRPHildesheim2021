@@ -24,9 +24,17 @@ import wget
 import zipfile
 
 
-def download_and_unzip():
+def download_and_unzip(dir_name=os.path.join(r"../../dataset/tiny-imagenet-200")):
     wget.download("http://cs231n.stanford.edu/tiny-imagenet-200.zip")
 
+    if os.path.isdir(dir_name):
+        if not os.listdir(dir_name):
+            wget.download("http://cs231n.stanford.edu/tiny-imagenet-200.zip")
+    else:
+        os.makedirs(
+            "/dataset/tinyimagenet-200/",
+        )
+        wget.download("http://cs231n.stanford.edu/tiny-imagenet-200.zip")
     with zipfile.ZipFile("tiny-imagenet-200.zip") as zip_ref:
         zip_ref.extractall("/dataset/tinyimagenet-200/")
 

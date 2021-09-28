@@ -515,7 +515,7 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
 
             OOD_data = np.concatenate([OOD_data, SVHN_train_data, SVHN_test_data])
             OOD_labels = np.concatenate(
-                [OOD_labels, SVHN_test_labels, SVHN_test_labels]
+                [OOD_labels, SVHN_train_labels, SVHN_test_labels]
             )
 
             pass

@@ -141,11 +141,13 @@ class ResNet(nn.Module):
         n_power_iterations=1,
         similarity="E",
         selfsupervision=False,
+        batch_size=128,
     ):
         super(ResNet, self).__init__()
         self.in_planes = 16
         self.softmax = nn.Softmax(dim=-1)
         self.mod = mod
+        self.batch_size = batch_size
 
         def wrapped_conv(input_size, in_c, out_c, kernel_size, stride):
             padding = 1 if kernel_size == 3 else 0
@@ -186,6 +188,10 @@ class ResNet(nn.Module):
         self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
         self.selfsupervision = selfsupervision
+        if self.selfsupervision:
+            self.x_trans_head = nn.Linear(self.fc.out_features, 3)
+            self.y_trans_head = nn.Linear(self.fc.out_features, 3)
+            self.rot_head = nn.Linear(self.fc.out_features, 4)
         self.pred_layer = nn.Linear(num_classes, num_classes - 1)
 
         if self.similarity == "I":
@@ -244,10 +250,16 @@ class ResNet(nn.Module):
         if train_g:
             return g
         h = self.h_func(f_out)
-        pred = self.softmax(torch.div(g, h))
+        pred = self.softmax(torch.div(g, h))  # 128 11
 
         if self_sup_train:
-            return pred, out
+            # x_trans = self.x_trans_head(out)
+            # y_trans = self.y_trans_head(out)
+            # rot = self.rot_head(out)
+            x_trans = self.x_trans_head(out[4 * self.batch_size :])
+            y_trans = self.y_trans_head(out[4 * self.batch_size :])  # 128 3
+            rot = self.rot_head(out[: 4 * self.batch_size])  # 512 4
+            return pred, x_trans, y_trans, rot
 
         if not self.selfsupervision:
             return self.softmax(pred_layer(pred))

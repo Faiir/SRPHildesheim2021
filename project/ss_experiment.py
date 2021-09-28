@@ -57,6 +57,7 @@ def train_ss(
     transl_loss_weight,
 ):
     net.train()  # enter train mode
+
     loss_avg = 0.0
     for (
         x_tf_0,
@@ -82,16 +83,8 @@ def train_ss(
             == target_class.shape[0]
         )
         target_class = target_class.int()
-        # target_class = target_class.reshape(-1, 1)
-        print("target_trans_x unique", torch.unique(target_trans_x))
-        print("target_trans_y unique", torch.unique(target_trans_y))
-        print("target_class unique", torch.unique(target_class))
 
-        print("target_trans_x", target_trans_x.size())
-        print("target_trans_y", target_trans_y.size())
-        print("target_class", target_class.size())
-
-        target_class += 1
+        # target_class += 1
         batch = np.concatenate((x_tf_0, x_tf_90, x_tf_180, x_tf_270, x_tf_trans), 0)
         batch = torch.FloatTensor(batch).cuda()
 
@@ -104,33 +97,34 @@ def train_ss(
             ),
             0,
         )
-        print("target_rots unique", torch.unique(target_rots))
-        print("target_rots", target_rots.size())
+
         optimizer.zero_grad(set_to_none=True)
 
         # Forward together
-        logits, pen = net(batch, self_sup_train=True)
-        print("logits", logits.size())
-        print("pen", pen.size())
-        classification_logits = logits[:batch_size]
-        rot_logits = net.rot_head(pen[: 4 * batch_size])
-        x_trans_logits = net.x_trans_head(pen[4 * batch_size :])
-        y_trans_logits = net.y_trans_head(pen[4 * batch_size :])
+        logits, x_trans_logits, y_trans_logits, rot_logits = net(
+            batch, self_sup_train=True
+        )
 
-        print("classification_logits", classification_logits.size())
-        print("rot_logits", rot_logits.size())
-        print("x_trans_logits", x_trans_logits.size())
-        print("y_trans_logits", y_trans_logits.size())
+        # print("pen", pen.size())
+        classification_logits = logits[:batch_size]
+        # rot_logits = net.rot_head(pen[: 4 * batch_size])
+        # x_trans_logits = net.x_trans_head(pen[4 * batch_size :])
+        # y_trans_logits = net.y_trans_head(pen[4 * batch_size :])
 
         classification_loss = F.cross_entropy(
             classification_logits, target_class.cuda().long()
         )
-        rot_loss = F.cross_entropy(rot_logits, target_rots.cuda()) * rot_loss_weight
+
+        rot_loss = (
+            F.cross_entropy(rot_logits, target_rots.cuda().long()) * rot_loss_weight
+        )
         x_trans_loss = (
-            F.cross_entropy(x_trans_logits, target_trans_x.cuda()) * transl_loss_weight
+            F.cross_entropy(x_trans_logits, target_trans_x.cuda().long())
+            * transl_loss_weight
         )
         y_trans_loss = (
-            F.cross_entropy(y_trans_logits, target_trans_y.cuda()) * transl_loss_weight
+            F.cross_entropy(y_trans_logits, target_trans_y.cuda().long())
+            * transl_loss_weight
         )
 
         loss = classification_loss + ((rot_loss + x_trans_loss + y_trans_loss) / 3.0)
@@ -157,6 +151,7 @@ def ss_experiment(
     save_net=True,
     **kwargs
 ):
+    os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
     resnet20 = get_model(
         "small_gen_odin_res", similarity="C", selfsupervision=True, num_classes=11
     )
