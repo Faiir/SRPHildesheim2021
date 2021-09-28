@@ -44,6 +44,7 @@ def download_and_unzip(dir_name=os.path.join(r"./dataset/tiny-imagenet-200")):
 # id_dict = {}
 # for i, line in enumerate(open("/dataset/tinyimagenet-200/wnids.txt", "r")):
 #     id_dict[line.replace("\n", "")] = i
+# TODO add function to convert it to numpy array
 
 
 class TrainTinyImageNetDataset(Dataset):
