@@ -7,7 +7,12 @@ import torchvision.transforms as transforms
 from torchvision.datasets import MNIST, FashionMNIST, SVHN, CIFAR10, CIFAR100
 import copy
 import time
-from .tinyimagenetloader import TrainTinyImageNetDataset, TestTinyImageNetDataset
+from .tinyimagenetloader import (
+    TrainTinyImageNetDataset,
+    TestTinyImageNetDataset,
+    download_and_unzip,
+)
+import os
 
 
 class Data_manager:
@@ -520,8 +525,17 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
 
             pass
         elif ood_dataset == "TinyImageNet":
+            if not os.listdir(os.path.join(r"./dataset/tiny-imagenet-200")):
+                download_and_unzip()
             id_dict = {}
-            for i, line in enumerate(open("/dataset/tinyimagenet-200/wnids.txt", "r")):
+            for i, line in enumerate(
+                open(
+                    os.path.join(
+                        r"\dataset\tiny-imagenet-200\tiny-imagenet-200\wnids.txt"
+                    ),
+                    "r",
+                )
+            ):
                 id_dict[line.replace("\n", "")] = i
             normalize_imagenet = transforms.Normalize(
                 (122.4786, 114.2755, 101.3963), (70.4924, 68.5679, 71.8127)
