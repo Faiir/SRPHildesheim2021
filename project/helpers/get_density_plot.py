@@ -11,7 +11,7 @@ def _transform(x):
         return -1
 
 
-def density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, oracle_step):
+def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
     targets = np.concatenate(targets, axis=0)
     pert_preds = np.concatenate(pert_preds, axis=0)
     gs = np.concatenate(gs, axis=0)

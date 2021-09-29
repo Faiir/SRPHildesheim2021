@@ -84,8 +84,10 @@ def get_density_vals(
 
             del data, target, pred
         scores.append(preds.detach().cpu().numpy())
-
+    torch.cuda.empty_cache()
+    trained_net.zero_grad(set_to_none=True)
     eps = epsi_list[np.argmax(scores)]
+    del scores
     pert_imgs = []
     targets = []
     for batch_idx, (data, target) in enumerate(pool_loader):
@@ -100,21 +102,22 @@ def get_density_vals(
         pert_imgs.append(
             fgsm_attack(data, epsilon=eps, data_grad=data.grad.data).to("cpu")
         )
-        targets.append(target.to("cpu").numpy())
+        targets.append(target.to("cpu").numpy().astype(np.float16))
         del data, output, target
     torch.cuda.empty_cache()
+    trained_net.zero_grad(set_to_none=True)
     gs = []
     hs = []
     pert_preds = []
     with torch.no_grad():
         for p_img in pert_imgs:
             pert_pred, g, h = trained_net(p_img.to(device), get_test_model=True)
-            gs.append(g.detach().to("cpu").numpy())
-            hs.append(h.detach().to("cpu").numpy())
+            gs.append(g.detach().to("cpu").numpy().astype(np.float16))
+            hs.append(h.detach().to("cpu").numpy().astype(np.float16))
             pert_preds.append(pert_pred.detach().to("cpu").numpy())
-            p_img.detach().to("cpu").numpy()
-
-    return pert_imgs, pert_preds, gs, hs, targets
+            p_img.detach().to("cpu").numpy().astype(np.float16)
+    del pert_imgs
+    return pert_preds, gs, hs, targets
 
 
 def fgsm_attack(image, epsilon, data_grad):
