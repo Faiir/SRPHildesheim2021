@@ -7,12 +7,36 @@ import torch.nn.functional as F
 from ..data.datahandler_for_array import get_ood_dataloader
 
 
-def train(net, train_loader, optimizer, criterion, device, epochs=5, verbose=1):
+def cosine_annealing(step, total_steps, lr_max, lr_min):
+    return lr_min + (lr_max - lr_min) * 0.5 * (1 + np.cos(step / total_steps * np.pi))
+
+
+def create_lr_sheduler(optimizer, epochs, pert_loader, learning_rate):
+
+    return torch.optim.lr_scheduler.LambdaLR(
+        optimizer,
+        lr_lambda=lambda step: cosine_annealing(
+            step,
+            epochs * len(pert_loader),
+            1,  # since lr_lambda computes multiplicative factor
+            1e-6 / learning_rate,
+        ),
+    )
+
+
+def train(
+    net, train_loader, optimizer, criterion, device, epochs=5, verbose=1, **kwargs
+):
     if verbose > 0:
         print("training with device:", device)
 
     if device == "cuda":
         torch.backends.cudnn.benchmark = True
+
+    if kwargs.get("lr_sheduler", True):
+        lr_sheduler = create_lr_sheduler(
+            optimizer, epochs, train_loader, kwargs.get("lr", 0.1)
+        )
 
     for epoch in tqdm(range(0, epochs)):
         train_loss = 0
@@ -28,7 +52,8 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, verbose=1):
 
             loss.backward()
             optimizer.step()
-
+            if kwargs.get("lr_sheduler", True):
+                lr_sheduler.step()
         avg_train_loss = train_loss / len(train_loader)
 
         if verbose == 1:

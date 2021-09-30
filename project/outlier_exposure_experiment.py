@@ -70,15 +70,15 @@ def outlier_exposure_experiment(data_manager, writer, net, verbose=0, **kwargs):
             net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay
         )
 
-        if (i % outlier_exposure_amount == 3) and (i != 0):
+        if (i % outlier_exposure_amount == 0) and (i != 0):
             # init  optimizer
             g_optim = optim.SGD(
                 net.parameters(),
-                lr=lr * 5,
+                lr=lr,
                 momentum=momentum,
                 weight_decay=weight_decay,
             )
-            net = train_g(net, g_optim, data_manager, epochs=10)
+            net = train_g(net, g_optim, data_manager, epochs=epochs / 2)
 
         net, avg_train_loss = train(
             net,
