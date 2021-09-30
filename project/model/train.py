@@ -57,7 +57,7 @@ def train(
         avg_train_loss = train_loss / len(train_loader)
 
         if verbose == 1:
-            if epoch % (epochs // 10) == 0:
+            if epoch % 10 == 0:
                 print(" epoch: ", epoch, "current train_loss:", avg_train_loss)
         elif verbose == 2:
             print(" epoch: ", epoch, "current train_loss:", avg_train_loss)

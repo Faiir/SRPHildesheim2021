@@ -14,7 +14,10 @@
       "metric": "f1",
       "model_name": "gen_odin_res",
       "similarity": "E",
-      "include_bn": false
+      "include_bn": false,
+      "nesterov": false,
+      "lr": 0.1,
+      "momentum": 0.9
     }
   ],
   "in_dist_data": ["Cifar10"],

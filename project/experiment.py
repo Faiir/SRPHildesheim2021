@@ -55,6 +55,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
     batch_size = param_dict["batch_size"]
     weight_decay = param_dict["weight_decay"]
     metric = param_dict["metric"]
+    lr = param_dict["lr"]
+    nesterov = param_dict["nesterov"]
+    momentum = param_dict["momentum"]
 
     if oracle == "random":
         from .helpers.sampler import random_sample
@@ -72,10 +75,12 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         from .helpers.sampler import DDU_sampler
 
         sampler = DDU_sampler
+        raise NotImplementedError
     elif oracle == "Gen0din":
         from .helpers.sampler import gen0din_sampler
 
-        sampler = gen0din_sampler
+        raise NotImplementedError
+        # sampler = gen0din_sampler
 
     # net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
     # net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
@@ -100,7 +105,13 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         if torch.cuda.is_available():
             net.cuda()
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(net.parameters(), weight_decay=weight_decay)
+        optimizer = optim.SGD(
+            net.parameters(),
+            weight_decay=weight_decay,
+            momentum=momentum,
+            lr=lr,
+            nesterov=nesterov,
+        )
 
         trained_net, avg_train_loss = train(
             net,
@@ -119,7 +130,11 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         pert_preds, gs, hs, targets = get_density_vals(
             pool_loader, test_loader, trained_net
         )
-        density_plot(pert_preds, gs, hs, targets, writer, i)
+        try:
+            density_plot(pert_preds, gs, hs, targets, writer, i)
+        except:
+            print("image couldn't be created")
+            pass
         # unlabelled pool predictions
         pool_predictions, pool_labels_list = get_pool_predictions(
             trained_net, pool_loader, device=device, return_labels=True
