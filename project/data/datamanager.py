@@ -253,8 +253,18 @@ class Data_manager:
         )
 
         if log_dict is not None:
+            acc_dict = {}
+            acc_dict["test_accuracy"] = log_dict["test_accuracy"]
+            acc_dict["train_accuracy"] = log_dict["train_accuracy"]
+
             writer.add_scalars(
-                f"{metric}/{dataset}/{oracle}/{metric}", log_dict, self.iter
+                f"{metric}/{dataset}/{oracle}/{metric}", acc_dict, self.iter
+            )
+            loss_dict = {}
+            loss_dict["train_loss"] = log_dict["train_loss"]
+            loss_dict["test_loss"] = log_dict["test_loss"]
+            writer.add_scalars(
+                f"{metric}/{dataset}/{oracle}/loss", loss_dict, self.iter
             )
             current_iter_log.update(log_dict)
 
