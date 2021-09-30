@@ -116,10 +116,10 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
 
-        pert_imgs, pert_preds, gs, hs, targets = get_density_vals(
+        pert_preds, gs, hs, targets = get_density_vals(
             pool_loader, test_loader, trained_net
         )
-        density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, i)
+        density_plot(pert_preds, gs, hs, targets, writer, i)
         # unlabelled pool predictions
         pool_predictions, pool_labels_list = get_pool_predictions(
             trained_net, pool_loader, device=device, return_labels=True
@@ -203,12 +203,11 @@ def start_experiment(config_path, log):
     with open(config_path, mode="r", encoding="utf-8") as config_f:
         config = json.load(config_f)
 
-    datasets = config["datasets"]
-    for dataset in datasets:
+    in_dist_data = config["in_dist_data"]
+    ood_data = config["ood_data"]
+    for dataset in in_dist_data:
 
-        data_manager = get_datamanager(
-            indistribution=["Cifar10"], ood=["Fashion_MNIST"]
-        )
+        data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
 
         for exp in config["experiment-list"]:
             metric = exp["metric"]

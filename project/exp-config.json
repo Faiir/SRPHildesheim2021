@@ -17,5 +17,6 @@
       "include_bn": false
     }
   ],
-  "datasets": ["CIFAR10-CIFAR100"]
+  "in_dist_data": ["Cifar10"],
+  "ood_data": ["MNIST", "Fashion_MNIST", "SVHN"]
 }
