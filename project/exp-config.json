@@ -17,7 +17,8 @@
       "include_bn": false,
       "nesterov": false,
       "lr": 0.1,
-      "momentum": 0.9
+      "momentum": 0.9,
+      "do_validation": true
     }
   ],
   "in_dist_data": ["Cifar10"],

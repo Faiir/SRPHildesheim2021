@@ -61,7 +61,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
     lr = param_dict["lr"]
     nesterov = param_dict["nesterov"]
     momentum = param_dict["momentum"]
-
+    do_validation = param_dict["do_validation"]
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -100,13 +100,19 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
             writer.add_figure(
                 tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot
             )
-
-        (
-            train_loader,
-            test_loader,
-            val_loader,
-            pool_loader,
-        ) = create_dataloader_with_validation(data_manager, batch_size=batch_size)
+        if do_validation:
+            (
+                train_loader,
+                test_loader,
+                val_loader,
+                pool_loader,
+            ) = create_dataloader_with_validation(data_manager, batch_size=batch_size)
+        else:
+            (
+                train_loader,
+                test_loader,
+                pool_loader,
+            ) = get_dataloader(data_manager, batch_size=batch_size)
 
         if torch.cuda.is_available():
             net.cuda()
@@ -118,19 +124,30 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
             lr=lr,
             nesterov=nesterov,
         )
-
-        trained_net, avg_train_loss = train(
-            net,
-            train_loader,
-            optimizer,
-            criterion,
-            device=device,
-            epochs=epochs,
-            verbose=verbose,
-            do_validation=True,
-            val_dataloader=val_loader,
-            patience=10,
-        )
+        if do_validation:
+            trained_net, avg_train_loss = train(
+                net,
+                train_loader,
+                optimizer,
+                criterion,
+                device=device,
+                epochs=epochs,
+                verbose=verbose,
+                do_validation=True,
+                val_dataloader=val_loader,
+                patience=10,
+            )
+        else:
+            trained_net, avg_train_loss = train(
+                net,
+                train_loader,
+                optimizer,
+                criterion,
+                device=device,
+                epochs=epochs,
+                verbose=verbose,
+                do_validation=False,
+            )
 
         avg_test_loss = test(
             trained_net, criterion, test_loader, device=device, verbose=verbose
