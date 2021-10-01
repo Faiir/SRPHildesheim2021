@@ -65,7 +65,7 @@ def train(
         if validation:
             val_loss = []
             net.eval()  # prep model for evaluation
-            with torch.no_grad(set_to_none=True):
+            with torch.no_grad():
                 for data, target in val_dataloader:
                     data, target = data.to(device).float(), target.to(device).long()
                     output = net(data)

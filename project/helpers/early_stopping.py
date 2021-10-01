@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import os
 
 """ 
 early stopping implementation
@@ -15,7 +16,7 @@ class EarlyStopping:
         patience=7,
         verbose=False,
         delta=0,
-        path=".\model\saved_models\checkpoint.pt",
+        path=".\checkpoint.pt",
         trace_func=print,
     ):
         """
@@ -38,7 +39,7 @@ class EarlyStopping:
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
-        self.path = path
+        self.path = os.path.join(path)
         self.trace_func = trace_func
 
     def __call__(self, val_loss, model):
