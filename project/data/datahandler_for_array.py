@@ -125,9 +125,15 @@ def get_ood_dataloader(data_manager, batch_size=16):
 
     transform_ood = transforms.Compose(
         [
+            transforms.ColorJitter(
+                brightness=(0.25, 0.75),
+                contrast=(0.25, 0.75),
+                saturation=(0.25, 0.75),
+                hue=(0.25, 0.75),
+            ),
             transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(),
-            transforms.RandomResizedCrop(size=32, scale=(0.8, 1.0)),
+            transforms.RandomCrop(size=32),
+            transforms.RandomRotation(degrees=(0, 180)),
         ]
     )
 
