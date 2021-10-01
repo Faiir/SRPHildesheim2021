@@ -34,7 +34,7 @@ class DataHandler_For_Arrays(Dataset):
         return len(self.X)
 
 
-def create_dataloader(data_manager, batch_size=128, split_size=0.1):
+def create_dataloader(data_manager, batch_size=128):
     """
     Args:
         data_manager: Current version of the train data and the pool to sample from
@@ -105,7 +105,7 @@ def create_dataloader(data_manager, batch_size=128, split_size=0.1):
     return train_loader, test_loader, pool_loader  # , train_dataset, test_dataset
 
 
-def create_dataloader_with_validation(data_manager, batch_size=128, split_size=0.1):
+def create_dataloader_with_validation(data_manager, batch_size=128):
     """
     Args:
         data_manager: Current version of the train data and the pool to sample from
@@ -194,10 +194,10 @@ def create_dataloader_with_validation(data_manager, batch_size=128, split_size=0
     )  # , train_dataset, test_dataset
 
 
-def get_dataloader(data_manager, batch_size=128, split_size=0.1):
+def get_dataloader(data_manager, batch_size=128):
 
     train_loader, test_loader, pool_loader = create_dataloader(
-        data_manager, batch_size=128, split_size=0.1
+        data_manager, batch_size=128
     )
 
     return train_loader, test_loader, pool_loader

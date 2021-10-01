@@ -14,7 +14,10 @@ import pandas as pd
 
 
 # data imports
-from .data.datahandler_for_array import get_dataloader
+from .data.datahandler_for_array import (
+    get_dataloader,
+    create_dataloader_with_validation,
+)
 from .data.datamanager import get_datamanager
 
 # train functions
@@ -98,9 +101,12 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
                 tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot
             )
 
-        train_loader, test_loader, pool_loader = get_dataloader(
-            data_manager, batch_size=batch_size
-        )
+        (
+            train_loader,
+            test_loader,
+            val_loader,
+            pool_loader,
+        ) = create_dataloader_with_validation(data_manager, batch_size=batch_size)
 
         if torch.cuda.is_available():
             net.cuda()
