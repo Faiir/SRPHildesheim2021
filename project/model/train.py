@@ -61,25 +61,30 @@ def train(
             if kwargs.get("lr_sheduler", True):
                 lr_sheduler.step()
         avg_train_loss = train_loss / len(train_loader)
+        print(f"avg train loss {avg_train_loss}")
+        if epoch % 5 == 0:
+            if validation:
+                val_loss = 0
+                net.eval()  # prep model for evaluation
+                with torch.no_grad():
+                    for vdata, vtarget in val_dataloader:
+                        vdata, vtarget = (
+                            vdata.to(device).float(),
+                            vtarget.to(device).long(),
+                        )
+                        voutput = net(vdata)
+                        vloss = criterion(voutput, vtarget)
+                        val_loss += vloss.item()
 
-        if validation:
-            val_loss = []
-            net.eval()  # prep model for evaluation
-            with torch.no_grad():
-                for data, target in val_dataloader:
-                    data, target = data.to(device).float(), target.to(device).long()
-                    output = net(data)
-                    loss = criterion(output, target)
-                    val_loss.append(loss.item())
+                avg_val_loss = val_loss / len(val_dataloader)
+                early_stopping(avg_val_loss, net)
+                print(f"avg val loss {avg_val_loss} epoch {epoch}")
+                if early_stopping.early_stop:
+                    print(
+                        f"Early stopping epoch {epoch} , avg train_loss {avg_train_loss}, avg val loss {avg_val_loss}"
+                    )
 
-            avg_val_loss = np.average(val_loss)
-            early_stopping(avg_val_loss, net)
-            if early_stopping.early_stop:
-                print(
-                    f"Early stopping epoch {epoch} , avg train_loss {avg_train_loss}, avg val loss {avg_val_loss}"
-                )
-
-                break
+                    break
 
         if verbose == 1:
             if epoch % 10 == 0:
