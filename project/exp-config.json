@@ -15,9 +15,9 @@
       "model_name": "small_gen_odin_res",
       "similarity": "E",
       "include_bn": false,
-      "nesterov": false,
-      "lr": 0.0001,
-      "momentum": 0.7,
+      "nesterov": true,
+      "lr": 0.001,
+      "momentum": 0.4,
       "do_validation": true
     }
   ],
