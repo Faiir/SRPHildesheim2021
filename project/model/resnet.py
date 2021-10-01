@@ -143,6 +143,7 @@ class ResNet(nn.Module):
         mnist=False,
         similarity="E",
         selfsupervision=False,
+        batch_size=128,
     ):
         """
         If the "mod" parameter is set to True, the architecture uses 2 modifications:
