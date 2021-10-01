@@ -42,7 +42,7 @@ def train(
         validation = True
         val_dataloader = kwargs.get("val_dataloader")
         patience = kwargs.get("patience", 10)
-        early_stopping = EarlyStopping(patience, verbose=True, delta=1e-3)
+        early_stopping = EarlyStopping(patience, verbose=True, delta=1e-8)
 
     for epoch in tqdm(range(0, epochs)):
         train_loss = 0
