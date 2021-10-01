@@ -184,13 +184,14 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         if metric.lower() == "accuracy":
             test_accuracy = accuracy(test_labels, test_predictions)
             train_accuracy = accuracy(train_labels, train_predictions)
-
+            
             dict_to_add = {
                 "test_loss": avg_test_loss,
                 "train_loss": avg_train_loss,
                 "test_accuracy": test_accuracy,
                 "train_accuracy": train_accuracy,
             }
+            print(dict_to_add)
 
         elif metric.lower() == "f1":
             f1_score = f1(test_labels, test_predictions)
