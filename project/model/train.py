@@ -67,9 +67,7 @@ def train(
 
         avg_train_loss = train_loss / len(train_loader)
 
-        if kwargs.get("lr_sheduler", True):
-            lr_sheduler.step(avg_train_loss)
-        if epoch % 2 == 0:
+        if epoch % 1 == 0:
             if validation:
                 val_loss = 0
                 net.eval()  # prep model for evaluation
@@ -85,6 +83,8 @@ def train(
 
                 avg_val_loss = val_loss / len(val_dataloader)
                 early_stopping(avg_val_loss, net)
+                if kwargs.get("lr_sheduler", True):
+                    lr_sheduler.step(avg_val_loss)
                 print(f"avg val loss {avg_val_loss} epoch {epoch}")
                 if early_stopping.early_stop:
                     print(
