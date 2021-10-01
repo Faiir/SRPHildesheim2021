@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 
 import torchvision.transforms as transforms
 
-from torchvision.datasets import MNIST, FashionMNIST, SVHN, CIFAR10, CIFAR100
+from torchvision.datasets import MNIST, FashionMNIST, SVHN, CIFAR10
 import copy
 import time
 
@@ -317,10 +317,16 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
         if dataset == "Cifar10":
 
             CIFAR10_train = CIFAR10(
-                root=r"/dataset/CHIFAR10/", train=True, download=True, transform=None
+                root=r"/dataset/CHIFAR10/",
+                train=True,
+                download=True,
+                transform=transforms.ToTensor(),
             )
             CIFAR10_test = CIFAR10(
-                root=r"/dataset/CHIFAR10/", train=False, download=True, transform=None
+                root=r"/dataset/CHIFAR10/",
+                train=False,
+                download=True,
+                transform=transforms.ToTensor(),
             )
             # CIFAR10_train_data = CIFAR10_train.data.permute(
             #     0, 3, 1, 2
@@ -329,16 +335,17 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             #     0, 3, 1, 2
             # )  # .reshape(-1, 3, 32, 32)
 
-            CIFAR10_train_data = np.swapaxes(CIFAR10_train.data, 1, 3)
-            CIFAR10_test_data = np.swapaxes(CIFAR10_test.data, 1, 3)
+            CIFAR10_train_data = np.array([i.numpy() for i, _ in CIFAR10_train])
+            CIFAR10_test_data = np.array([i.numpy() for i, _ in CIFAR10_test])
+
             CIFAR10_train_labels = np.array(CIFAR10_train.targets)
             CIFAR10_test_labels = np.array(CIFAR10_test.targets)
 
             base_data = np.concatenate(
-                [base_data, CIFAR10_train_data, CIFAR10_test_data]
+                [base_data, CIFAR10_train_data, CIFAR10_test_data], axis=0
             )
             base_labels = np.concatenate(
-                [base_labels, CIFAR10_train_labels, CIFAR10_test_labels]
+                [base_labels, CIFAR10_train_labels, CIFAR10_test_labels], axis=0
             )
         elif dataset == "MNIST":
 
@@ -349,8 +356,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -401,8 +408,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -441,8 +448,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -453,8 +460,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -464,7 +471,9 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
 
             MNIST_train_labels = MNIST_train.targets.numpy()
             MNIST_test_labels = MNIST_test.targets.numpy()
-            OOD_data = np.concatenate([OOD_data, MNIST_train_data, MNIST_test_data])
+            OOD_data = np.concatenate(
+                [OOD_data, MNIST_train_data, MNIST_test_data], axis=0
+            )
             OOD_labels = np.concatenate(
                 [OOD_labels, MNIST_train_labels, MNIST_test_labels]
             )
@@ -478,8 +487,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -490,8 +499,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -505,10 +514,10 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
 
             OOD_data = np.concatenate(
-                [OOD_data, Fashion_MNIST_train_data, Fashion_MNIST_test_data]
+                [OOD_data, Fashion_MNIST_train_data, Fashion_MNIST_test_data], axis=0
             )
             OOD_labels = np.concatenate(
-                [OOD_labels, Fashion_MNIST_train_labels, Fashion_MNIST_test_labels]
+                [OOD_labels, Fashion_MNIST_train_labels, Fashion_MNIST_test_labels],
             )
         elif ood_dataset == "SVHN":
             SVHN_train = SVHN(
@@ -528,7 +537,9 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             SVHN_train_labels = SVHN_train.labels
             SVHN_test_labels = SVHN_test.labels
 
-            OOD_data = np.concatenate([OOD_data, SVHN_train_data, SVHN_test_data])
+            OOD_data = np.concatenate(
+                [OOD_data, SVHN_train_data, SVHN_test_data], axis=0
+            )
             OOD_labels = np.concatenate(
                 [OOD_labels, SVHN_train_labels, SVHN_test_labels]
             )
