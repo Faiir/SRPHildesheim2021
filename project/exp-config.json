@@ -18,7 +18,8 @@
       "nesterov": true,
       "lr": 0.001,
       "momentum": 0.4,
-      "do_validation": true
+      "do_validation": true,
+      "lr_sheduler": true
     }
   ],
   "in_dist_data": ["Cifar10"],

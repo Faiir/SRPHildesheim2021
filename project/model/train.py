@@ -35,14 +35,20 @@ def train(
         torch.backends.cudnn.benchmark = True
 
     if kwargs.get("lr_sheduler", True):
-        lr_sheduler = create_lr_sheduler(
-            optimizer, epochs, train_loader, kwargs.get("lr", 0.1)
+        lr_sheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            "min",
+            factor=0.3,
+            patience=int(epochs * 0.05),
+            min_lr=1e-7,
+            verbose=True,
         )
+
     if kwargs.get("do_validation", False):
         validation = True
         val_dataloader = kwargs.get("val_dataloader")
         patience = kwargs.get("patience", 10)
-        early_stopping = EarlyStopping(patience, verbose=True, delta=1e-8)
+        early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
     for epoch in tqdm(range(0, epochs)):
         train_loss = 0
@@ -58,11 +64,12 @@ def train(
 
             loss.backward()
             optimizer.step()
-            if kwargs.get("lr_sheduler", True):
-                lr_sheduler.step()
+
         avg_train_loss = train_loss / len(train_loader)
-        print(f"avg train loss {avg_train_loss}")
-        if epoch % 5 == 0:
+
+        if kwargs.get("lr_sheduler", True):
+            lr_sheduler.step(avg_train_loss)
+        if epoch % 2 == 0:
             if validation:
                 val_loss = 0
                 net.eval()  # prep model for evaluation

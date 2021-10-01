@@ -62,6 +62,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
     nesterov = param_dict["nesterov"]
     momentum = param_dict["momentum"]
     do_validation = param_dict["do_validation"]
+    lr_sheduler = param_dict["lr_sheduler"]
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -136,6 +137,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
                 do_validation=True,
                 val_dataloader=val_loader,
                 patience=10,
+                lr_sheduler=lr_sheduler,
             )
         else:
             trained_net, avg_train_loss = train(
@@ -147,6 +149,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
                 epochs=epochs,
                 verbose=verbose,
                 do_validation=False,
+                lr_sheduler=lr_sheduler,
             )
 
         avg_test_loss = test(
@@ -184,7 +187,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         if metric.lower() == "accuracy":
             test_accuracy = accuracy(test_labels, test_predictions)
             train_accuracy = accuracy(train_labels, train_predictions)
-            
+
             dict_to_add = {
                 "test_loss": avg_test_loss,
                 "train_loss": avg_train_loss,
