@@ -53,12 +53,15 @@ def get_model(
         )
         return genOdin
     elif model_name == "gen_odin_res":
-        return resnet18(similarity=similarity)
+        return resnet18(
+            similarity=similarity, do_not_genOdin=kwargs.get("do_not_genOdin", False)
+        )
     elif model_name == "small_gen_odin_res":
         return resnet20(
             similarity=similarity,
             selfsupervision=kwargs.get("selfsupervision", False),
             num_classes=kwargs.get("num_classes", 10),
+            do_not_genOdin=kwargs.get("do_not_genOdin", False),
         )
     else:
         raise ValueError(f"Model {model_name} not found")

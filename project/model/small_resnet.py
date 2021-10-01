@@ -142,12 +142,14 @@ class ResNet(nn.Module):
         similarity="E",
         selfsupervision=False,
         batch_size=128,
+        do_not_genOdin=True,
     ):
         super(ResNet, self).__init__()
         self.in_planes = 16
         self.softmax = nn.Softmax(dim=-1)
         self.mod = mod
         self.batch_size = batch_size
+        self.do_not_genOdin = do_not_genOdin
 
         def wrapped_conv(input_size, in_c, out_c, kernel_size, stride):
             padding = 1 if kernel_size == 3 else 0
@@ -179,6 +181,9 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 16, 64, num_blocks[2], stride=2)
         self.fc = nn.Linear(256 * block.expansion, 128)
         self.fc1 = nn.Linear(128, num_classes)
+
+        if self.do_not_genOdin:
+            outlayer = nn.Linear(self.fc1.out_features, num_classes)
 
         self.apply(_weights_init)
 
@@ -241,7 +246,8 @@ class ResNet(nn.Module):
         # print("flatten", out.size())  # 4x256
         out = self.activation(self.fc(out))
         f_out = self.fc1(out)
-
+        if self.do_not_genOdin:
+            return self.softmax(self.outlayer(f_out))
         # if self_supervision:
         #     return f_out, out  # (128,10) (n,128)
 

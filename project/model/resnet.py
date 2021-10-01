@@ -144,6 +144,7 @@ class ResNet(nn.Module):
         similarity="E",
         selfsupervision=False,
         batch_size=128,
+        do_not_genOdin=True,
     ):
         """
         If the "mod" parameter is set to True, the architecture uses 2 modifications:
@@ -155,6 +156,7 @@ class ResNet(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
         self.mod = mod
         self.batch_size = batch_size
+        self.do_not_genOdin = do_not_genOdin
 
         def wrapped_conv(input_size, in_c, out_c, kernel_size, stride):
             padding = 1 if kernel_size == 3 else 0
@@ -195,6 +197,9 @@ class ResNet(nn.Module):
             self.layer4 = self._make_layer(block, 8, 512, num_blocks[3], stride=2)
         self.fc = nn.Linear(512 * block.expansion, 128)
         self.fc1 = nn.Linear(128, num_classes)
+
+        if self.do_not_genOdin:
+            outlayer = nn.Linear(self.fc1.out_features, num_classes)
 
         self.similarity = similarity
         self.g_activation = nn.Sigmoid()
@@ -256,7 +261,8 @@ class ResNet(nn.Module):
         # print("flatten", out.size())  # 4x256
         out = self.activation(self.fc(out))
         f_out = self.fc1(out)
-
+        if self.do_not_genOdin:
+            return self.softmax(self.outlayer(f_out))
         # if self_supervision:
         #     return f_out, out  # (128,10) (n,128)
 

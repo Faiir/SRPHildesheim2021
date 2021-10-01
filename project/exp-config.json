@@ -1,25 +1,27 @@
 {
   "experiment-list": [
     {
-      "test_size": 200,
-      "pool_size": 500,
-      "labelled_size": 200,
-      "OOD_ratio": 0.1,
-      "oracle_stepsize": 50,
-      "oracle_steps": 2,
-      "epochs": 1,
+      "test_size": 4002,
+      "pool_size": 15000,
+      "labelled_size": 4000,
+      "OOD_ratio": 0.2,
+      "oracle_stepsize": 250,
+      "oracle_steps": 10,
+      "epochs": 250,
       "batch_size": 50,
       "oracles": ["least confidence"],
       "weight_decay": 1e-5,
-      "metric": "f1",
+      "metric": "accuracy",
       "model_name": "small_gen_odin_res",
       "similarity": "E",
       "include_bn": false,
-      "nesterov": false,
-      "lr": 0.1,
-      "momentum": 0.9
+      "nesterov": true,
+      "lr": 0.001,
+      "momentum": 0.4,
+      "do_validation": true,
+      "lr_sheduler": true
     }
   ],
   "in_dist_data": ["Cifar10"],
-  "ood_data": ["MNIST"]
+  "ood_data": ["Fashion_MNIST", "MNIST"]
 }

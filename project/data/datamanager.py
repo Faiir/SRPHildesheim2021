@@ -245,7 +245,7 @@ class Data_manager:
                 self.status_manager[self.status_manager["status"] == 0]
             ),
         }
-
+        print("Sampling result",current_iter_log , self.iter)
         writer.add_scalars(
             f"{metric}/{dataset}/{oracle}/examples_labelled",
             current_iter_log,

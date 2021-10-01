@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 from ..data.datahandler_for_array import get_ood_dataloader
+from ..helpers.early_stopping import EarlyStopping
 
 
 def cosine_annealing(step, total_steps, lr_max, lr_min):
@@ -29,14 +30,25 @@ def train(
 ):
     if verbose > 0:
         print("training with device:", device)
-
+    validation = False
     if device == "cuda":
         torch.backends.cudnn.benchmark = True
 
     if kwargs.get("lr_sheduler", True):
-        lr_sheduler = create_lr_sheduler(
-            optimizer, epochs, train_loader, kwargs.get("lr", 0.1)
+        lr_sheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            "min",
+            factor=0.3,
+            patience=int(epochs * 0.05),
+            min_lr=1e-7,
+            verbose=True,
         )
+
+    if kwargs.get("do_validation", False):
+        validation = True
+        val_dataloader = kwargs.get("val_dataloader")
+        patience = kwargs.get("patience", 10)
+        early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
     for epoch in tqdm(range(0, epochs)):
         train_loss = 0
@@ -52,9 +64,34 @@ def train(
 
             loss.backward()
             optimizer.step()
-            if kwargs.get("lr_sheduler", True):
-                lr_sheduler.step()
+
         avg_train_loss = train_loss / len(train_loader)
+
+        if epoch % 1 == 0:
+            if validation:
+                val_loss = 0
+                net.eval()  # prep model for evaluation
+                with torch.no_grad():
+                    for vdata, vtarget in val_dataloader:
+                        vdata, vtarget = (
+                            vdata.to(device).float(),
+                            vtarget.to(device).long(),
+                        )
+                        voutput = net(vdata)
+                        vloss = criterion(voutput, vtarget)
+                        val_loss += vloss.item()
+
+                avg_val_loss = val_loss / len(val_dataloader)
+                early_stopping(avg_val_loss, net)
+                if kwargs.get("lr_sheduler", True):
+                    lr_sheduler.step(avg_val_loss)
+                print(f"avg val loss {avg_val_loss} epoch {epoch}")
+                if early_stopping.early_stop:
+                    print(
+                        f"Early stopping epoch {epoch} , avg train_loss {avg_train_loss}, avg val loss {avg_val_loss}"
+                    )
+
+                    break
 
         if verbose == 1:
             if epoch % 10 == 0:

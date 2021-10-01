@@ -34,7 +34,7 @@ class DataHandler_For_Arrays(Dataset):
         return len(self.X)
 
 
-def create_dataloader(data_manager, batch_size=128, split_size=0.1):
+def create_dataloader(data_manager, batch_size=128):
     """
     Args:
         data_manager: Current version of the train data and the pool to sample from
@@ -57,6 +57,7 @@ def create_dataloader(data_manager, batch_size=128, split_size=0.1):
 
     transform_train = transforms.Compose(
         [
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             transforms.ColorJitter(
                 brightness=(0.25, 0.75),
                 contrast=(0.25, 0.75),
@@ -105,7 +106,7 @@ def create_dataloader(data_manager, batch_size=128, split_size=0.1):
     return train_loader, test_loader, pool_loader  # , train_dataset, test_dataset
 
 
-def create_dataloader_with_validation(data_manager, batch_size=128, split_size=0.1):
+def create_dataloader_with_validation(data_manager, batch_size=128):
     """
     Args:
         data_manager: Current version of the train data and the pool to sample from
@@ -128,6 +129,7 @@ def create_dataloader_with_validation(data_manager, batch_size=128, split_size=0
 
     transform_train = transforms.Compose(
         [
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             transforms.ColorJitter(
                 brightness=(0.25, 0.75),
                 contrast=(0.25, 0.75),
@@ -194,10 +196,10 @@ def create_dataloader_with_validation(data_manager, batch_size=128, split_size=0
     )  # , train_dataset, test_dataset
 
 
-def get_dataloader(data_manager, batch_size=128, split_size=0.1):
+def get_dataloader(data_manager, batch_size=128):
 
     train_loader, test_loader, pool_loader = create_dataloader(
-        data_manager, batch_size=128, split_size=0.1
+        data_manager, batch_size=128
     )
 
     return train_loader, test_loader, pool_loader
@@ -220,6 +222,7 @@ def get_ood_dataloader(data_manager, batch_size=16):
 
     transform_ood = transforms.Compose(
         [
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             transforms.ColorJitter(
                 brightness=(0.25, 0.75),
                 contrast=(0.25, 0.75),
