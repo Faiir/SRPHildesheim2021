@@ -67,11 +67,9 @@ def train(
             net.eval()  # prep model for evaluation
             with torch.no_grad(set_to_none=True):
                 for data, target in val_dataloader:
-                    # forward pass: compute predicted outputs by passing inputs to the model
+                    data, target = data.to(device).float(), target.to(device).long()
                     output = net(data)
-                    # calculate the loss
                     loss = criterion(output, target)
-                    # record validation loss
                     val_loss.append(loss.item())
 
             avg_val_loss = np.average(val_loss)

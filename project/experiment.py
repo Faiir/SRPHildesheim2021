@@ -127,6 +127,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
             device=device,
             epochs=epochs,
             verbose=verbose,
+            do_validation=True,
+            val_dataloader=val_loader,
+            patience=10,
         )
 
         avg_test_loss = test(
