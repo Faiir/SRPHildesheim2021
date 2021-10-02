@@ -26,8 +26,9 @@ def create_lr_sheduler(optimizer, epochs, pert_loader, learning_rate):
 
 
 def train(
-    net, train_loader, optimizer, criterion, device, epochs=5, verbose=1, **kwargs
+    net, train_loader, optimizer, criterion, device, epochs=5, **kwargs
 ):
+    verbose = kwargs.get("verbose", 1)
     if verbose > 0:
         print("training with device:", device)
     validation = False
@@ -38,7 +39,7 @@ def train(
         lr_sheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             "min",
-            factor=0.3,
+            factor=0.1,
             patience=int(epochs * 0.05),
             min_lr=1e-7,
             verbose=True,
