@@ -128,7 +128,7 @@ class genOdinModel(nn.Module):
             assert False, "Incorrect similarity Measure"
 
     def forward(
-        self, input_data, get_test_model=True, train_g=False
+        self, input_data, get_test_model=False, train_g=False
     ):  # 128 , 3 ,32, 32
         x = self.pool(self.activation(self.conv1(input_data)))  # 128 , 4 , 14, 14
         x = self.pool(self.activation(self.conv2(x)))  # 128, 12, 5,5
@@ -150,7 +150,7 @@ class genOdinModel(nn.Module):
         h = self.h_func(x)  # 128 10
         out = torch.div(g, h)
         pred = self.softmax(out)
-        if get_test_model:
+        if not get_test_model:
             return pred
         else:
-            return pred, out, g, h  # 128,10 ; 1 : 128,10
+            return pred, g, h  # 128,10 ; 1 : 128,10
