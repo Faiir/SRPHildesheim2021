@@ -15,21 +15,13 @@
       "model_name": "base_small_resnet",
       "similarity": "E",
       "include_bn": false,
-<<<<<<< HEAD
       "nesterov": false,
       "lr": 0.1,
       "momentum": 0.9,
       "do_validation": false,
-=======
-      "nesterov": true,
-      "lr": 0.001,
-      "momentum": 0.4,
-      "do_validation": true,
->>>>>>> c885069fd22c8059d609fdbeb244ed299dabc698
       "lr_sheduler": true,
-      "do_pertubed_images": true,
+      "do_pertubed_images": false,
       "verbose" : 2
-
     }
   ],
   "in_dist_data": ["Cifar10"],
