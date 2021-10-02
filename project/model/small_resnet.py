@@ -142,11 +142,16 @@ class ResNet(nn.Module):
         coeff=3,
         n_power_iterations=1,
         similarity="E",
+        selfsupervision=False,
+        batch_size=128,
+        do_not_genOdin=True,
     ):
         super(ResNet, self).__init__()
         self.in_planes = 16
         self.softmax = nn.Softmax(dim=-1)
         self.mod = mod
+        self.batch_size = batch_size
+        self.do_not_genOdin = do_not_genOdin
 
         def wrapped_conv(input_size, in_c, out_c, kernel_size, stride):
             padding = 1 if kernel_size == 3 else 0
@@ -179,12 +184,22 @@ class ResNet(nn.Module):
         self.fc = nn.Linear(256 * block.expansion, 128)
         self.fc1 = nn.Linear(128, num_classes)
 
+        if self.do_not_genOdin:
+            outlayer = nn.Linear(self.fc1.out_features, num_classes)
+
         self.apply(_weights_init)
 
         self.similarity = similarity
         self.g_activation = nn.Sigmoid()
         self.g_func = nn.Linear(self.fc1.out_features, 1)
         self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
+
+        self.selfsupervision = selfsupervision
+        if self.selfsupervision:
+            self.x_trans_head = nn.Linear(self.fc.out_features, 3)
+            self.y_trans_head = nn.Linear(self.fc.out_features, 3)
+            self.rot_head = nn.Linear(self.fc.out_features, 4)
+        self.pred_layer = nn.Linear(num_classes, num_classes - 1)
 
         if self.similarity == "I":
             self.dropout_3 = nn.Dropout(p=0.6)
@@ -222,7 +237,8 @@ class ResNet(nn.Module):
             input_size = math.ceil(input_size / stride)
         return nn.Sequential(*layers)
 
-    def forward(self, x, get_test_model=False, train_g=False, self_supervision=False):
+    def forward(self, x, get_test_model=False, train_g=False, self_sup_train=False):
+
         out = self.activation(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
@@ -232,9 +248,10 @@ class ResNet(nn.Module):
         # print("flatten", out.size())  # 4x256
         out = self.activation(self.fc(out))
         f_out = self.fc1(out)
-
-        if self_supervision:
-            return f_out, out  # (128,10) (n,128)
+        if self.do_not_genOdin:
+            return self.softmax(self.outlayer(f_out))
+        # if self_supervision:
+        #     return f_out, out  # (128,10) (n,128)
 
         self.feature = out.clone().detach()
         # out = self.fc(out) / self.temp
@@ -242,7 +259,20 @@ class ResNet(nn.Module):
         if train_g:
             return g
         h = self.h_func(f_out)
-        pred = self.softmax(torch.div(g, h))
+        pred = self.softmax(torch.div(g, h))  # 128 11
+
+        if self_sup_train:
+            # x_trans = self.x_trans_head(out)
+            # y_trans = self.y_trans_head(out)
+            # rot = self.rot_head(out)
+            x_trans = self.x_trans_head(out[4 * self.batch_size :])
+            y_trans = self.y_trans_head(out[4 * self.batch_size :])  # 128 3
+            rot = self.rot_head(out[: 4 * self.batch_size])  # 512 4
+            return pred, x_trans, y_trans, rot
+
+        if self.selfsupervision:
+            return self.softmax(pred_layer(pred))
+
         if not get_test_model:
             return pred
         else:
@@ -256,7 +286,8 @@ def resnet20(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
-        **kwargs,
+        num_classes=kwargs.get("num_classes"),
+        selfsupervision=kwargs.get("selfsupervision"),
     )
 
 

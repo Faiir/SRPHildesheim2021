@@ -24,11 +24,19 @@ import wget
 import zipfile
 
 
-def download_and_unzip():
+def download_and_unzip(dir_name=os.path.join(r"./dataset/tiny-imagenet-200")):
     wget.download("http://cs231n.stanford.edu/tiny-imagenet-200.zip")
-
-    with zipfile.ZipFile("tiny-imagenet-200.zip") as zip_ref:
-        zip_ref.extractall("/dataset/tinyimagenet-200/")
+    print(os.getcwd())
+    if os.path.isdir(dir_name):
+        if not os.listdir(dir_name):
+            pass
+    else:
+        os.makedirs(dir_name)
+        if not os.path.exists("./tiny-imagenet-200.zip"):
+            wget.download("http://cs231n.stanford.edu/tiny-imagenet-200.zip")
+            # wget.download("http://cs231n.stanford.edu/tiny-imagenet-200.zip")
+        with zipfile.ZipFile("tiny-imagenet-200.zip") as zip_ref:
+            zip_ref.extractall(dir_name)
 
 
 # batch_size = 64
@@ -36,11 +44,20 @@ def download_and_unzip():
 # id_dict = {}
 # for i, line in enumerate(open("/dataset/tinyimagenet-200/wnids.txt", "r")):
 #     id_dict[line.replace("\n", "")] = i
+# TODO add function to convert it to numpy array
 
 
 class TrainTinyImageNetDataset(Dataset):
-    def __init__(self, id, transform=None):
-        self.filenames = glob.glob("/dataset/tinyimagenet-200/train/*/*/*.JPEG")
+    def __init__(
+        self,
+        id,
+        transform=None,
+        path=r"dataset\tiny-imagenet-200\tiny-imagenet-200\train",
+    ):
+        tmp_path = os.path.join(path, "/*/*/*.JPEG")
+        self.filenames = glob.glob(
+            tmp_path
+        )  # "/dataset/tinyimagenet-200/train/*/*/*.JPEG")
         self.transform = transform
         self.id_dict = id
 
@@ -59,8 +76,14 @@ class TrainTinyImageNetDataset(Dataset):
 
 
 class TestTinyImageNetDataset(Dataset):
-    def __init__(self, id, transform=None):
-        self.filenames = glob.glob("/dataset/tinyimagenet-200/val/images/*.JPEG")
+    def __init__(
+        self,
+        id,
+        transform=None,
+        path=r"dataset\tiny-imagenet-200\tiny-imagenet-200\train",
+    ):
+        tmp_path = os.path.join(path, "/*/*/*.JPEG")
+        self.filenames = glob.glob(tmp_path)
         self.transform = transform
         self.id_dict = id
         self.cls_dic = {}

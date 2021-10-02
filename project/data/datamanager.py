@@ -4,10 +4,16 @@ from sklearn.model_selection import train_test_split
 
 import torchvision.transforms as transforms
 
-from torchvision.datasets import MNIST, FashionMNIST, SVHN, CIFAR10, CIFAR100
+from torchvision.datasets import MNIST, FashionMNIST, SVHN, CIFAR10
 import copy
 import time
-from .tinyimagenetloader import TrainTinyImageNetDataset, TestTinyImageNetDataset
+
+# from .tinyimagenetloader import (
+#     TrainTinyImageNetDataset,
+#     TestTinyImageNetDataset,
+#     download_and_unzip,
+# )
+import os
 
 
 class Data_manager:
@@ -227,9 +233,8 @@ class Data_manager:
 
     def add_log(self, writer, oracle, dataset, metric, log_dict=None):
         self.iter += 1
-
+        # "Iteration"=  self.iter,
         current_iter_log = {
-            "Iteration": self.iter,
             "Base_examples_labelled": len(
                 self.status_manager[self.status_manager["status"] > 1]
             ),
@@ -240,7 +245,7 @@ class Data_manager:
                 self.status_manager[self.status_manager["status"] == 0]
             ),
         }
-
+        print("Sampling result",current_iter_log , self.iter)
         writer.add_scalars(
             f"{metric}/{dataset}/{oracle}/examples_labelled",
             current_iter_log,
@@ -248,8 +253,18 @@ class Data_manager:
         )
 
         if log_dict is not None:
+            acc_dict = {}
+            acc_dict["test_accuracy"] = log_dict["test_accuracy"]
+            acc_dict["train_accuracy"] = log_dict["train_accuracy"]
+
             writer.add_scalars(
-                f"{metric}/{dataset}/{oracle}/{metric}", log_dict, self.iter
+                f"{metric}/{dataset}/{oracle}/{metric}", acc_dict, self.iter
+            )
+            loss_dict = {}
+            loss_dict["train_loss"] = log_dict["train_loss"]
+            loss_dict["test_loss"] = log_dict["test_loss"]
+            writer.add_scalars(
+                f"{metric}/{dataset}/{oracle}/loss", loss_dict, self.iter
             )
             current_iter_log.update(log_dict)
 
@@ -302,10 +317,16 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
         if dataset == "Cifar10":
 
             CIFAR10_train = CIFAR10(
-                root=r"/dataset/CHIFAR10/", train=True, download=True, transform=None
+                root=r"/dataset/CHIFAR10/",
+                train=True,
+                download=True,
+                transform=transforms.ToTensor(),
             )
             CIFAR10_test = CIFAR10(
-                root=r"/dataset/CHIFAR10/", train=False, download=True, transform=None
+                root=r"/dataset/CHIFAR10/",
+                train=False,
+                download=True,
+                transform=transforms.ToTensor(),
             )
             # CIFAR10_train_data = CIFAR10_train.data.permute(
             #     0, 3, 1, 2
@@ -314,16 +335,17 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             #     0, 3, 1, 2
             # )  # .reshape(-1, 3, 32, 32)
 
-            CIFAR10_train_data = np.swapaxes(CIFAR10_train.data, 1, 3)
-            CIFAR10_test_data = np.swapaxes(CIFAR10_test.data, 1, 3)
+            CIFAR10_train_data = np.array([i.numpy() for i, _ in CIFAR10_train])
+            CIFAR10_test_data = np.array([i.numpy() for i, _ in CIFAR10_test])
+
             CIFAR10_train_labels = np.array(CIFAR10_train.targets)
             CIFAR10_test_labels = np.array(CIFAR10_test.targets)
 
             base_data = np.concatenate(
-                [base_data, CIFAR10_train_data, CIFAR10_test_data]
+                [base_data, CIFAR10_train_data, CIFAR10_test_data], axis=0
             )
             base_labels = np.concatenate(
-                [base_labels, CIFAR10_train_labels, CIFAR10_test_labels]
+                [base_labels, CIFAR10_train_labels, CIFAR10_test_labels], axis=0
             )
         elif dataset == "MNIST":
 
@@ -334,8 +356,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -386,8 +408,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -426,8 +448,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -438,8 +460,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -449,7 +471,9 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
 
             MNIST_train_labels = MNIST_train.targets.numpy()
             MNIST_test_labels = MNIST_test.targets.numpy()
-            OOD_data = np.concatenate([OOD_data, MNIST_train_data, MNIST_test_data])
+            OOD_data = np.concatenate(
+                [OOD_data, MNIST_train_data, MNIST_test_data], axis=0
+            )
             OOD_labels = np.concatenate(
                 [OOD_labels, MNIST_train_labels, MNIST_test_labels]
             )
@@ -463,8 +487,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -475,8 +499,8 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 transform=transforms.Compose(
                     [
                         transforms.Pad(2),
+                        transforms.Grayscale(3),
                         transforms.ToTensor(),
-                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                     ]
                 ),
             )
@@ -490,10 +514,10 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
 
             OOD_data = np.concatenate(
-                [OOD_data, Fashion_MNIST_train_data, Fashion_MNIST_test_data]
+                [OOD_data, Fashion_MNIST_train_data, Fashion_MNIST_test_data], axis=0
             )
             OOD_labels = np.concatenate(
-                [OOD_labels, Fashion_MNIST_train_labels, Fashion_MNIST_test_labels]
+                [OOD_labels, Fashion_MNIST_train_labels, Fashion_MNIST_test_labels],
             )
         elif ood_dataset == "SVHN":
             SVHN_train = SVHN(
@@ -513,25 +537,35 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             SVHN_train_labels = SVHN_train.labels
             SVHN_test_labels = SVHN_test.labels
 
-            OOD_data = np.concatenate([OOD_data, SVHN_train_data, SVHN_test_data])
+            OOD_data = np.concatenate(
+                [OOD_data, SVHN_train_data, SVHN_test_data], axis=0
+            )
             OOD_labels = np.concatenate(
-                [OOD_labels, SVHN_test_labels, SVHN_test_labels]
+                [OOD_labels, SVHN_train_labels, SVHN_test_labels]
             )
 
-            pass
-        elif ood_dataset == "TinyImageNet":
-            id_dict = {}
-            for i, line in enumerate(open("/dataset/tinyimagenet-200/wnids.txt", "r")):
-                id_dict[line.replace("\n", "")] = i
-            normalize_imagenet = transforms.Normalize(
-                (122.4786, 114.2755, 101.3963), (70.4924, 68.5679, 71.8127)
-            )
-            train_t_imagenet = TrainTinyImageNetDataset(
-                id=id_dict, transform=transforms.Compose([normalize_imagenet, resize])
-            )
-            test_t_imagenet = TestTinyImageNetDataset(
-                id=id_dict, transform=transforms.Compose([normalize_imagenet, resize])
-            )
+        # elif ood_dataset == "TinyImageNet":
+        #     if not os.listdir(os.path.join(r"./dataset/tiny-imagenet-200")):
+        #         download_and_unzip()
+        #     id_dict = {}
+        #     for i, line in enumerate(
+        #         open(
+        #             os.path.join(
+        #                 r"\dataset\tiny-imagenet-200\tiny-imagenet-200\wnids.txt"
+        #             ),
+        #             "r",
+        #         )
+        #     ):
+        #         id_dict[line.replace("\n", "")] = i
+        #     normalize_imagenet = transforms.Normalize(
+        #         (122.4786, 114.2755, 101.3963), (70.4924, 68.5679, 71.8127)
+        #     )
+        #     train_t_imagenet = TrainTinyImageNetDataset(
+        #         id=id_dict, transform=transforms.Compose([normalize_imagenet, resize])
+        #     )
+        #     test_t_imagenet = TestTinyImageNetDataset(
+        #         id=id_dict, transform=transforms.Compose([normalize_imagenet, resize])
+        #     )
 
     base_data = np.delete(base_data, 0, axis=0)
     base_labels = np.delete(base_labels, 0)
@@ -546,48 +580,3 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
     )
 
     return data_manager
-
-
-# def get_datamanager(dataset="MNIST-FMNIST"):
-
-#     if dataset == "MNIST-FMNIST":
-#         MNIST_train = MNIST(root=r".", train=True, download=True)
-#         MNIST_test = MNIST(root=r".", train=False, download=True)
-
-#         Fashion_MNIST_train = FashionMNIST(root=".", train=True, download=True)
-#         Fashion_MNIST_test = FashionMNIST(root=".", train=False, download=True)
-
-#         MNIST_train_data = MNIST_train.data.numpy()
-#         MNIST_test_data = MNIST_test.data.numpy()
-
-#         MNIST_train_labels = MNIST_train.targets.numpy()
-#         MNIST_test_labels = MNIST_test.targets.numpy()
-
-#         Fashion_MNIST_train_data = Fashion_MNIST_train.data.numpy()
-#         Fashion_MNIST_test_data = Fashion_MNIST_test.data.numpy()
-
-#         Fashion_MNIST_train_labels = Fashion_MNIST_train.targets.numpy()
-#         Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
-
-#         base_data = np.concatenate([MNIST_train_data, MNIST_test_data])
-#         base_labels = np.concatenate([MNIST_train_labels, MNIST_test_labels])
-
-#         OOD_data = np.concatenate([Fashion_MNIST_train_data, Fashion_MNIST_test_data])
-#         OOD_labels = np.concatenate(
-#             [Fashion_MNIST_train_labels, Fashion_MNIST_test_labels]
-#         )
-
-#     if dataset == "CHIFAR":
-#         base_data = "chifar"
-#         pass
-
-#     # TODO base_data, base_labels, OOD_data, OOD_labels = get_dataset(dataset)
-
-#     data_manager = Data_manager(
-#         base_data=base_data,
-#         base_labels=base_labels,
-#         OOD_data=OOD_data,
-#         OOD_labels=OOD_labels,
-#     )
-
-#     return data_manager

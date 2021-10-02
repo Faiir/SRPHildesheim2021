@@ -23,7 +23,7 @@ from tqdm import tqdm
 from project.data.datahandler_for_array import get_dataloader
 
 
-def outlier_exposure_experiment(data_manager, writer, net, verbose=0):
+def outlier_exposure_experiment(data_manager, writer, net, verbose=0, **kwargs):
     """experiment [Experiment function which performs the entire acitve learning process based on the predefined config]
 
     [extended_summary]
@@ -38,15 +38,15 @@ def outlier_exposure_experiment(data_manager, writer, net, verbose=0):
         [None]: [Log Attribute in Datamanage writes log to dist]
     """
 
-    oracle_stepsize = 200
-    oracle_steps = 10
-    epochs = 25
-    batch_size = 64
-    weight_decay = 0.0001
+    oracle_stepsize = kwargs.get("oracle_stepsize", 200)
+    oracle_steps = kwargs.get("oracle_steps", 10)
+    epochs = kwargs.get("epochs", 25)
+    batch_size = kwargs.get("batch_size", 64)
+    weight_decay = kwargs.get("weight_decay", 0.0001)
     metric = "accuracy"
-    momentum = 0.8
-    outlier_exposure_amount = 2
-    lr = 0.0001
+    momentum = kwargs.get("momentum", 0.8)
+    outlier_exposure_amount = kwargs.get("outlier_exposure_amount", 2)
+    lr = kwargs.get("lr", 0.0001)
 
     sampler = uncertainity_sampling_highest_entropy
 
@@ -56,8 +56,6 @@ def outlier_exposure_experiment(data_manager, writer, net, verbose=0):
         net.cuda()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     data_manager.reset_pool()
-
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     for i in tqdm(range(oracle_steps)):
 
@@ -72,15 +70,15 @@ def outlier_exposure_experiment(data_manager, writer, net, verbose=0):
             net.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay
         )
 
-        if (i % outlier_exposure_amount == 3) and (i != 0):
+        if (i % outlier_exposure_amount == 0) and (i != 0):
             # init  optimizer
             g_optim = optim.SGD(
                 net.parameters(),
-                lr=lr * 5,
+                lr=lr,
                 momentum=momentum,
                 weight_decay=weight_decay,
             )
-            net = train_g(net, g_optim, data_manager, epochs=10)
+            net = train_g(net, g_optim, data_manager, epochs=epochs / 2)
 
         net, avg_train_loss = train(
             net,
@@ -96,10 +94,8 @@ def outlier_exposure_experiment(data_manager, writer, net, verbose=0):
             net, criterion, test_loader, device=device, verbose=verbose
         )
         print(f"avg.test loss: {avg_test_loss} oracle step {i}")
-        pert_imgs, pert_preds, gs, hs, targets = get_density_vals(
-            pool_loader, test_loader, net
-        )
-        # density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, i)
+        pert_preds, gs, hs, targets = get_density_vals(pool_loader, test_loader, net)
+        density_plot(pert_preds, gs, hs, targets, writer, i)
         # unlabelled pool predictions
         pool_predictions, pool_labels_list = get_pool_predictions(
             net, pool_loader, device=device, return_labels=True

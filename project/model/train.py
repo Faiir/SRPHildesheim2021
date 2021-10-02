@@ -5,11 +5,50 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 from ..data.datahandler_for_array import get_ood_dataloader
+from ..helpers.early_stopping import EarlyStopping
 
 
-def train(net, train_loader, optimizer, criterion, device, epochs=5, verbose=1):
+def cosine_annealing(step, total_steps, lr_max, lr_min):
+    return lr_min + (lr_max - lr_min) * 0.5 * (1 + np.cos(step / total_steps * np.pi))
+
+
+def create_lr_sheduler(optimizer, epochs, pert_loader, learning_rate):
+
+    return torch.optim.lr_scheduler.LambdaLR(
+        optimizer,
+        lr_lambda=lambda step: cosine_annealing(
+            step,
+            epochs * len(pert_loader),
+            1,  # since lr_lambda computes multiplicative factor
+            1e-6 / learning_rate,
+        ),
+    )
+
+
+def train(
+    net, train_loader, optimizer, criterion, device, epochs=5, verbose=1, **kwargs
+):
     if verbose > 0:
         print("training with device:", device)
+    validation = False
+    if device == "cuda":
+        torch.backends.cudnn.benchmark = True
+
+    if kwargs.get("lr_sheduler", True):
+        lr_sheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            "min",
+            factor=0.3,
+            patience=int(epochs * 0.05),
+            min_lr=1e-7,
+            verbose=True,
+        )
+
+    if kwargs.get("do_validation", False):
+        validation = True
+        val_dataloader = kwargs.get("val_dataloader")
+        patience = kwargs.get("patience", 10)
+        early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
     for epoch in tqdm(range(0, epochs)):
         train_loss = 0
@@ -18,7 +57,7 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, verbose=1):
             net.train()
             data, target = data.to(device).float(), target.to(device).long()
 
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
             yhat = net(data).to(device)
             loss = criterion(yhat, target)
             train_loss += loss.item()
@@ -28,8 +67,34 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, verbose=1):
 
         avg_train_loss = train_loss / len(train_loader)
 
+        if epoch % 1 == 0:
+            if validation:
+                val_loss = 0
+                net.eval()  # prep model for evaluation
+                with torch.no_grad():
+                    for vdata, vtarget in val_dataloader:
+                        vdata, vtarget = (
+                            vdata.to(device).float(),
+                            vtarget.to(device).long(),
+                        )
+                        voutput = net(vdata)
+                        vloss = criterion(voutput, vtarget)
+                        val_loss += vloss.item()
+
+                avg_val_loss = val_loss / len(val_dataloader)
+                early_stopping(avg_val_loss, net)
+                if kwargs.get("lr_sheduler", True):
+                    lr_sheduler.step(avg_val_loss)
+                print(f"avg val loss {avg_val_loss} epoch {epoch}")
+                if early_stopping.early_stop:
+                    print(
+                        f"Early stopping epoch {epoch} , avg train_loss {avg_train_loss}, avg val loss {avg_val_loss}"
+                    )
+
+                    break
+
         if verbose == 1:
-            if epoch % (epochs // 10) == 0:
+            if epoch % 10 == 0:
                 print(" epoch: ", epoch, "current train_loss:", avg_train_loss)
         elif verbose == 2:
             print(" epoch: ", epoch, "current train_loss:", avg_train_loss)
@@ -71,43 +136,50 @@ def get_density_vals(
     for eps in tqdm(epsi_list):
         preds = 0
         for batch_idx, (data, target) in enumerate(val_loader):
+            trained_net.zero_grad(set_to_none=True)
             data, target = data.to(device).float(), target.to(device).long()
             data.requires_grad = True
             yhat = trained_net(data)
             pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
 
             preds += torch.sum(pred)
-        scores.append(preds.detach().cpu().numpy())
 
+            del data, target, pred
+        scores.append(preds.detach().cpu().numpy())
+    torch.cuda.empty_cache()
+    trained_net.zero_grad(set_to_none=True)
     eps = epsi_list[np.argmax(scores)]
+    del scores
     pert_imgs = []
     targets = []
     for batch_idx, (data, target) in enumerate(pool_loader):
+        trained_net.zero_grad(set_to_none=True)
         backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
         data, target = data.to(device).float(), target.to(device).long()
         data.requires_grad = True
         output = trained_net(data)
         pred, _ = output.max(dim=-1, keepdim=True)
-        trained_net.zero_grad()
+
         pred.backward(backward_tensor)
         pert_imgs.append(
             fgsm_attack(data, epsilon=eps, data_grad=data.grad.data).to("cpu")
         )
-        targets.append(target.to("cpu").numpy())
+        targets.append(target.to("cpu").numpy().astype(np.float16))
         del data, output, target
     torch.cuda.empty_cache()
+    trained_net.zero_grad(set_to_none=True)
     gs = []
     hs = []
     pert_preds = []
     with torch.no_grad():
         for p_img in pert_imgs:
             pert_pred, g, h = trained_net(p_img.to(device), get_test_model=True)
-            gs.append(g.detach().to("cpu").numpy())
-            hs.append(h.detach().to("cpu").numpy())
+            gs.append(g.detach().to("cpu").numpy().astype(np.float16))
+            hs.append(h.detach().to("cpu").numpy().astype(np.float16))
             pert_preds.append(pert_pred.detach().to("cpu").numpy())
-            p_img.detach().to("cpu").numpy()
-
-    return pert_imgs, pert_preds, gs, hs, targets
+            p_img.detach().to("cpu").numpy().astype(np.float16)
+    del pert_imgs
+    return pert_preds, gs, hs, targets
 
 
 def fgsm_attack(image, epsilon, data_grad):
@@ -153,7 +225,7 @@ def train_g(net, optimizer, datamanager, epochs=10):
 
     data, target = data.cuda(), target.cuda()
 
-    optimizer.zero_grad()
+    optimizer.zero_grad(set_to_none=True)
     x = net(data, train_g=True)
 
     loss = F.binary_cross_entropy(x, target)

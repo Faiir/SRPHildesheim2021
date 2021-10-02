@@ -14,7 +14,10 @@ import pandas as pd
 
 
 # data imports
-from .data.datahandler_for_array import get_dataloader
+from .data.datahandler_for_array import (
+    get_dataloader,
+    create_dataloader_with_validation,
+)
 from .data.datamanager import get_datamanager
 
 # train functions
@@ -55,7 +58,11 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
     batch_size = param_dict["batch_size"]
     weight_decay = param_dict["weight_decay"]
     metric = param_dict["metric"]
-
+    lr = param_dict["lr"]
+    nesterov = param_dict["nesterov"]
+    momentum = param_dict["momentum"]
+    do_validation = param_dict["do_validation"]
+    lr_sheduler = param_dict["lr_sheduler"]
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -72,10 +79,12 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         from .helpers.sampler import DDU_sampler
 
         sampler = DDU_sampler
+        raise NotImplementedError
     elif oracle == "Gen0din":
         from .helpers.sampler import gen0din_sampler
 
-        sampler = gen0din_sampler
+        raise NotImplementedError
+        # sampler = gen0din_sampler
 
     # net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
     # net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
@@ -92,34 +101,69 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
             writer.add_figure(
                 tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot
             )
-
-        train_loader, test_loader, pool_loader = get_dataloader(
-            data_manager, batch_size=batch_size
-        )
+        if do_validation:
+            (
+                train_loader,
+                test_loader,
+                val_loader,
+                pool_loader,
+            ) = create_dataloader_with_validation(data_manager, batch_size=batch_size)
+        else:
+            (
+                train_loader,
+                test_loader,
+                pool_loader,
+            ) = get_dataloader(data_manager, batch_size=batch_size)
 
         if torch.cuda.is_available():
             net.cuda()
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(net.parameters(), weight_decay=weight_decay)
-
-        trained_net, avg_train_loss = train(
-            net,
-            train_loader,
-            optimizer,
-            criterion,
-            device=device,
-            epochs=epochs,
-            verbose=verbose,
+        optimizer = optim.SGD(
+            net.parameters(),
+            weight_decay=weight_decay,
+            momentum=momentum,
+            lr=lr,
+            nesterov=nesterov,
         )
+        if do_validation:
+            trained_net, avg_train_loss = train(
+                net,
+                train_loader,
+                optimizer,
+                criterion,
+                device=device,
+                epochs=epochs,
+                verbose=verbose,
+                do_validation=True,
+                val_dataloader=val_loader,
+                patience=10,
+                lr_sheduler=lr_sheduler,
+            )
+        else:
+            trained_net, avg_train_loss = train(
+                net,
+                train_loader,
+                optimizer,
+                criterion,
+                device=device,
+                epochs=epochs,
+                verbose=verbose,
+                do_validation=False,
+                lr_sheduler=lr_sheduler,
+            )
 
         avg_test_loss = test(
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
 
-        pert_imgs, pert_preds, gs, hs, targets = get_density_vals(
+        pert_preds, gs, hs, targets = get_density_vals(
             pool_loader, test_loader, trained_net
         )
-        density_plot(pert_imgs, pert_preds, gs, hs, targets, writer, i)
+        try:
+            density_plot(pert_preds, gs, hs, targets, writer, i)
+        except:
+            print("image couldn't be created")
+            pass
         # unlabelled pool predictions
         pool_predictions, pool_labels_list = get_pool_predictions(
             trained_net, pool_loader, device=device, return_labels=True
@@ -150,6 +194,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
                 "test_accuracy": test_accuracy,
                 "train_accuracy": train_accuracy,
             }
+            print(dict_to_add)
 
         elif metric.lower() == "f1":
             f1_score = f1(test_labels, test_predictions)
@@ -203,12 +248,11 @@ def start_experiment(config_path, log):
     with open(config_path, mode="r", encoding="utf-8") as config_f:
         config = json.load(config_f)
 
-    datasets = config["datasets"]
-    for dataset in datasets:
+    in_dist_data = config["in_dist_data"]
+    ood_data = config["ood_data"]
+    for dataset in in_dist_data:
 
-        data_manager = get_datamanager(
-            indistribution=["Cifar10"], ood=["Fashion_MNIST"]
-        )
+        data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
 
         for exp in config["experiment-list"]:
             metric = exp["metric"]

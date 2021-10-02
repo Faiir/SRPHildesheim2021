@@ -16,8 +16,15 @@ import torch
 class euc_dist_layer(nn.Module):
     def __init__(self, out_classes, dimensions):
         super().__init__()
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
         weights = torch.rand(
-            (1, dimensions, out_classes), dtype=torch.float32, requires_grad=True
+            (1, dimensions, out_classes),
+            dtype=torch.float32,
+            requires_grad=True,
+            device=torch.device(self.device),
         )
 
         self.weights = nn.Parameter(weights)
@@ -33,25 +40,40 @@ class euc_dist_layer(nn.Module):
         return pw_dist(x, self.weights)  # 128 10
 
 
+@torch.jit.script
+def get_max(x, y, eps):
+    return torch.max((torch.mul(x, y)), eps)
+
+
 class cosine_layer(nn.Module):
     def __init__(self, out_classes, dimensions):
         super().__init__()
         # weights = torch.Tensor((out_classes, dimensions), dtype=torch.float64)
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
         weights = torch.rand(
-            (out_classes, dimensions), dtype=torch.float32, requires_grad=True
+            (1, dimensions, out_classes),
+            dtype=torch.float32,
+            requires_grad=True,
+            device=torch.device(self.device),
         )
+
         self.weights = nn.Parameter(weights)
 
     def forward(self, x, eps=1e-08):
         # https://pytorch.org/docs/stable/generated/torch.nn.CosineSimilarity.html
         # x =>  batch , D
-        eps = torch.tensor(eps, dtype=torch.float32)
+        eps = torch.tensor(eps, dtype=torch.float32, device=torch.device(self.device))
 
         x_norm = torch.linalg.norm(x, dim=0)
         w_norm = torch.linalg.norm(self.weights, dim=0)
 
         nominator = torch.matmul(x, self.weights.T)
-        denominator = torch.max((torch.mul(x_norm, w_norm)), eps)
+        # denominator = torch.max((torch.mul(x_norm, w_norm)), eps)
+
+        denominator = get_max(x_norm, w_norm, eps)
 
         return torch.div(nominator, denominator)  # 128 10
 

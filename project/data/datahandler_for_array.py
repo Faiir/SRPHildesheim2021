@@ -34,7 +34,7 @@ class DataHandler_For_Arrays(Dataset):
         return len(self.X)
 
 
-def create_dataloader(data_manager, batch_size=128, split_size=0.1):
+def create_dataloader(data_manager, batch_size=128):
     """
     Args:
         data_manager: Current version of the train data and the pool to sample from
@@ -57,9 +57,16 @@ def create_dataloader(data_manager, batch_size=128, split_size=0.1):
 
     transform_train = transforms.Compose(
         [
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.ColorJitter(
+                brightness=(0.25, 0.75),
+                contrast=(0.25, 0.75),
+                saturation=(0.25, 0.75),
+                hue=(-0.25, 0.25),
+            ),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(size=32),
+            transforms.RandomRotation(degrees=(0, 180)),
         ]
     )
 
@@ -81,6 +88,7 @@ def create_dataloader(data_manager, batch_size=128, split_size=0.1):
         sampler=RandomSampler(train_dataset),
         batch_size=batch_size,
         num_workers=2,
+        pin_memory=True,
     )
 
     test_loader = DataLoader(
@@ -88,17 +96,110 @@ def create_dataloader(data_manager, batch_size=128, split_size=0.1):
         sampler=SequentialSampler(test_dataset),
         batch_size=batch_size,
         num_workers=2,
+        pin_memory=True,
     )
 
-    pool_loader = DataLoader(pool_dataset, batch_size=batch_size, num_workers=2)
+    pool_loader = DataLoader(
+        pool_dataset, batch_size=batch_size, num_workers=2, pin_memory=True
+    )
 
     return train_loader, test_loader, pool_loader  # , train_dataset, test_dataset
 
 
-def get_dataloader(data_manager, batch_size=128, split_size=0.1):
+def create_dataloader_with_validation(data_manager, batch_size=128):
+    """
+    Args:
+        data_manager: Current version of the train data and the pool to sample from
+        batch_size: batch_size
+
+    Returns:
+        PyTorch's train ,val and test loader
+    """
+    train_X, train_y = data_manager.get_train_data()
+    test_X, test_y = data_manager.get_test_data()
+    pool_X, pool_y = data_manager.get_unlabelled_pool_data()
+
+    train_X, train_y = train_X.astype(np.float32), train_y.astype(np.float32)
+    test_X, test_y = test_X.astype(np.float32), test_y.astype(np.float32)
+    pool_X, pool_y = pool_X.astype(np.float32), pool_y.astype(np.float32)
+
+    train_X, train_y = torch.from_numpy(train_X), torch.from_numpy(train_y)
+    test_X, test_y = torch.from_numpy(test_X), torch.from_numpy(test_y)
+    pool_X, pool_y = torch.from_numpy(pool_X), torch.from_numpy(pool_y)
+
+    transform_train = transforms.Compose(
+        [
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.ColorJitter(
+                brightness=(0.25, 0.75),
+                contrast=(0.25, 0.75),
+                saturation=(0.25, 0.75),
+                hue=(-0.25, 0.25),
+            ),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomCrop(size=32),
+            transforms.RandomRotation(degrees=(0, 180)),
+        ]
+    )
+
+    # Normalize the test set same as training set without augmentation
+    transform_test = transforms.Compose(
+        [
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ]
+    )
+
+    pool_dataset = DataHandler_For_Arrays(pool_X, pool_y)
+
+    train_dataset = DataHandler_For_Arrays(train_X, train_y, transform=transform_train)
+
+    test_dataset = DataHandler_For_Arrays(test_X, test_y, transform=transform_test)
+
+    test_dataset, validation_dataset = random_split(
+        test_dataset,
+        lengths=[int(len(test_dataset) * 0.5), int(len(test_dataset) * 0.5)],
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        sampler=RandomSampler(train_dataset),
+        batch_size=batch_size,
+        num_workers=2,
+        pin_memory=True,
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        sampler=SequentialSampler(test_dataset),
+        batch_size=batch_size,
+        num_workers=2,
+        pin_memory=True,
+    )
+
+    val_loader = DataLoader(
+        validation_dataset,
+        sampler=SequentialSampler(validation_dataset),
+        batch_size=batch_size,
+        num_workers=2,
+        pin_memory=True,
+    )
+
+    pool_loader = DataLoader(
+        pool_dataset, batch_size=batch_size, num_workers=2, pin_memory=True
+    )
+
+    return (
+        train_loader,
+        test_loader,
+        val_loader,
+        pool_loader,
+    )  # , train_dataset, test_dataset
+
+
+def get_dataloader(data_manager, batch_size=128):
 
     train_loader, test_loader, pool_loader = create_dataloader(
-        data_manager, batch_size=128, split_size=0.1
+        data_manager, batch_size=128
     )
 
     return train_loader, test_loader, pool_loader
@@ -121,9 +222,16 @@ def get_ood_dataloader(data_manager, batch_size=16):
 
     transform_ood = transforms.Compose(
         [
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.ColorJitter(
+                brightness=(0.25, 0.75),
+                contrast=(0.25, 0.75),
+                saturation=(0.25, 0.75),
+                hue=(-0.25, 0.25),
+            ),
             transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(),
-            transforms.RandomResizedCrop(size=32, scale=(0.8, 1.0)),
+            transforms.RandomCrop(size=32),
+            transforms.RandomRotation(degrees=(0, 180)),
         ]
     )
 
@@ -136,6 +244,7 @@ def get_ood_dataloader(data_manager, batch_size=16):
         sampler=RandomSampler(train_dataset),
         batch_size=batch_size * 4,
         num_workers=2,
+        pin_memory=True,
     )
 
     outlier_loader = DataLoader(
@@ -143,5 +252,6 @@ def get_ood_dataloader(data_manager, batch_size=16):
         sampler=RandomSampler(outlier_data),
         batch_size=batch_size,
         num_workers=2,
+        pin_memory=True,
     )
     return train_loader, outlier_loader

@@ -18,7 +18,7 @@ SCRIPT_DIR = os.path.dirname(
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 
-from project.model.resnet import add_rot_heads
+from project.model.get_model import add_rot_heads
 from project.selfsupervision.pertubed_dataset import create_pert_dataloader
 
 from project.model.get_model import get_model, save_model
@@ -57,6 +57,7 @@ def train_ss(
     transl_loss_weight,
 ):
     net.train()  # enter train mode
+
     loss_avg = 0.0
     for (
         x_tf_0,
@@ -81,7 +82,9 @@ def train_ss(
             == target_trans_y.shape[0]
             == target_class.shape[0]
         )
+        target_class = target_class.int()
 
+        # target_class += 1
         batch = np.concatenate((x_tf_0, x_tf_90, x_tf_180, x_tf_270, x_tf_trans), 0)
         batch = torch.FloatTensor(batch).cuda()
 
@@ -93,35 +96,43 @@ def train_ss(
                 3 * torch.ones(batch_size),
             ),
             0,
-        ).long()
+        )
 
-        lr_scheduler.step()
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
 
         # Forward together
-        logits, pen = net(batch, self_supervision=True)
+        logits, x_trans_logits, y_trans_logits, rot_logits = net(
+            batch, self_sup_train=True
+        )
 
+        # print("pen", pen.size())
         classification_logits = logits[:batch_size]
-        rot_logits = net.rot_head(pen[: 4 * batch_size])
-        x_trans_logits = net.x_trans_head(pen[4 * batch_size :])
-        y_trans_logits = net.y_trans_head(pen[4 * batch_size :])
+        # rot_logits = net.rot_head(pen[: 4 * batch_size])
+        # x_trans_logits = net.x_trans_head(pen[4 * batch_size :])
+        # y_trans_logits = net.y_trans_head(pen[4 * batch_size :])
 
         classification_loss = F.cross_entropy(
-            classification_logits, target_class.cuda()
+            classification_logits, target_class.cuda().long()
         )
-        rot_loss = F.cross_entropy(rot_logits, target_rots.cuda()) * rot_loss_weight
+
+        rot_loss = (
+            F.cross_entropy(rot_logits, target_rots.cuda().long()) * rot_loss_weight
+        )
         x_trans_loss = (
-            F.cross_entropy(x_trans_logits, target_trans_x.cuda()) * transl_loss_weight
+            F.cross_entropy(x_trans_logits, target_trans_x.cuda().long())
+            * transl_loss_weight
         )
         y_trans_loss = (
-            F.cross_entropy(y_trans_logits, target_trans_y.cuda()) * transl_loss_weight
+            F.cross_entropy(y_trans_logits, target_trans_y.cuda().long())
+            * transl_loss_weight
         )
 
         loss = classification_loss + ((rot_loss + x_trans_loss + y_trans_loss) / 3.0)
 
         loss.backward()
-        optimizer.step()
 
+        optimizer.step()
+        lr_scheduler.step()
         # exponential moving average
         loss_avg = loss_avg * 0.9 + float(loss) * 0.1
         print(loss_avg)
@@ -140,13 +151,19 @@ def ss_experiment(
     save_net=True,
     **kwargs
 ):
-    resnet18 = get_model("gen_odin_res", similarity="C")
-    resnet18 = add_rot_heads(resnet18)
+    os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+    resnet20 = get_model(
+        "small_gen_odin_res", similarity="C", selfsupervision=True, num_classes=11
+    )
+    resnet20 = add_rot_heads(resnet20)
+
+    if torch.cuda.is_available():
+        resnet20.cuda()
 
     ss_loader = create_pert_dataloader(datamanager, batchsize)
 
     optimizer = torch.optim.SGD(
-        resnet18.parameters(),
+        resnet20.parameters(),
         lr,
         momentum=momentum,
         weight_decay=weight_decay,
@@ -155,8 +172,8 @@ def ss_experiment(
 
     lr_sheduler = create_lr_sheduler(optimizer, epochs, ss_loader, lr)
 
-    resnet18 = train_ss(
-        resnet18,
+    resnet20 = train_ss(
+        resnet20,
         ss_loader,
         optimizer,
         lr_sheduler,
@@ -166,10 +183,10 @@ def ss_experiment(
 
     if save_net:
         if kwargs["desc_string"] is not None:
-            save_model(resnet18, kwargs["path"], kwargs["desc_string"])
+            save_model(resnet20, kwargs["path"], kwargs["desc_string"])
         else:
-            save_model(resnet18, kwargs["path"])
-    return resnet18
+            save_model(resnet20, kwargs["path"])
+    return resnet20
 
 
 if __name__ == "__main__":
