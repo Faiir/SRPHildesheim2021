@@ -233,7 +233,7 @@ class Data_manager:
 
     def add_log(self, writer, oracle, dataset, metric, log_dict=None):
         self.iter += 1
-        # "Iteration"=  self.iter,
+        #
         current_iter_log = {
             "Base_examples_labelled": len(
                 self.status_manager[self.status_manager["status"] > 1]
@@ -245,12 +245,14 @@ class Data_manager:
                 self.status_manager[self.status_manager["status"] == 0]
             ),
         }
-        print("Sampling result",current_iter_log , self.iter)
+        print("Sampling result", current_iter_log, self.iter)
         writer.add_scalars(
             f"{metric}/{dataset}/{oracle}/examples_labelled",
             current_iter_log,
             self.iter,
         )
+
+        current_iter_log["Iteration"] = self.iter
 
         if log_dict is not None:
             acc_dict = {}

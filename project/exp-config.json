@@ -16,11 +16,13 @@
       "similarity": "E",
       "include_bn": false,
       "nesterov": true,
-      "lr": 0.1,
-      "momentum": 0.9,
-      "do_validation": false,
+      "lr": 0.001,
+      "momentum": 0.4,
+      "do_validation": true,
       "lr_sheduler": true,
+      "do_pertubed_images": true,
       "verbose" : 2
+
     }
   ],
   "in_dist_data": ["Cifar10"],
