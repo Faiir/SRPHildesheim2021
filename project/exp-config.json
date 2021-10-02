@@ -1,8 +1,8 @@
 {
   "experiment-list": [
     {
-      "test_size": 9980,
-      "pool_size": 10,
+      "test_size": 10000,
+      "pool_size": 0,
       "labelled_size": 50000,
       "OOD_ratio": 0,
       "oracle_stepsize": 10,

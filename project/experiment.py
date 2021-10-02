@@ -37,7 +37,7 @@ from .helpers.get_density_plot import density_plot
 do_tsne = False
 
 
-def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0):
+def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     """experiment [Experiment function which performs the entire acitve learning process based on the predefined config]
 
     [extended_summary]
@@ -46,7 +46,6 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         param_dict ([dict]): [experiment config from json file]
         data_manager ([class]): [Data manager which handels the management of both the dataset and the OOD data. Logs, Samples, performs oracle steps etc.]
         net ([nn.module]): [Pytorch Neural Network for experiment]
-        verbose (int, optional): [description]. Defaults to 0.
 
     Returns:
         [None]: [Log Attribute in Datamanage writes log to dist]
@@ -63,6 +62,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
     momentum = param_dict["momentum"]
     do_validation = param_dict["do_validation"]
     lr_sheduler = param_dict["lr_sheduler"]
+    verbose = param_dict["verbose"]
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -280,7 +280,6 @@ def start_experiment(config_path, log):
                     data_manager=data_manager,
                     writer=writer,
                     dataset=dataset,
-                    verbose=0,
                     net=net,
                 )
 
