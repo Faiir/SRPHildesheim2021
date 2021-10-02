@@ -63,12 +63,8 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     do_validation = param_dict["do_validation"]
     lr_sheduler = param_dict["lr_sheduler"]
     verbose = param_dict["verbose"]
-<<<<<<< HEAD
-
-=======
     do_pertubed_images = param_dict["do_pertubed_images"]
     
->>>>>>> c885069fd22c8059d609fdbeb244ed299dabc698
     if oracle == "random":
         from .helpers.sampler import random_sample
 
