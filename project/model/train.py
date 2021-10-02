@@ -2,6 +2,7 @@ import time
 from collections import defaultdict
 from tqdm import tqdm
 import torch
+from torchsummary import summary
 import numpy as np
 import torch.nn.functional as F
 from ..data.datahandler_for_array import get_ood_dataloader
@@ -31,9 +32,14 @@ def train(
     verbose = kwargs.get("verbose", 1)
     if verbose > 0:
         print("training with device:", device)
+        print("Number of Training Samples : ", len(train_loader.dataset))
+        print("Number of Epochs : ", epochs)
+
+    summary(net, input_size=(3, 32, 32))
+
     validation = False
     if device == "cuda":
-        torch.backends.cudnn.benchmark = True
+        torch.backends.cudnn.benchmark = False
 
     if kwargs.get("lr_sheduler", True):
         lr_sheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -53,6 +59,7 @@ def train(
 
     for epoch in tqdm(range(0, epochs)):
         train_loss = 0
+        train_acc = 0
         for batch_idx, (data, target) in enumerate(train_loader):
 
             net.train()
@@ -62,11 +69,13 @@ def train(
             yhat = net(data).to(device)
             loss = criterion(yhat, target)
             train_loss += loss.item()
+            train_acc += torch.sum(torch.argmax(yhat, dim=1)==target).item()
 
             loss.backward()
             optimizer.step()
 
         avg_train_loss = train_loss / len(train_loader)
+        avg_train_acc = train_acc/len(train_loader.dataset)
 
         if epoch % 1 == 0:
             if validation:
@@ -96,9 +105,9 @@ def train(
 
         if verbose == 1:
             if epoch % 10 == 0:
-                print(" epoch: ", epoch, "current train_loss:", avg_train_loss)
+                print(f'Epoch: {epoch} ---- Train_loss: {avg_train_loss:.4f} train_acc : {100*avg_train_acc:.2f}')
         elif verbose == 2:
-            print(" epoch: ", epoch, "current train_loss:", avg_train_loss)
+            print(f'Epoch: {epoch} ---- Train_loss: {avg_train_loss:.4f} train_acc : {100*avg_train_acc:.2f}')
 
     return net, avg_train_loss
 

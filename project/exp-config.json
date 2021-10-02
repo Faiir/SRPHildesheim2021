@@ -15,7 +15,7 @@
       "model_name": "base_small_resnet",
       "similarity": "E",
       "include_bn": false,
-      "nesterov": true,
+      "nesterov": false,
       "lr": 0.1,
       "momentum": 0.9,
       "do_validation": false,

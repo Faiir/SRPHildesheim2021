@@ -63,6 +63,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     do_validation = param_dict["do_validation"]
     lr_sheduler = param_dict["lr_sheduler"]
     verbose = param_dict["verbose"]
+
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -118,6 +119,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         if torch.cuda.is_available():
             net.cuda()
         criterion = nn.CrossEntropyLoss()
+
         optimizer = optim.SGD(
             net.parameters(),
             weight_decay=weight_decay,
