@@ -183,39 +183,40 @@ class ResNet(nn.Module):
         self.fc1 = nn.Linear(128, num_classes)
 
         if self.do_not_genOdin:
-            outlayer = nn.Linear(self.fc1.out_features, num_classes)
-
-        self.apply(_weights_init)
-
-        self.similarity = similarity
-        self.g_activation = nn.Sigmoid()
-        self.g_func = nn.Linear(self.fc1.out_features, 1)
-        self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
-
-        self.selfsupervision = selfsupervision
-        if self.selfsupervision:
-            self.x_trans_head = nn.Linear(self.fc.out_features, 3)
-            self.y_trans_head = nn.Linear(self.fc.out_features, 3)
-            self.rot_head = nn.Linear(self.fc.out_features, 4)
-        self.pred_layer = nn.Linear(num_classes, num_classes - 1)
-
-        if self.similarity == "I":
-            self.dropout_3 = nn.Dropout(p=0.6)
-            self.h_func = nn.Linear(self.fc1.out_features, num_classes)
-
-        elif self.similarity == "E":
-            self.dropout_3 = nn.Dropout(0)
-            self.h_func = euc_dist_layer(num_classes, self.fc1.out_features)
-
-        elif self.similarity == "C":
-            self.dropout_3 = nn.Dropout(p=0)
-            self.h_func = cosine_layer(num_classes, self.fc1.out_features)
+            self.outlayer = nn.Linear(self.fc1.out_features, num_classes)
         else:
-            assert False, "Incorrect similarity Measure"
+            
+            self.similarity = similarity
+            self.g_activation = nn.Sigmoid()
+            self.g_func = nn.Linear(self.fc1.out_features, 1)
+            self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
+
+            self.selfsupervision = selfsupervision
+            if self.selfsupervision:
+                self.x_trans_head = nn.Linear(self.fc.out_features, 3)
+                self.y_trans_head = nn.Linear(self.fc.out_features, 3)
+                self.rot_head = nn.Linear(self.fc.out_features, 4)
+            self.pred_layer = nn.Linear(num_classes, num_classes - 1)
+
+            if self.similarity == "I":
+                self.dropout_3 = nn.Dropout(p=0.6)
+                self.h_func = nn.Linear(self.fc1.out_features, num_classes)
+
+            elif self.similarity == "E":
+                self.dropout_3 = nn.Dropout(0)
+                self.h_func = euc_dist_layer(num_classes, self.fc1.out_features)
+
+            elif self.similarity == "C":
+                self.dropout_3 = nn.Dropout(p=0)
+                self.h_func = cosine_layer(num_classes, self.fc1.out_features)
+            else:
+                assert False, "Incorrect similarity Measure"
 
         self.activation = F.leaky_relu if self.mod else F.relu
         self.feature = None
         self.temp = temp  #! change
+        self.apply(_weights_init)
+
 
     def _make_layer(self, block, input_size, planes, num_blocks, stride):
         strides = [stride] + [1] * (num_blocks - 1)

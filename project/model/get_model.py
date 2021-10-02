@@ -63,6 +63,10 @@ def get_model(
             num_classes=kwargs.get("num_classes", 10),
             do_not_genOdin=kwargs.get("do_not_genOdin", False),
         )
+    elif model_name == "base_small_resnet":
+        return resnet20(
+            num_classes=kwargs.get("num_classes", 10)
+        )
     else:
         raise ValueError(f"Model {model_name} not found")
 
