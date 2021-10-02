@@ -19,7 +19,8 @@
       "lr": 0.001,
       "momentum": 0.4,
       "do_validation": true,
-      "lr_sheduler": true
+      "lr_sheduler": true,
+      "do_pertubed_images": true
     }
   ],
   "in_dist_data": ["Cifar10"],

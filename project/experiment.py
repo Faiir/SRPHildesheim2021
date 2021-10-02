@@ -63,6 +63,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
     momentum = param_dict["momentum"]
     do_validation = param_dict["do_validation"]
     lr_sheduler = param_dict["lr_sheduler"]
+    do_pertubed_images = param_dict["do_pertubed_images"]
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -155,15 +156,15 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         avg_test_loss = test(
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
-
-        pert_preds, gs, hs, targets = get_density_vals(
-            pool_loader, test_loader, trained_net
-        )
-        try:
-            density_plot(pert_preds, gs, hs, targets, writer, i)
-        except:
-            print("image couldn't be created")
-            pass
+        if do_pertubed_images:
+            pert_preds, gs, hs, targets = get_density_vals(
+                pool_loader, test_loader, trained_net
+            )
+            try:
+                density_plot(pert_preds, gs, hs, targets, writer, i)
+            except:
+                print("image couldn't be created")
+                pass
         # unlabelled pool predictions
         pool_predictions, pool_labels_list = get_pool_predictions(
             trained_net, pool_loader, device=device, return_labels=True
