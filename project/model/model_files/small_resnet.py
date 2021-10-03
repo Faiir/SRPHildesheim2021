@@ -186,7 +186,7 @@ class ResNet(nn.Module):
         if self.do_not_genOdin:
             self.outlayer = nn.Linear(self.fc1.out_features, num_classes)
         else:
-            
+
             self.similarity = similarity
             self.g_activation = nn.Sigmoid()
             self.g_func = nn.Linear(self.fc1.out_features, 1)
@@ -217,7 +217,6 @@ class ResNet(nn.Module):
         self.feature = None
         self.temp = temp  #! change
         self.apply(_weights_init)
-
 
         self.apply(_weights_init)
 
@@ -265,9 +264,6 @@ class ResNet(nn.Module):
         pred = self.softmax(torch.div(g, h))  # 128 11
 
         if self_sup_train:
-            # x_trans = self.x_trans_head(out)
-            # y_trans = self.y_trans_head(out)
-            # rot = self.rot_head(out)
             x_trans = self.x_trans_head(out[4 * self.batch_size :])
             y_trans = self.y_trans_head(out[4 * self.batch_size :])  # 128 3
             rot = self.rot_head(out[: 4 * self.batch_size])  # 512 4
