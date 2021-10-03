@@ -1,9 +1,9 @@
 {
   "experiment-list": [
     {
-      "test_size": 10000,
+      "test_size": 5000,
       "pool_size": 0,
-      "labelled_size": 50000,
+      "labelled_size": 4000,
       "OOD_ratio": 0,
       "oracle_stepsize": 10,
       "oracle_steps": 1,
@@ -15,14 +15,13 @@
       "model_name": "base_small_resnet",
       "similarity": "E",
       "include_bn": false,
-      "nesterov": true,
-      "lr": 0.001,
-      "momentum": 0.4,
+      "nesterov": false,
+      "lr": 0.1,
+      "momentum": 0.9,
       "do_validation": true,
       "lr_sheduler": true,
-      "do_pertubed_images": true,
+      "do_pertubed_images": false,
       "verbose" : 2
-
     }
   ],
   "in_dist_data": ["Cifar10"],

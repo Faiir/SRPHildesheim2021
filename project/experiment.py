@@ -120,6 +120,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         if torch.cuda.is_available():
             net.cuda()
         criterion = nn.CrossEntropyLoss()
+
         optimizer = optim.SGD(
             net.parameters(),
             weight_decay=weight_decay,
@@ -225,7 +226,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         #         predictions=predictions,
         #     )
 
-    return net
+    return net,optimizer
 
 
 def start_experiment(config_path, log):
@@ -276,7 +277,7 @@ def start_experiment(config_path, log):
                     OOD_ratio=exp["OOD_ratio"],
                 )
 
-                trained_net = experiment(
+                trained_net, optimizer = experiment(
                     param_dict=exp,
                     oracle=oracle,
                     data_manager=data_manager,
@@ -292,8 +293,15 @@ def start_experiment(config_path, log):
 
                 log_dir = os.path.join(".", "log_dir")
 
+                model_dir = os.path.join(".", "saved_models")
+
                 if os.path.exists(log_dir) == False:
                     os.mkdir(os.path.join(".", "log_dir"))
+
+                if os.path.exists(model_dir) == False:
+                    os.mkdir(os.path.join(".", "saved_models"))
+
+                save_model(trained_net, optimizer, exp, data_manager, model_dir, in_dist_data, ood_data, desc_str="Experiment-from-" + str(current_time))
 
                 log_path = os.path.join(log_dir, log_file_name)
 

@@ -2,6 +2,7 @@ import time
 from collections import defaultdict
 from tqdm import tqdm
 import torch
+from torchsummary import summary
 import numpy as np
 import torch.nn.functional as F
 from ..data.datahandler_for_array import get_ood_dataloader
@@ -24,6 +25,14 @@ def create_lr_sheduler(optimizer, epochs, pert_loader, learning_rate):
         ),
     )
 
+def verbosity(message,verbose):
+    if verbose == 1:
+        if epoch % 10 == 0:
+            print(message)
+    elif verbose == 2:
+        print(message)
+    return None
+
 
 def train(
     net, train_loader, optimizer, criterion, device, epochs=5, **kwargs
@@ -31,9 +40,14 @@ def train(
     verbose = kwargs.get("verbose", 1)
     if verbose > 0:
         print("training with device:", device)
+        print("Number of Training Samples : ", len(train_loader.dataset))
+        print("Number of Epochs : ", epochs)
+
+    summary(net, input_size=(3, 32, 32))
+
     validation = False
     if device == "cuda":
-        torch.backends.cudnn.benchmark = True
+        torch.backends.cudnn.benchmark = False
 
     if kwargs.get("lr_sheduler", True):
         lr_sheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -51,8 +65,12 @@ def train(
         patience = kwargs.get("patience", 10)
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
-    for epoch in tqdm(range(0, epochs)):
+    for epoch in tqdm(range(1, epochs+1)):
+        if verbose>0:
+            print(f'\nEpoch: {epoch}')
+
         train_loss = 0
+        train_acc = 0
         for batch_idx, (data, target) in enumerate(train_loader):
 
             net.train()
@@ -62,15 +80,18 @@ def train(
             yhat = net(data).to(device)
             loss = criterion(yhat, target)
             train_loss += loss.item()
+            train_acc += torch.sum(torch.argmax(yhat, dim=1)==target).item()
 
             loss.backward()
             optimizer.step()
 
         avg_train_loss = train_loss / len(train_loader)
+        avg_train_acc = train_acc/len(train_loader.dataset)
 
         if epoch % 1 == 0:
             if validation:
                 val_loss = 0
+                val_acc = 0
                 net.eval()  # prep model for evaluation
                 with torch.no_grad():
                     for vdata, vtarget in val_dataloader:
@@ -81,24 +102,25 @@ def train(
                         voutput = net(vdata)
                         vloss = criterion(voutput, vtarget)
                         val_loss += vloss.item()
+                        val_acc += torch.sum(torch.argmax(voutput, dim=1)==vtarget).item()
+
 
                 avg_val_loss = val_loss / len(val_dataloader)
+                avg_val_acc = val_acc/len(val_dataloader.dataset)
+
                 early_stopping(avg_val_loss, net)
                 if kwargs.get("lr_sheduler", True):
                     lr_sheduler.step(avg_val_loss)
-                print(f"avg val loss {avg_val_loss} epoch {epoch}")
+
+                verbosity(f'Val_loss: {avg_val_loss:.4f} Val_acc : {100*avg_val_acc:.2f}',verbose)
+
                 if early_stopping.early_stop:
                     print(
                         f"Early stopping epoch {epoch} , avg train_loss {avg_train_loss}, avg val loss {avg_val_loss}"
                     )
-
                     break
 
-        if verbose == 1:
-            if epoch % 10 == 0:
-                print(" epoch: ", epoch, "current train_loss:", avg_train_loss)
-        elif verbose == 2:
-            print(" epoch: ", epoch, "current train_loss:", avg_train_loss)
+        verbosity(f'Train_loss: {avg_train_loss:.4f} Train_acc : {100*avg_train_acc:.2f}',verbose)
 
     return net, avg_train_loss
 
