@@ -55,7 +55,7 @@ def display_top(snapshot, key_type="lineno", limit=10):
     print("Total allocated size: %.1f KiB" % (total / 1024))
 
 
-debug = True
+debug = False
 
 
 class Data_manager:
@@ -123,9 +123,9 @@ class Data_manager:
                 np.ones_like(labelled_labels),
                 np.ones_like(unlabelled_labels),
             ]
-        if debug:
-            snapshot = tracemalloc.take_snapshot()
-            display_top(snapshot)
+            if debug:
+                snapshot = tracemalloc.take_snapshot()
+                display_top(snapshot)
         else:
             print("Running Experiment without Pool")
             if labelled_size <= len(train_data) - len(np.unique(train_labels)):
@@ -141,6 +141,9 @@ class Data_manager:
                     test_size=len(np.unique(train_labels)),
                     stratify=train_labels,
                 )
+                if debug:
+                    snapshot = tracemalloc.take_snapshot()
+                    display_top(snapshot)
             else:
                 labelled_data = train_data[:labelled_size]
                 labelled_labels = train_labels[:labelled_size]
