@@ -186,7 +186,7 @@ class ResNet(nn.Module):
         if self.do_not_genOdin:
             self.outlayer = nn.Linear(self.fc1.out_features, num_classes)
         else:
-            
+
             self.similarity = similarity
             self.g_activation = nn.Sigmoid()
             self.g_func = nn.Linear(self.fc1.out_features, 1)
@@ -217,7 +217,6 @@ class ResNet(nn.Module):
         self.feature = None
         self.temp = temp  #! change
         self.apply(_weights_init)
-
 
         self.apply(_weights_init)
 

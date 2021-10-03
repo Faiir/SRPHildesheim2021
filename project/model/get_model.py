@@ -1,9 +1,10 @@
 from .model_files.mnist_model import Net
 from .model_files.genOdinModel import genOdinModel
-from .model_files.resnet import resnet18
-from .model_files.resnet__wPTSpec import resnet20 as resnet20Spec
-from .model_files.small_resnet import resnet20
+from .model_files.big_resnet import resnet18
+from .model_files.small_resnet__wPTSpec import resnet20 as resnet20Spec
 from .model_files.small_resnet_original import resnet20 as resnet20_original
+from .model_files.small_resnet import resnet20
+
 
 from datetime import datetime
 import torch
