@@ -187,7 +187,7 @@ class ResNet(nn.Module):
 def resnet20(similarity="C", **kwargs):
     return ResNet(
         BasicBlock,
-        num_blocks=[3, 3, 3],
+        [3, 3, 3],
         similarity=similarity,
         num_classes=kwargs.get("num_classes"),
         selfsupervision=kwargs.get("selfsupervision"),
