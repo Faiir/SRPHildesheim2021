@@ -135,8 +135,8 @@ class ResNet(nn.Module):
         num_blocks,
         num_classes=10,
         temp=1.0,
-        spectral_normalization=False,
-        mod=False,
+        spectral_normalization=True,
+        mod=True,
         coeff=3,
         n_power_iterations=1,
         similarity="E",
@@ -183,9 +183,9 @@ class ResNet(nn.Module):
         self.fc1 = nn.Linear(128, num_classes)
 
         if self.do_not_genOdin:
-            self.outlayer = nn.Linear(256,num_classes)
-        
+            self.outlayer = nn.Linear(self.fc1.out_features, num_classes)
         else:
+            
             self.similarity = similarity
             self.g_activation = nn.Sigmoid()
             self.g_func = nn.Linear(self.fc1.out_features, 1)
@@ -244,12 +244,11 @@ class ResNet(nn.Module):
         out = self.layer3(out)
         out = F.avg_pool2d(out, 4)
         out = out.view(out.size(0), -1)
-        if self.do_not_genOdin:
-            return self.softmax(self.outlayer(out))
         # print("flatten", out.size())  # 4x256
-        
         out = self.activation(self.fc(out))
         f_out = self.fc1(out)
+        if self.do_not_genOdin:
+            return self.softmax(self.outlayer(f_out))
         # if self_supervision:
         #     return f_out, out  # (128,10) (n,128)
 

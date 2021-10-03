@@ -25,6 +25,14 @@ def create_lr_sheduler(optimizer, epochs, pert_loader, learning_rate):
         ),
     )
 
+def verbosity(message,verbose):
+    if verbose == 1:
+        if epoch % 10 == 0:
+            print(message)
+    elif verbose == 2:
+        print(message)
+    return None
+
 
 def train(
     net, train_loader, optimizer, criterion, device, epochs=5, **kwargs
@@ -57,7 +65,10 @@ def train(
         patience = kwargs.get("patience", 10)
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
-    for epoch in tqdm(range(0, epochs)):
+    for epoch in tqdm(range(1, epochs+1)):
+        if verbose>0:
+            print(f'\nEpoch: {epoch}')
+
         train_loss = 0
         train_acc = 0
         for batch_idx, (data, target) in enumerate(train_loader):
@@ -80,6 +91,7 @@ def train(
         if epoch % 1 == 0:
             if validation:
                 val_loss = 0
+                val_acc = 0
                 net.eval()  # prep model for evaluation
                 with torch.no_grad():
                     for vdata, vtarget in val_dataloader:
@@ -90,24 +102,25 @@ def train(
                         voutput = net(vdata)
                         vloss = criterion(voutput, vtarget)
                         val_loss += vloss.item()
+                        val_acc += torch.sum(torch.argmax(voutput, dim=1)==vtarget).item()
+
 
                 avg_val_loss = val_loss / len(val_dataloader)
+                avg_val_acc = val_acc/len(val_dataloader.dataset)
+
                 early_stopping(avg_val_loss, net)
                 if kwargs.get("lr_sheduler", True):
                     lr_sheduler.step(avg_val_loss)
-                print(f"avg val loss {avg_val_loss} epoch {epoch}")
+
+                verbosity(f'Val_loss: {avg_val_loss:.4f} Val_acc : {100*avg_val_acc:.2f}',verbose)
+
                 if early_stopping.early_stop:
                     print(
                         f"Early stopping epoch {epoch} , avg train_loss {avg_train_loss}, avg val loss {avg_val_loss}"
                     )
-
                     break
 
-        if verbose == 1:
-            if epoch % 10 == 0:
-                print(f'Epoch: {epoch} ---- Train_loss: {avg_train_loss:.4f} train_acc : {100*avg_train_acc:.2f}')
-        elif verbose == 2:
-            print(f'Epoch: {epoch} ---- Train_loss: {avg_train_loss:.4f} train_acc : {100*avg_train_acc:.2f}')
+        verbosity(f'Train_loss: {avg_train_loss:.4f} Train_acc : {100*avg_train_acc:.2f}',verbose)
 
     return net, avg_train_loss
 
