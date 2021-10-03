@@ -55,21 +55,6 @@ def create_dataloader(data_manager, batch_size=128):
     test_X, test_y = torch.from_numpy(test_X), torch.from_numpy(test_y)
     pool_X, pool_y = torch.from_numpy(pool_X), torch.from_numpy(pool_y)
 
-#    transform_train = transforms.Compose(
-#        [
-#            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-#            transforms.ColorJitter(
-#                brightness=(0.25, 0.75),
-#                contrast=(0.25, 0.75),
-#                saturation=(0.25, 0.75),
-#                hue=(-0.25, 0.25),
-#            ),
-#            transforms.RandomHorizontalFlip(),
-#           transforms.RandomCrop(size=32),
-#            transforms.RandomRotation(degrees=(0, 180)),
-#        ]
-#    )
-
     transform_train = transform=transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, 4),
@@ -77,17 +62,11 @@ def create_dataloader(data_manager, batch_size=128):
                                      std=[0.229, 0.224, 0.225]),
         ])
 
-    # Normalize the test set same as training set without augmentation
-#    transform_test = transforms.Compose(
-#        [
-#            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-#        ]
-#    )
-
     transform_test = transforms.Compose([
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225]),
         ])
+
 
     pool_dataset = DataHandler_For_Arrays(pool_X, pool_y)
 
@@ -139,6 +118,8 @@ def create_dataloader_with_validation(data_manager, batch_size=128):
     test_X, test_y = torch.from_numpy(test_X), torch.from_numpy(test_y)
     pool_X, pool_y = torch.from_numpy(pool_X), torch.from_numpy(pool_y)
 
+
+
     transform_train = transform=transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, 4),
@@ -151,6 +132,7 @@ def create_dataloader_with_validation(data_manager, batch_size=128):
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225]),
         ])
+
 
     pool_dataset = DataHandler_For_Arrays(pool_X, pool_y)
 
@@ -196,7 +178,7 @@ def create_dataloader_with_validation(data_manager, batch_size=128):
         test_loader,
         val_loader,
         pool_loader,
-    )  # , train_dataset, test_dataset
+    )
 
 
 def get_dataloader(data_manager, batch_size=128):
@@ -225,19 +207,12 @@ def get_ood_dataloader(data_manager, batch_size=16):
 
     transform_ood = transforms.Compose(
         [
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-            transforms.ColorJitter(
-                brightness=(0.25, 0.75),
-                contrast=(0.25, 0.75),
-                saturation=(0.25, 0.75),
-                hue=(-0.25, 0.25),
-            ),
-            transforms.RandomHorizontalFlip(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             transforms.RandomCrop(size=32),
             transforms.RandomRotation(degrees=(0, 180)),
+            transforms.RandomHorizontalFlip(),
         ]
     )
-
     outlier_data = DataHandler_For_Arrays(
         train_X, train_y, transform=transform_ood, num_classes=1
     )

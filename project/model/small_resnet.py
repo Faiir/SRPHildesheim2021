@@ -133,6 +133,7 @@ class ResNet(nn.Module):
         self,
         block,
         num_blocks,
+        do_not_genOdin,
         num_classes=10,
         temp=1.0,
         spectral_normalization=True,
@@ -142,7 +143,6 @@ class ResNet(nn.Module):
         similarity="E",
         selfsupervision=False,
         batch_size=128,
-        do_not_genOdin=True,
     ):
         super(ResNet, self).__init__()
         self.in_planes = 16
@@ -150,6 +150,7 @@ class ResNet(nn.Module):
         self.mod = mod
         self.batch_size = batch_size
         self.do_not_genOdin = do_not_genOdin
+        print("similarity: ", similarity)
 
         def wrapped_conv(input_size, in_c, out_c, kernel_size, stride):
             padding = 1 if kernel_size == 3 else 0
@@ -218,6 +219,8 @@ class ResNet(nn.Module):
         self.apply(_weights_init)
 
 
+        self.apply(_weights_init)
+
     def _make_layer(self, block, input_size, planes, num_blocks, stride):
         strides = [stride] + [1] * (num_blocks - 1)
         layers = []
@@ -285,8 +288,10 @@ def resnet20(spectral_normalization=True, mod=True, temp=1.0, similarity="C", **
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,
+        similarity=similarity,
         num_classes=kwargs.get("num_classes"),
         selfsupervision=kwargs.get("selfsupervision"),
+        do_not_genOdin=kwargs.get("do_not_genOdin", False),
     )
 
 

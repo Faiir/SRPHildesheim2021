@@ -7,13 +7,55 @@ import torchvision.transforms as transforms
 from torchvision.datasets import MNIST, FashionMNIST, SVHN, CIFAR10
 import copy
 import time
+import gc
 
 # from .tinyimagenetloader import (
 #     TrainTinyImageNetDataset,
 #     TestTinyImageNetDataset,
 #     download_and_unzip,
 # )
+
 import os
+
+# from ..helpers.memory_tracer import display_top
+import tracemalloc
+
+from collections import Counter
+import linecache
+import os
+import tracemalloc
+
+
+def display_top(snapshot, key_type="lineno", limit=10):
+    snapshot = snapshot.filter_traces(
+        (
+            tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+            tracemalloc.Filter(False, "<unknown>"),
+        )
+    )
+    top_stats = snapshot.statistics(key_type)
+
+    print("Top %s lines" % limit)
+    for index, stat in enumerate(top_stats[:limit], 1):
+        frame = stat.traceback[0]
+        # replace "/path/to/module/file.py" with "module/file.py"
+        filename = os.sep.join(frame.filename.split(os.sep)[-2:])
+        print(
+            "#%s: %s:%s: %.1f KiB" % (index, filename, frame.lineno, stat.size / 1024)
+        )
+        line = linecache.getline(frame.filename, frame.lineno).strip()
+        if line:
+            print("    %s" % line)
+
+    other = top_stats[limit:]
+    if other:
+        size = sum(stat.size for stat in other)
+        print("%s other: %.1f KiB" % (len(other), size / 1024))
+    total = sum(stat.size for stat in top_stats)
+    print("Total allocated size: %.1f KiB" % (total / 1024))
+
+
+debug = False
 
 
 class Data_manager:
@@ -21,10 +63,10 @@ class Data_manager:
     ## DataManager would either get the extact data (array/tensors) or it'll have a df of filenames
 
     def __init__(self, base_data, base_labels, OOD_data, OOD_labels):
-        self.base_data = base_data
-        self.base_labels = base_labels
-        self.OOD_data = OOD_data
-        self.OOD_labels = OOD_labels
+        self.base_data = base_data.copy()
+        self.base_labels = base_labels.copy()
+        self.OOD_data = OOD_data.copy()
+        self.OOD_labels = OOD_labels.copy()
         self.log = {}
         self.iter = None
         self.config = {}
@@ -37,6 +79,9 @@ class Data_manager:
     ):
 
         print("Creating New Dataset")
+        if debug:
+            snapshot = tracemalloc.take_snapshot()
+            display_top(snapshot)
 
         assert 0 <= OOD_ratio < 1, "Invalid OOD_ratio : {OOD_ratio}"
 
@@ -78,7 +123,9 @@ class Data_manager:
                 np.ones_like(labelled_labels),
                 np.ones_like(unlabelled_labels),
             ]
-
+            if debug:
+                snapshot = tracemalloc.take_snapshot()
+                display_top(snapshot)
         else:
             print("Running Experiment without Pool")
             if labelled_size <= len(train_data) - len(np.unique(train_labels)):
@@ -94,6 +141,9 @@ class Data_manager:
                     test_size=len(np.unique(train_labels)),
                     stratify=train_labels,
                 )
+                if debug:
+                    snapshot = tracemalloc.take_snapshot()
+                    display_top(snapshot)
             else:
                 labelled_data = train_data[:labelled_size]
                 labelled_labels = train_labels[:labelled_size]
@@ -141,7 +191,9 @@ class Data_manager:
         )
 
         self.iter = 0
-
+        if debug:
+            snapshot = tracemalloc.take_snapshot()
+            display_top(snapshot)
         self.config = {
             "Total_overall_examples": len(self.status_manager),
             "Total_base_examples": len(
@@ -159,6 +211,14 @@ class Data_manager:
 
         self.save_experiment_start(csv=save_csv)
         print("Status_manager intialised")
+
+        self.OOD_data = None
+        self.OOD_labels = None
+        self.base_data = None
+        self.base_labels = None
+        if debug:
+            snapshot = tracemalloc.take_snapshot()
+            display_top(snapshot)
         return None
 
     def save_experiment_start(self, csv=False):
@@ -314,6 +374,10 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
     )
+    if debug:
+        tracemalloc.start()
+        snapshot = tracemalloc.take_snapshot()
+        display_top(snapshot)
 
     for dataset in indistribution:
         if dataset == "Cifar10":
@@ -344,11 +408,26 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             CIFAR10_test_labels = np.array(CIFAR10_test.targets)
 
             base_data = np.concatenate(
-                [base_data, CIFAR10_train_data, CIFAR10_test_data], axis=0
+                [base_data.copy(), CIFAR10_train_data.copy(), CIFAR10_test_data.copy()],
+                axis=0,
             )
             base_labels = np.concatenate(
-                [base_labels, CIFAR10_train_labels, CIFAR10_test_labels], axis=0
+                [
+                    base_labels.copy(),
+                    CIFAR10_train_labels.copy(),
+                    CIFAR10_test_labels.copy(),
+                ],
+                axis=0,
             )
+            del (
+                CIFAR10_train_data,
+                CIFAR10_test_data,
+                CIFAR10_train_labels,
+                CIFAR10_test_labels,
+                CIFAR10_train,
+                CIFAR10_test,
+            )
+            gc.collect()
         elif dataset == "MNIST":
 
             MNIST_train = MNIST(
@@ -384,11 +463,25 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 MNIST_train_labels = MNIST_train.targets
                 MNIST_test_labels = MNIST_test.targets
 
-            base_data = np.concatenate([base_data, MNIST_train_data, MNIST_test_data])
-            base_labels = np.concatenate(
-                [base_labels, MNIST_train_labels, MNIST_test_labels]
+            base_data = np.concatenate(
+                [base_data.copy(), MNIST_train_data.copy(), MNIST_test_data.copy()]
             )
-
+            base_labels = np.concatenate(
+                [
+                    base_labels.copy(),
+                    MNIST_train_labels.copy(),
+                    MNIST_test_labels.copy(),
+                ]
+            )
+            del (
+                MNIST_train,
+                MNIST_test,
+                MNIST_train_data,
+                MNIST_test_data,
+                MNIST_train_labels,
+                MNIST_test_labels,
+            )
+            gc.collect()
         elif dataset == "Fashion_MNIST":
 
             Fashion_MNIST_train = FashionMNIST(
@@ -434,12 +527,28 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
                 Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
 
             base_data = np.concatenate(
-                [base_data, Fashion_MNIST_train_data, Fashion_MNIST_test_data]
+                [
+                    base_data.copy(),
+                    Fashion_MNIST_train_data.copy(),
+                    Fashion_MNIST_test_data.copy(),
+                ]
             )
             base_labels = np.concatenate(
-                [base_labels, Fashion_MNIST_train_labels, Fashion_MNIST_test_labels]
+                [
+                    base_labels.copy(),
+                    Fashion_MNIST_train_labels.copy(),
+                    Fashion_MNIST_test_labels.copy(),
+                ]
             )
-
+            del (
+                Fashion_MNIST_train,
+                Fashion_MNIST_test,
+                Fashion_MNIST_train_data,
+                Fashion_MNIST_test_data,
+                Fashion_MNIST_train_labels,
+                Fashion_MNIST_test_labels,
+            )
+            gc.collect()
     for ood_dataset in ood:
         if ood_dataset == "MNIST":
 
@@ -474,12 +583,22 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             MNIST_train_labels = MNIST_train.targets.numpy()
             MNIST_test_labels = MNIST_test.targets.numpy()
             OOD_data = np.concatenate(
-                [OOD_data, MNIST_train_data, MNIST_test_data], axis=0
+                [OOD_data.copy(), MNIST_train_data.copy(), MNIST_test_data.copy()],
+                axis=0,
             )
             OOD_labels = np.concatenate(
-                [OOD_labels, MNIST_train_labels, MNIST_test_labels]
+                [OOD_labels.copy(), MNIST_train_labels.copy(), MNIST_test_labels.copy()]
             )
 
+            del (
+                MNIST_train,
+                MNIST_test,
+                MNIST_train_data,
+                MNIST_test_data,
+                MNIST_train_labels,
+                MNIST_test_labels,
+            )
+            gc.collect()
         elif ood_dataset == "Fashion_MNIST":
 
             Fashion_MNIST_train = FashionMNIST(
@@ -516,11 +635,29 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
 
             OOD_data = np.concatenate(
-                [OOD_data, Fashion_MNIST_train_data, Fashion_MNIST_test_data], axis=0
+                [
+                    OOD_data.copy(),
+                    Fashion_MNIST_train_data.copy(),
+                    Fashion_MNIST_test_data.copy(),
+                ],
+                axis=0,
             )
             OOD_labels = np.concatenate(
-                [OOD_labels, Fashion_MNIST_train_labels, Fashion_MNIST_test_labels],
+                [
+                    OOD_labels.copy(),
+                    Fashion_MNIST_train_labels.copy(),
+                    Fashion_MNIST_test_labels.copy(),
+                ],
             )
+            del (
+                Fashion_MNIST_train,
+                Fashion_MNIST_test,
+                Fashion_MNIST_train_data,
+                Fashion_MNIST_test_data,
+                Fashion_MNIST_train_labels,
+                Fashion_MNIST_test_labels,
+            )
+            gc.collect()
         elif ood_dataset == "SVHN":
             SVHN_train = SVHN(
                 root=r"/dataset/SVHN",
@@ -540,12 +677,21 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
             SVHN_test_labels = SVHN_test.labels
 
             OOD_data = np.concatenate(
-                [OOD_data, SVHN_train_data, SVHN_test_data], axis=0
+                [OOD_data.copy(), SVHN_train_data.copy(), SVHN_test_data.copy()], axis=0
             )
             OOD_labels = np.concatenate(
-                [OOD_labels, SVHN_train_labels, SVHN_test_labels]
+                [OOD_labels.copy(), SVHN_train_labels.copy(), SVHN_test_labels.copy()]
             )
 
+            del (
+                SVHN_train,
+                SVHN_test,
+                SVHN_train_data,
+                SVHN_test_data,
+                SVHN_train_labels,
+                SVHN_test_labels,
+            )
+            gc.collect()
         # elif ood_dataset == "TinyImageNet":
         #     if not os.listdir(os.path.join(r"./dataset/tiny-imagenet-200")):
         #         download_and_unzip()
@@ -569,6 +715,10 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
         #         id=id_dict, transform=transforms.Compose([normalize_imagenet, resize])
         #     )
 
+    if debug:
+        snapshot = tracemalloc.take_snapshot()
+        display_top(snapshot)
+
     base_data = np.delete(base_data, 0, axis=0)
     base_labels = np.delete(base_labels, 0)
     OOD_data = np.delete(OOD_data, 0, axis=0)
@@ -580,5 +730,12 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
         OOD_data=OOD_data,
         OOD_labels=OOD_labels,
     )
-
+    del (base_data, base_labels, OOD_data, OOD_labels)
+    gc.collect()
+    if debug:
+        snapshot = tracemalloc.take_snapshot()
+        display_top(snapshot)
     return data_manager
+
+
+# get_datamanager(ood=["Fashion_MNIST", "MNIST"])
