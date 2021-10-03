@@ -91,11 +91,6 @@ class ResNet(nn.Module):
         block,
         num_blocks,
         num_classes=10,
-        temp=1.0,
-        spectral_normalization=True,
-        mod=True,
-        coeff=3,
-        n_power_iterations=1,
         similarity="E",
         selfsupervision=False,
         batch_size=128,
@@ -105,7 +100,7 @@ class ResNet(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
         self.batch_size = batch_size
         self.do_not_genOdin = do_not_genOdin
-
+        self.similarity = similarity
         print("similarity: ", similarity)
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
@@ -117,8 +112,6 @@ class ResNet(nn.Module):
         if self.do_not_genOdin:
             self.outlayer = spectral_norm(nn.Linear(64, num_classes))
         else:
-
-            self.similarity = similarity
             self.g_activation = nn.Sigmoid()
             self.g_func = nn.Linear(self.fc1.out_features, 1)
             self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
@@ -191,8 +184,16 @@ class ResNet(nn.Module):
             return pred, g, h
 
 
-def resnet20():
-    return ResNet(BasicBlock, [3, 3, 3])
+def resnet20(similarity="C", **kwargs):
+    return ResNet(
+        BasicBlock,
+        num_blocks=[3, 3, 3],
+        similarity=similarity,
+        num_classes=kwargs.get("num_classes"),
+        selfsupervision=kwargs.get("selfsupervision"),
+        do_not_genOdin=kwargs.get("do_not_genOdin", False),
+        batch_size=kwargs.get("batch_size", 64),
+    )
 
 
 def resnet32():
