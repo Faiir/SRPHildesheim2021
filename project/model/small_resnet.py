@@ -257,6 +257,7 @@ class ResNet(nn.Module):
         g = self.g_activation(self.g_norm(self.g_func(f_out)))
         if train_g:
             return g
+
         h = self.h_func(f_out)
         pred = self.softmax(torch.div(g, h))  # 128 11
 

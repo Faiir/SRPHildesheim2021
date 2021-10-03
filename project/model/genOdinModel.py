@@ -9,8 +9,18 @@ arxiv: https://arxiv.org/abs/2002.11297
 
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
+from torch.autograd import Variable, Function
 import torch
+
+
+# class euc_dist_func(Function):
+#     @staticmethod
+#     def forward(ctx, *args, **kwargs):
+#         return super().forward(ctx, *args, **kwargs)
+
+#     @staticmethod
+#     def backward(ctx, *grad_outputs):
+#         return super().backward(ctx, *grad_outputs)
 
 
 class euc_dist_layer(nn.Module):
@@ -20,62 +30,58 @@ class euc_dist_layer(nn.Module):
             self.device = "cuda"
         else:
             self.device = "cpu"
-        weights = torch.rand(
+        weight = torch.rand(
             (1, dimensions, out_classes),
             dtype=torch.float32,
             requires_grad=True,
             device=torch.device(self.device),
         )
 
-        self.weights = nn.Parameter(weights)
+        self.weight = nn.Parameter(weight, requires_grad=True)
 
     def forward(self, x):
         # https://pytorch.org/docs/stable/generated/torch.lisnalg.norm.html#torch.linalg.norm
         x = x.unsqueeze(dim=-1)
-        # x -= self.weights
+        # x -= self.weight
         # return torch.linalg.norm(x, dim=-1)
 
         pw_dist = torch.nn.PairwiseDistance(keepdim=False)
+        out = pw_dist(x, self.weight)
 
-        return pw_dist(x, self.weights)  # 128 10
+        return out  # 128 10
 
 
-@torch.jit.script
-def get_max(x, y, eps):
-    return torch.max((torch.mul(x, y)), eps)
+# @torch.jit.script
+# def get_max(x, y, eps):
+#     return torch.max((torch.mul(x, y)), eps)
 
 
 class cosine_layer(nn.Module):
     def __init__(self, out_classes, dimensions):
         super().__init__()
-        # weights = torch.Tensor((out_classes, dimensions), dtype=torch.float64)
+        # weight = torch.Tensor((out_classes, dimensions), dtype=torch.float64)
         if torch.cuda.is_available():
             self.device = "cuda"
         else:
             self.device = "cpu"
-        weights = torch.rand(
+        weight = torch.rand(
             (1, dimensions, out_classes),
             dtype=torch.float32,
             requires_grad=True,
             device=torch.device(self.device),
         )
 
-        self.weights = nn.Parameter(weights)
+        self.weight = nn.Parameter(weight, requires_grad=True)
+
+        print("cosine size", self.weight.shape)
 
     def forward(self, x, eps=1e-08):
         # https://pytorch.org/docs/stable/generated/torch.nn.CosineSimilarity.html
         # x =>  batch , D
         eps = torch.tensor(eps, dtype=torch.float32, device=torch.device(self.device))
-
-        x_norm = torch.linalg.norm(x, dim=0)
-        w_norm = torch.linalg.norm(self.weights, dim=0)
-
-        nominator = torch.matmul(x, self.weights.T)
-        # denominator = torch.max((torch.mul(x_norm, w_norm)), eps)
-
-        denominator = get_max(x_norm, w_norm, eps)
-
-        return torch.div(nominator, denominator)  # 128 10
+        x = x.unsqueeze(-1)
+        cos = nn.CosineSimilarity(dim=1, eps=eps)
+        return cos(self.weight, x)
 
 
 class genOdinModel(nn.Module):
