@@ -1,14 +1,14 @@
 {
   "experiment-list": [
     {
-      "test_size": 5000,
+      "test_size": 10000,
       "pool_size": 0,
-      "labelled_size": 4000,
+      "labelled_size": 50000,
       "OOD_ratio": 0,
       "oracle_stepsize": 10,
       "oracle_steps": 1,
-      "epochs": 200,
-      "batch_size": 128,
+      "epochs": 20,
+      "batch_size": 50,
       "oracles": ["least confidence"],
       "weight_decay": 1e-4,
       "metric": "accuracy",
@@ -18,7 +18,8 @@
       "nesterov": false,
       "lr": 0.1,
       "momentum": 0.9,
-      "do_validation": true,
+      "validation_source": "train", 
+      "validation_split": 0.1,
       "lr_sheduler": true,
       "do_pertubed_images": false,
       "verbose" : 2

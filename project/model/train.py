@@ -37,16 +37,20 @@ def verbosity(message, verbose, epoch):
 
 def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
     verbose = kwargs.get("verbose", 1)
+    val_dataloader = kwargs.get("val_dataloader", None)
+        
     if verbose > 0:
-        print("training with device:", device)
+        print("\nTraining with device :", device)
         print("Number of Training Samples : ", len(train_loader.dataset))
+        if val_dataloader is not None:
+            print("Number of Validation Samples : ", len(val_dataloader.dataset))
         print("Number of Epochs : ", epochs)
-
-    summary(net, input_size=(3, 32, 32))
-
-    validation = False
+    
+        if verbose>1:
+            summary(net, input_size=(3, 32, 32))
+    
     if device == "cuda":
-        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.benchmark = True
 
     if kwargs.get("lr_sheduler", True):
         lr_sheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -58,11 +62,14 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
             verbose=True,
         )
 
-    if kwargs.get("do_validation", False):
+    if val_dataloader is not None:
         validation = True
-        val_dataloader = kwargs.get("val_dataloader")
+        if kwargs.get("patience", None) is None:
+            print('INFO ------ Early Stopping Patience not specified using 10')
         patience = kwargs.get("patience", 10)
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
+    else:
+        validation = False
 
     for epoch in tqdm(range(1, epochs + 1)):
         if verbose > 0:
