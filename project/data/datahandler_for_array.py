@@ -57,7 +57,7 @@ def create_dataloader(data_manager, batch_size=128):
 
     transform_train = transforms.Compose(
         [
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             transforms.RandomCrop(size=32),
             transforms.RandomRotation(degrees=(0, 180)),
             transforms.RandomHorizontalFlip(),
@@ -67,7 +67,7 @@ def create_dataloader(data_manager, batch_size=128):
     # Normalize the test set same as training set without augmentation
     transform_test = transforms.Compose(
         [
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
     )
 
@@ -123,7 +123,7 @@ def create_dataloader_with_validation(data_manager, batch_size=128):
 
     transform_train = transforms.Compose(
         [
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             transforms.RandomCrop(size=32),
             transforms.RandomRotation(degrees=(0, 180)),
             transforms.RandomHorizontalFlip(),
@@ -132,7 +132,7 @@ def create_dataloader_with_validation(data_manager, batch_size=128):
     # Normalize the test set same as training set without augmentation
     transform_test = transforms.Compose(
         [
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
     )
 
@@ -209,7 +209,7 @@ def get_ood_dataloader(data_manager, batch_size=16):
 
     transform_ood = transforms.Compose(
         [
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             transforms.RandomCrop(size=32),
             transforms.RandomRotation(degrees=(0, 180)),
             transforms.RandomHorizontalFlip(),
