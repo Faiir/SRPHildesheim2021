@@ -25,7 +25,8 @@ def create_lr_sheduler(optimizer, epochs, pert_loader, learning_rate):
         ),
     )
 
-def verbosity(message,verbose):
+
+def verbosity(message, verbose, epoch):
     if verbose == 1:
         if epoch % 10 == 0:
             print(message)
@@ -34,9 +35,7 @@ def verbosity(message,verbose):
     return None
 
 
-def train(
-    net, train_loader, optimizer, criterion, device, epochs=5, **kwargs
-):
+def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
     verbose = kwargs.get("verbose", 1)
     if verbose > 0:
         print("training with device:", device)
@@ -65,9 +64,9 @@ def train(
         patience = kwargs.get("patience", 10)
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
-    for epoch in tqdm(range(1, epochs+1)):
-        if verbose>0:
-            print(f'\nEpoch: {epoch}')
+    for epoch in tqdm(range(1, epochs + 1)):
+        if verbose > 0:
+            print(f"\nEpoch: {epoch}")
 
         train_loss = 0
         train_acc = 0
@@ -80,13 +79,13 @@ def train(
             yhat = net(data).to(device)
             loss = criterion(yhat, target)
             train_loss += loss.item()
-            train_acc += torch.sum(torch.argmax(yhat, dim=1)==target).item()
+            train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
 
             loss.backward()
             optimizer.step()
 
         avg_train_loss = train_loss / len(train_loader)
-        avg_train_acc = train_acc/len(train_loader.dataset)
+        avg_train_acc = train_acc / len(train_loader.dataset)
 
         if epoch % 1 == 0:
             if validation:
@@ -102,17 +101,22 @@ def train(
                         voutput = net(vdata)
                         vloss = criterion(voutput, vtarget)
                         val_loss += vloss.item()
-                        val_acc += torch.sum(torch.argmax(voutput, dim=1)==vtarget).item()
-
+                        val_acc += torch.sum(
+                            torch.argmax(voutput, dim=1) == vtarget
+                        ).item()
 
                 avg_val_loss = val_loss / len(val_dataloader)
-                avg_val_acc = val_acc/len(val_dataloader.dataset)
+                avg_val_acc = val_acc / len(val_dataloader.dataset)
 
                 early_stopping(avg_val_loss, net)
                 if kwargs.get("lr_sheduler", True):
                     lr_sheduler.step(avg_val_loss)
 
-                verbosity(f'Val_loss: {avg_val_loss:.4f} Val_acc : {100*avg_val_acc:.2f}',verbose)
+                verbosity(
+                    f"Val_loss: {avg_val_loss:.4f} Val_acc : {100*avg_val_acc:.2f}",
+                    verbose,
+                    epoch,
+                )
 
                 if early_stopping.early_stop:
                     print(
@@ -120,7 +124,11 @@ def train(
                     )
                     break
 
-        verbosity(f'Train_loss: {avg_train_loss:.4f} Train_acc : {100*avg_train_acc:.2f}',verbose)
+        verbosity(
+            f"Train_loss: {avg_train_loss:.4f} Train_acc : {100*avg_train_acc:.2f}",
+            verbose,
+            epoch,
+        )
 
     return net, avg_train_loss
 

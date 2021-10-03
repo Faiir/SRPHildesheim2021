@@ -64,7 +64,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     lr_sheduler = param_dict["lr_sheduler"]
     verbose = param_dict["verbose"]
     do_pertubed_images = param_dict["do_pertubed_images"]
-    
+
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -167,18 +167,20 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             except:
                 print("image couldn't be created")
                 pass
-        # unlabelled pool predictions
-        pool_predictions, pool_labels_list = get_pool_predictions(
-            trained_net, pool_loader, device=device, return_labels=True
-        )
 
-        # samples from unlabelled pool predictions
-        sampler(
-            dataset_manager=data_manager,
-            number_samples=oracle_stepsize,
-            net=trained_net,
-            predictions=pool_predictions,
-        )
+        if len(pool_loader) > 0:
+            # unlabelled pool predictions
+            pool_predictions, pool_labels_list = get_pool_predictions(
+                trained_net, pool_loader, device=device, return_labels=True
+            )
+
+            # samples from unlabelled pool predictions
+            sampler(
+                dataset_manager=data_manager,
+                number_samples=oracle_stepsize,
+                net=trained_net,
+                predictions=pool_predictions,
+            )
 
         test_predictions, test_labels = get_pool_predictions(
             trained_net, test_loader, device=device, return_labels=True
@@ -226,7 +228,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         #         predictions=predictions,
         #     )
 
-    return net,optimizer
+    return net, optimizer
 
 
 def start_experiment(config_path, log):
@@ -301,7 +303,16 @@ def start_experiment(config_path, log):
                 if os.path.exists(model_dir) == False:
                     os.mkdir(os.path.join(".", "saved_models"))
 
-                save_model(trained_net, optimizer, exp, data_manager, model_dir, in_dist_data, ood_data, desc_str="Experiment-from-" + str(current_time))
+                save_model(
+                    trained_net,
+                    optimizer,
+                    exp,
+                    data_manager,
+                    model_dir,
+                    in_dist_data,
+                    ood_data,
+                    desc_str="Experiment-from-" + str(current_time),
+                )
 
                 log_path = os.path.join(log_dir, log_file_name)
 
