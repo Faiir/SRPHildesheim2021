@@ -37,7 +37,7 @@ from .helpers.get_density_plot import density_plot
 do_tsne = False
 
 
-def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0):
+def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     """experiment [Experiment function which performs the entire acitve learning process based on the predefined config]
 
     [extended_summary]
@@ -46,7 +46,6 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         param_dict ([dict]): [experiment config from json file]
         data_manager ([class]): [Data manager which handels the management of both the dataset and the OOD data. Logs, Samples, performs oracle steps etc.]
         net ([nn.module]): [Pytorch Neural Network for experiment]
-        verbose (int, optional): [description]. Defaults to 0.
 
     Returns:
         [None]: [Log Attribute in Datamanage writes log to dist]
@@ -63,7 +62,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
     momentum = param_dict["momentum"]
     do_validation = param_dict["do_validation"]
     lr_sheduler = param_dict["lr_sheduler"]
+    verbose = param_dict["verbose"]
     do_pertubed_images = param_dict["do_pertubed_images"]
+    
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -119,6 +120,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         if torch.cuda.is_available():
             net.cuda()
         criterion = nn.CrossEntropyLoss()
+
         optimizer = optim.SGD(
             net.parameters(),
             weight_decay=weight_decay,
@@ -224,7 +226,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, verbose=0
         #         predictions=predictions,
         #     )
 
-    return net
+    return net,optimizer
 
 
 def start_experiment(config_path, log):
@@ -275,13 +277,12 @@ def start_experiment(config_path, log):
                     OOD_ratio=exp["OOD_ratio"],
                 )
 
-                trained_net = experiment(
+                trained_net, optimizer = experiment(
                     param_dict=exp,
                     oracle=oracle,
                     data_manager=data_manager,
                     writer=writer,
                     dataset=dataset,
-                    verbose=0,
                     net=net,
                 )
 
@@ -292,8 +293,15 @@ def start_experiment(config_path, log):
 
                 log_dir = os.path.join(".", "log_dir")
 
+                model_dir = os.path.join(".", "saved_models")
+
                 if os.path.exists(log_dir) == False:
                     os.mkdir(os.path.join(".", "log_dir"))
+
+                if os.path.exists(model_dir) == False:
+                    os.mkdir(os.path.join(".", "saved_models"))
+
+                save_model(trained_net, optimizer, exp, data_manager, model_dir, in_dist_data, ood_data, desc_str="Experiment-from-" + str(current_time))
 
                 log_path = os.path.join(log_dir, log_file_name)
 

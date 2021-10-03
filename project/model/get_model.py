@@ -3,6 +3,7 @@ from .genOdinModel import genOdinModel
 from .resnet import resnet18
 from .resnet__wPTSpec import resnet20 as resnet20Spec
 from .small_resnet import resnet20
+from .small_resnet_original import resnet20 as resnet20_original
 
 from datetime import datetime
 import torch
@@ -65,16 +66,15 @@ def get_model(
             num_classes=kwargs.get("num_classes", 10),
             do_not_genOdin=kwargs.get("do_not_genOdin", False),
         )
+
     elif model_name == "small_resnet_with_spec":
         return resnet20Spec()
+
+    elif model_name == "base_small_resnet":
+        return resnet20_original(num_classes=kwargs.get("num_classes", 10))
+
     else:
         raise ValueError(f"Model {model_name} not found")
-
-
-def remove_rot_heads(net):
-    # https://stackoverflow.com/questions/52548174/how-to-remove-the-last-fc-layer-from-a-resnet-model-in-pytorch
-    # TODO
-    return net
 
 
 def save_model(
@@ -100,3 +100,9 @@ def save_model(
         },
         path + ".pt",
     )
+
+
+# def remove_rot_heads(net):
+#     # https://stackoverflow.com/questions/52548174/how-to-remove-the-last-fc-layer-from-a-resnet-model-in-pytorch
+#     # TODO
+#     return net
