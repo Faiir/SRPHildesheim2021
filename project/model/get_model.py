@@ -1,7 +1,9 @@
 from .mnist_model import Net
 from .genOdinModel import genOdinModel
 from .resnet import resnet18
+from .resnet__wPTSpec import resnet20 as resnet20Spec
 from .small_resnet import resnet20
+
 from datetime import datetime
 import torch
 import os
@@ -63,6 +65,8 @@ def get_model(
             num_classes=kwargs.get("num_classes", 10),
             do_not_genOdin=kwargs.get("do_not_genOdin", False),
         )
+    elif model_name == "small_resnet_with_spec":
+        return resnet20Spec()
     else:
         raise ValueError(f"Model {model_name} not found")
 
