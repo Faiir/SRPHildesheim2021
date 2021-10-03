@@ -77,21 +77,32 @@ def get_model(
         raise ValueError(f"Model {model_name} not found")
 
 
-
-def save_model(net, optimizer, exp_conf, datamanager, path, in_dist, ood_data, desc_str="pretrained_net"):
-    time = datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
+def save_model(
+    net,
+    optimizer,
+    exp_conf,
+    datamanager,
+    path,
+    in_dist,
+    ood_data,
+    desc_str="pretrained_net",
+):
+    time = datetime.now().strftime("%d-%m-%H")
     path = os.path.join(path, desc_str)
-    torch.save({
-            'model_state_dict': net.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
+    torch.save(
+        {
+            "model_state_dict": net.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
             "experiment config": exp_conf,
             "datamanager": datamanager.status_manager,
             "in_dist": in_dist,
-            "ood_data": ood_data
-            }, path + ".pt")
-            
+            "ood_data": ood_data,
+        },
+        path + ".pt",
+    )
 
-def remove_rot_heads(net):
-    # https://stackoverflow.com/questions/52548174/how-to-remove-the-last-fc-layer-from-a-resnet-model-in-pytorch
-    # TODO
-    return net
+
+# def remove_rot_heads(net):
+#     # https://stackoverflow.com/questions/52548174/how-to-remove-the-last-fc-layer-from-a-resnet-model-in-pytorch
+#     # TODO
+#     return net
