@@ -146,11 +146,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             pert_preds, gs, hs, targets = get_density_vals(
                 pool_loader, test_loader, trained_net
             )
-            #try:
+            
             density_plot(pert_preds, gs, hs, targets, writer, i)
-            #except:
-            #    print("image couldn't be created")
-            #    pass
+
 
         if len(pool_loader) > 0:
             # unlabelled pool predictions
