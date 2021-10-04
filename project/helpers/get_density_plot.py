@@ -42,9 +42,7 @@ def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
     df_perturbed["g_s*e"] = df_perturbed["g_s"] * df_perturbed["entropies"]
     # fig, ax = plt.subplots(1, 1, figsize=(8, 8))
 
-    print(df_perturbed.describe())
-
-    fig, (ax1, ax2, ax3) = plt.subplots(2, 1, figsize=(6, 18))
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(6, 18))
     plot = seaborn.kdeplot(
         data=df_perturbed[df_perturbed["source"] != 0],
         x="g_s",
