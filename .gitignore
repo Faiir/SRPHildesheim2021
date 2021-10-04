@@ -50,3 +50,7 @@ events*
 __pypackages__/
 
 project/test.png
+project/exp-config.json
+
+exp-config*
+
