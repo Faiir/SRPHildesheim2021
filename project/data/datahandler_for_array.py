@@ -9,6 +9,9 @@ from torchvision.transforms import transforms
 import torch
 
 
+##setting pin_memory to False to see if the errors go away
+pin_memory = False
+
 class DataHandler_For_Arrays(Dataset):
     """
     base class for mnist / fashion_mnist
@@ -109,7 +112,7 @@ def create_dataloader(data_manager, batch_size=128, validation_split = None, val
         sampler=RandomSampler(train_dataset),
         batch_size=batch_size,
         num_workers=2,
-        pin_memory=True,
+        pin_memory=pin_memory,
     )
 
     test_loader = DataLoader(
@@ -117,14 +120,14 @@ def create_dataloader(data_manager, batch_size=128, validation_split = None, val
         sampler=SequentialSampler(test_dataset),
         batch_size=batch_size,
         num_workers=2,
-        pin_memory=True,
+        pin_memory=pin_memory,
     )
 
     pool_loader = DataLoader(
         pool_dataset, 
         batch_size=batch_size, 
         num_workers=2, 
-        pin_memory=True
+        pin_memory=pin_memory
     )
 
     if validation_source is not None:
@@ -133,7 +136,7 @@ def create_dataloader(data_manager, batch_size=128, validation_split = None, val
             sampler=SequentialSampler(validation_dataset),
             batch_size=batch_size,
             num_workers=2,
-            pin_memory=True,
+            pin_memory=pin_memory,
             )
 
         return (train_loader,
@@ -148,14 +151,6 @@ def create_dataloader(data_manager, batch_size=128, validation_split = None, val
 
 
 
-
-def get_dataloader(data_manager, batch_size=128):
-
-    train_loader, test_loader, pool_loader = create_dataloader(
-        data_manager, batch_size=128
-    )
-
-    return train_loader, test_loader, pool_loader
 
 
 def get_ood_dataloader(data_manager, batch_size=16):
@@ -190,7 +185,7 @@ def get_ood_dataloader(data_manager, batch_size=16):
         sampler=RandomSampler(train_dataset),
         batch_size=batch_size * 4,
         num_workers=2,
-        pin_memory=True,
+        pin_memory=pin_memory,
     )
 
     outlier_loader = DataLoader(
@@ -198,6 +193,6 @@ def get_ood_dataloader(data_manager, batch_size=16):
         sampler=RandomSampler(outlier_data),
         batch_size=batch_size,
         num_workers=2,
-        pin_memory=True,
+        pin_memory=pin_memory,
     )
     return train_loader, outlier_loader
