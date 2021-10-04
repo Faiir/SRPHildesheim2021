@@ -66,8 +66,8 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
     if val_dataloader is not None:
         validation = True
         if kwargs.get("patience", None) is None:
-            print('INFO ------ Early Stopping Patience not specified using 10')
-        patience = kwargs.get("patience", 10)
+            print(f'INFO ------ Early Stopping Patience not specified using {int(epochs * 0.1)}')
+        patience = kwargs.get("patience", int(epochs * 0.1))
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
     else:
         validation = False
