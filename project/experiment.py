@@ -14,16 +14,13 @@ import pandas as pd
 
 
 # data imports
-from .data.datahandler_for_array import (
-    get_dataloader,
-    create_dataloader_with_validation,
-)
+from .data.datahandler_for_array import create_dataloader
 from .data.datamanager import get_datamanager
 
 # train functions
 from .model.train import train, test, get_density_vals
 
-from .model.get_model import get_model
+from .model.get_model import get_model,save_model
 
 
 # helpers
@@ -60,10 +57,12 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     lr = param_dict["lr"]
     nesterov = param_dict["nesterov"]
     momentum = param_dict["momentum"]
-    do_validation = param_dict["do_validation"]
+    validation_split = param_dict.get("validation_split",None)
+    validation_source = param_dict.get("validation_source",None)
     lr_sheduler = param_dict["lr_sheduler"]
     verbose = param_dict["verbose"]
     do_pertubed_images = param_dict["do_pertubed_images"]
+    do_desity_plot = param_dict["do_desity_plot"]
 
     if oracle == "random":
         from .helpers.sampler import random_sample
@@ -103,20 +102,18 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             writer.add_figure(
                 tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot
             )
-        if do_validation:
-            (
-                train_loader,
-                test_loader,
-                val_loader,
-                pool_loader,
-            ) = create_dataloader_with_validation(data_manager, batch_size=batch_size)
-        else:
-            (
-                train_loader,
-                test_loader,
-                pool_loader,
-            ) = get_dataloader(data_manager, batch_size=batch_size)
 
+        data_loader_tuple = create_dataloader(data_manager, 
+                                                            batch_size=batch_size, 
+                                                            validation_source=validation_source, 
+                                                            validation_split=validation_split)
+        
+        if validation_source is not None:
+            train_loader, test_loader, pool_loader, val_loader = data_loader_tuple
+        else:
+            train_loader, test_loader, pool_loader = data_loader_tuple
+            val_loader = None
+        
         if torch.cuda.is_available():
             net.cuda()
         criterion = nn.CrossEntropyLoss()
@@ -128,8 +125,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             lr=lr,
             nesterov=nesterov,
         )
-        if do_validation:
-            trained_net, avg_train_loss = train(
+
+
+        trained_net, avg_train_loss = train(
                 net,
                 train_loader,
                 optimizer,
@@ -140,33 +138,19 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 do_validation=True,
                 val_dataloader=val_loader,
                 patience=10,
-                lr_sheduler=lr_sheduler,
-            )
-        else:
-            trained_net, avg_train_loss = train(
-                net,
-                train_loader,
-                optimizer,
-                criterion,
-                device=device,
-                epochs=epochs,
-                verbose=verbose,
-                do_validation=False,
-                lr_sheduler=lr_sheduler,
-            )
+                lr_sheduler=lr_sheduler
+        )
 
         avg_test_loss = test(
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
-        if do_pertubed_images:
+        if do_desity_plot:
             pert_preds, gs, hs, targets = get_density_vals(
-                pool_loader, test_loader, trained_net
+                pool_loader, test_loader, trained_net, do_pertubed_images
             )
-            try:
-                density_plot(pert_preds, gs, hs, targets, writer, i)
-            except:
-                print("image couldn't be created")
-                pass
+            
+            density_plot(pert_preds, gs, hs, targets, writer, i)
+
 
         if len(pool_loader) > 0:
             # unlabelled pool predictions
@@ -260,6 +244,12 @@ def start_experiment(config_path, log):
         data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
 
         for exp in config["experiment-list"]:
+            if exp["verbose"]>1:
+                print("Experiment Config :")
+                for variable in exp:
+                    if exp[variable] is not None:
+                        print(f"{variable} : ", exp[variable])
+
             metric = exp["metric"]
 
             for oracle in exp["oracles"]:

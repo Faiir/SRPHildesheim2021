@@ -212,10 +212,11 @@ class Data_manager:
         self.save_experiment_start(csv=save_csv)
         print("Status_manager intialised")
 
-        self.OOD_data = None
-        self.OOD_labels = None
-        self.base_data = None
-        self.base_labels = None
+        ## need these for multiple experiemnts, setting them to None breaks that functionality
+        #self.OOD_data = None
+        #self.OOD_labels = None
+        #self.base_data = None
+        #self.base_labels = None
         if debug:
             snapshot = tracemalloc.take_snapshot()
             display_top(snapshot)

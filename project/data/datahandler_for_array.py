@@ -34,14 +34,16 @@ class DataHandler_For_Arrays(Dataset):
         return len(self.X)
 
 
-def create_dataloader(data_manager, batch_size=128):
+def create_dataloader(data_manager, batch_size=128, validation_split = None, validation_source = None):
     """
     Args:
         data_manager: Current version of the train data and the pool to sample from
         batch_size: batch_size
+        validation_source : Whether to use train or test dataset for creating validation dataset, Defauts to None
+        validation_split : Specify the ratio of samples to use in validation, defaults to 20% of source size
 
     Returns:
-        PyTorch's train ,val and test loader
+        PyTorch's train, test and pool loader. (Validation loader is also returned if source is not None)
     """
     train_X, train_y = data_manager.get_train_data()
     test_X, test_y = data_manager.get_test_data()
@@ -74,6 +76,34 @@ def create_dataloader(data_manager, batch_size=128):
 
     test_dataset = DataHandler_For_Arrays(test_X, test_y, transform=transform_test)
 
+    if validation_source is None:
+        print('INFO ------ Validation source not specified in config, experiment would run without validation set')
+    else:    
+        if validation_source=='test':
+            if validation_split is None:
+                validation_size = int(len(test_dataset) * 0.2)
+            else:
+                assert 0<validation_split<1, f'Validation size must be >0 and <1, found {validation_split}'
+                validation_size = int(len(test_dataset) * validation_split)
+
+            print(f'Using Testing data to create validation dataset, size : {validation_size}')
+            test_dataset, validation_dataset = random_split(
+                test_dataset,
+                lengths=[len(test_dataset) - validation_size, validation_size],
+                )
+        elif validation_source == 'train':
+            if validation_split is None:
+                validation_size = int(len(train_dataset) * 0.2)
+            else:
+                assert 0<validation_split<1, f'Validation size must be >0 and <1, found {validation_split}'
+                validation_size = int(len(train_dataset) * validation_split)
+            
+            print(f'Using Training data to create validation dataset, size : {validation_size}')
+            train_dataset, validation_dataset = random_split(
+                train_dataset,
+                lengths=[len(train_dataset) - validation_size, validation_size],
+                )
+        
     train_loader = DataLoader(
         train_dataset,
         sampler=RandomSampler(train_dataset),
@@ -91,94 +121,32 @@ def create_dataloader(data_manager, batch_size=128):
     )
 
     pool_loader = DataLoader(
-        pool_dataset, batch_size=batch_size, num_workers=2, pin_memory=True
+        pool_dataset, 
+        batch_size=batch_size, 
+        num_workers=2, 
+        pin_memory=True
     )
 
-    return train_loader, test_loader, pool_loader  # , train_dataset, test_dataset
+    if validation_source is not None:
+        val_loader = DataLoader(
+            validation_dataset,
+            sampler=SequentialSampler(validation_dataset),
+            batch_size=batch_size,
+            num_workers=2,
+            pin_memory=True,
+            )
+
+        return (train_loader,
+            test_loader,
+            pool_loader,
+            val_loader)
+
+    else:
+        return (train_loader,
+            test_loader,
+            pool_loader)
 
 
-def create_dataloader_with_validation(data_manager, batch_size=128):
-    """
-    Args:
-        data_manager: Current version of the train data and the pool to sample from
-        batch_size: batch_size
-
-    Returns:
-        PyTorch's train ,val and test loader
-    """
-    train_X, train_y = data_manager.get_train_data()
-    test_X, test_y = data_manager.get_test_data()
-    pool_X, pool_y = data_manager.get_unlabelled_pool_data()
-
-    train_X, train_y = train_X.astype(np.float32), train_y.astype(np.float32)
-    test_X, test_y = test_X.astype(np.float32), test_y.astype(np.float32)
-    pool_X, pool_y = pool_X.astype(np.float32), pool_y.astype(np.float32)
-
-    train_X, train_y = torch.from_numpy(train_X), torch.from_numpy(train_y)
-    test_X, test_y = torch.from_numpy(test_X), torch.from_numpy(test_y)
-    pool_X, pool_y = torch.from_numpy(pool_X), torch.from_numpy(pool_y)
-
-
-
-    transform_train = transform=transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomCrop(32, 4),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225]),
-        ])
-
-    # Normalize the test set same as training set without augmentation
-    transform_test = transforms.Compose([
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225]),
-        ])
-
-
-    pool_dataset = DataHandler_For_Arrays(pool_X, pool_y)
-
-    train_dataset = DataHandler_For_Arrays(train_X, train_y, transform=transform_train)
-
-    test_dataset = DataHandler_For_Arrays(test_X, test_y, transform=transform_test)
-
-    test_dataset, validation_dataset = random_split(
-        test_dataset,
-        lengths=[int(len(test_dataset) * 0.5), int(len(test_dataset) * 0.5)],
-    )
-
-    train_loader = DataLoader(
-        train_dataset,
-        sampler=RandomSampler(train_dataset),
-        batch_size=batch_size,
-        num_workers=2,
-        pin_memory=True,
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        sampler=SequentialSampler(test_dataset),
-        batch_size=batch_size,
-        num_workers=2,
-        pin_memory=True,
-    )
-
-    val_loader = DataLoader(
-        validation_dataset,
-        sampler=SequentialSampler(validation_dataset),
-        batch_size=batch_size,
-        num_workers=2,
-        pin_memory=True,
-    )
-
-    pool_loader = DataLoader(
-        pool_dataset, batch_size=batch_size, num_workers=2, pin_memory=True
-    )
-
-    return (
-        train_loader,
-        test_loader,
-        val_loader,
-        pool_loader,
-    )
 
 
 def get_dataloader(data_manager, batch_size=128):
