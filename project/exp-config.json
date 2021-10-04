@@ -13,7 +13,7 @@
       "weight_decay": 1e-4,
       "metric": "accuracy",
       "model_name": "base_small_resnet",
-      "similarity": "C",
+      "similarity": "R",
       "include_bn": false,
       "nesterov": false,
       "lr": 0.1,

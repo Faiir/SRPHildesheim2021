@@ -91,6 +91,27 @@ class cosine_layer(nn.Module):
         cos = nn.CosineSimilarity(dim=1)
         return cos(self.weights, x)
 
+class inverted_temp(nn.Module):
+    def __init__(self, in_dimensions, out_dimensions):
+        super().__init__()
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
+        
+        self.weights = nn.Parameter(torch.Tensor(1, 1))
+  
+        self.h_func = nn.Linear(in_dimensions, out_dimensions)
+        self.g_func = nn.Linear(in_dimensions, 1)
+
+    def forward(self, x):
+        h = self.h_func(x)
+        g = self.g_func(x)
+        g = torch.add(1,torch.mul(self.weights.exp(),g))
+        out = torch.mul(h,g)
+        return out  
+
+
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -129,7 +150,7 @@ class ResNet(nn.Module):
         self.in_planes = 16
         self.similarity = similarity
 
-        if self.similarity not in ['I','E','C']:
+        if self.similarity not in ['I','E','C','R']:
             print('INFO ----- ResNet has been initialized without a similarity measure')
         else:
             print(f'INFO ----- ResNet has been initialized with a similarity measure : {self.similarity}')
@@ -142,7 +163,10 @@ class ResNet(nn.Module):
         
 
         if self.similarity not in ['I','E','C']:
-            self.linear = nn.Linear(64, num_classes)
+            if self.similarity == 'R':
+                self.linear = inverted_temp(64, num_classes)
+            else:
+                self.linear = nn.Linear(64, num_classes)
         else:
             self.g_activation = nn.Sigmoid()
             self.g_func = nn.Linear(64, 1)
