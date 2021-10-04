@@ -77,7 +77,8 @@ def get_model(
         )
 
     elif model_name == "base_small_resnet":
-        return resnet20_original(num_classes=kwargs.get("num_classes", 10))
+        return resnet20_original(num_classes=kwargs.get("num_classes", 10),
+                                 similarity=similarity)
 
     else:
         raise ValueError(f"Model {model_name} not found")

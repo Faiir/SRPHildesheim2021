@@ -1,9 +1,9 @@
 {
   "experiment-list": [
     {
-      "test_size": 10000,
+      "test_size": 1000,
       "pool_size": 0,
-      "labelled_size": 50000,
+      "labelled_size": 5000,
       "OOD_ratio": 0,
       "oracle_stepsize": 10,
       "oracle_steps": 1,
@@ -13,7 +13,7 @@
       "weight_decay": 1e-4,
       "metric": "accuracy",
       "model_name": "base_small_resnet",
-      "similarity": "E",
+      "similarity": "C",
       "include_bn": false,
       "nesterov": false,
       "lr": 0.1,
