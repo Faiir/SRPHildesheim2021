@@ -36,13 +36,14 @@ class LambdaLayer(nn.Module):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, stride=1, option="A"):
+    def __init__(self, in_planes, planes, stride=1, option="A", mod=True):
         super(BasicBlock, self).__init__()
         self.conv1 = spectral_norm(
             nn.Conv2d(
                 in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
             )
         )
+        self.mod = mod
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = spectral_norm(
             nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
@@ -93,7 +94,9 @@ class ResNet(nn.Module):
         num_classes=10,
         similarity="E",
         selfsupervision=False,
+        mod=True,
         batch_size=128,
+        do_not_genOdin=False,
     ):
         super(ResNet, self).__init__()
         self.in_planes = 16
@@ -101,19 +104,22 @@ class ResNet(nn.Module):
         self.batch_size = batch_size
         self.do_not_genOdin = do_not_genOdin
         self.similarity = similarity
+        self.mod = mod
         print("similarity: ", similarity)
 
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = spectral_norm(
+            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
+        )
         self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
-
+        self.linear = nn.Linear(64, num_classes)
         if self.do_not_genOdin:
             self.outlayer = spectral_norm(nn.Linear(64, num_classes))
         else:
             self.g_activation = nn.Sigmoid()
-            self.g_func = nn.Linear(self.fc1.out_features, 1)
+            self.g_func = nn.Linear(64, 1)
             self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
             self.selfsupervision = selfsupervision
@@ -189,6 +195,7 @@ def resnet20(similarity="C", **kwargs):
         BasicBlock,
         [3, 3, 3],
         similarity=similarity,
+        mod=kwargs.get("mod", True),
         num_classes=kwargs.get("num_classes"),
         selfsupervision=kwargs.get("selfsupervision"),
         do_not_genOdin=kwargs.get("do_not_genOdin", False),
