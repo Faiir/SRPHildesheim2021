@@ -21,6 +21,7 @@ __pycache__/
 
 #ignore own log files
 log/*
+saved_models/*
 dataset/*
 runs/*
 log_dir/*
