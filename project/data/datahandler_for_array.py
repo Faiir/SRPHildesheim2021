@@ -10,9 +10,7 @@ import torch
 
 
 class DataHandler_For_Arrays(Dataset):
-    """
-    base class for mnist / fashion_mnist
-    """
+    """DataHandler_For_Arrays [Base pytorch dataset for all experiments]"""
 
     def __init__(self, X, Y, transform=None, num_classes=10):
         self.X = X  # X[np.newaxis,...] # x[:, np.newaxis]:
@@ -34,7 +32,9 @@ class DataHandler_For_Arrays(Dataset):
         return len(self.X)
 
 
-def create_dataloader(data_manager, batch_size=128, validation_split = None, validation_source = None):
+def create_dataloader(
+    data_manager, batch_size=128, validation_split=None, validation_source=None
+):
     """
     Args:
         data_manager: Current version of the train data and the pool to sample from
@@ -57,18 +57,19 @@ def create_dataloader(data_manager, batch_size=128, validation_split = None, val
     test_X, test_y = torch.from_numpy(test_X), torch.from_numpy(test_y)
     pool_X, pool_y = torch.from_numpy(pool_X), torch.from_numpy(pool_y)
 
-    transform_train = transform=transforms.Compose([
+    transform_train = transform = transforms.Compose(
+        [
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, 4),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225]),
-        ])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
 
-    transform_test = transforms.Compose([
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225]),
-        ])
-
+    transform_test = transforms.Compose(
+        [
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
 
     pool_dataset = DataHandler_For_Arrays(pool_X, pool_y)
 
@@ -77,33 +78,43 @@ def create_dataloader(data_manager, batch_size=128, validation_split = None, val
     test_dataset = DataHandler_For_Arrays(test_X, test_y, transform=transform_test)
 
     if validation_source is None:
-        print('INFO ------ Validation source not specified in config, experiment would run without validation set')
-    else:    
-        if validation_source=='test':
+        print(
+            "INFO ------ Validation source not specified in config, experiment would run without validation set"
+        )
+    else:
+        if validation_source == "test":
             if validation_split is None:
                 validation_size = int(len(test_dataset) * 0.2)
             else:
-                assert 0<validation_split<1, f'Validation size must be >0 and <1, found {validation_split}'
+                assert (
+                    0 < validation_split < 1
+                ), f"Validation size must be >0 and <1, found {validation_split}"
                 validation_size = int(len(test_dataset) * validation_split)
 
-            print(f'Using Testing data to create validation dataset, size : {validation_size}')
+            print(
+                f"Using Testing data to create validation dataset, size : {validation_size}"
+            )
             test_dataset, validation_dataset = random_split(
                 test_dataset,
                 lengths=[len(test_dataset) - validation_size, validation_size],
-                )
-        elif validation_source == 'train':
+            )
+        elif validation_source == "train":
             if validation_split is None:
                 validation_size = int(len(train_dataset) * 0.2)
             else:
-                assert 0<validation_split<1, f'Validation size must be >0 and <1, found {validation_split}'
+                assert (
+                    0 < validation_split < 1
+                ), f"Validation size must be >0 and <1, found {validation_split}"
                 validation_size = int(len(train_dataset) * validation_split)
-            
-            print(f'Using Training data to create validation dataset, size : {validation_size}')
+
+            print(
+                f"Using Training data to create validation dataset, size : {validation_size}"
+            )
             train_dataset, validation_dataset = random_split(
                 train_dataset,
                 lengths=[len(train_dataset) - validation_size, validation_size],
-                )
-        
+            )
+
     train_loader = DataLoader(
         train_dataset,
         sampler=RandomSampler(train_dataset),
@@ -121,10 +132,7 @@ def create_dataloader(data_manager, batch_size=128, validation_split = None, val
     )
 
     pool_loader = DataLoader(
-        pool_dataset, 
-        batch_size=batch_size, 
-        num_workers=2, 
-        pin_memory=True
+        pool_dataset, batch_size=batch_size, num_workers=2, pin_memory=True
     )
 
     if validation_source is not None:
@@ -134,19 +142,12 @@ def create_dataloader(data_manager, batch_size=128, validation_split = None, val
             batch_size=batch_size,
             num_workers=2,
             pin_memory=True,
-            )
+        )
 
-        return (train_loader,
-            test_loader,
-            pool_loader,
-            val_loader)
+        return (train_loader, test_loader, pool_loader, val_loader)
 
     else:
-        return (train_loader,
-            test_loader,
-            pool_loader)
-
-
+        return (train_loader, test_loader, pool_loader)
 
 
 def get_dataloader(data_manager, batch_size=128):
@@ -158,7 +159,16 @@ def get_dataloader(data_manager, batch_size=128):
     return train_loader, test_loader, pool_loader
 
 
-def get_ood_dataloader(data_manager, batch_size=16):
+def get_ood_dataloader(data_manager, batch_size: int = 16):
+    """get_ood_dataloader [Returns OOD dataloader for Outlier exposure experiment]
+    Args:
+        data_manager ([object]): [datamanager]
+        batch_size (int, optional): [batch size for dataloader]. Defaults to 16.
+
+    Returns:
+        [torch.Dataloader]: [train loader]
+        [torch.Dataloader]: [ood lloader]
+    """
     train_X, train_y = data_manager.get_train_data()
     ood_X, ood_y = data_manager.get_ood_data()
 

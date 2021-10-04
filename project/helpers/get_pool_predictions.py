@@ -4,6 +4,19 @@ import torch
 
 @torch.no_grad()
 def get_pool_predictions(trained_net, pool_loader, device, return_labels=False):
+    """get_pool_predictions [predictions for the unlabelled pool]
+
+    [extended_summary]
+
+    Args:
+        trained_net ([nn.Module]): [description]
+        pool_loader ([Dataloader]): [description]
+        device ([str]): [description]
+        return_labels (bool, optional): [return the labels]. Defaults to False.
+
+    Returns:
+        [type]: [description]
+    """
     trained_net.eval()
 
     yhat = []

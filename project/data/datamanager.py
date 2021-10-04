@@ -82,6 +82,20 @@ class Data_manager:
     def create_merged_data(
         self, test_size, pool_size, labelled_size, OOD_ratio, save_csv=False
     ):
+        """create_merged_data [Creates the Active Learning pools]
+
+        [Creates the Active Learning pools based on the gived sizes]
+
+        Args:
+            test_size ([int]): [test set]
+            pool_size ([int]): [amount of unlabeled samples in the pool]
+            labelled_size ([int]): [inital size of training data]
+            OOD_ratio ([float]): [ratio of OOD images form the OOD datasets]
+            save_csv (bool, optional): [saves the state of the manager in a csv]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
 
         print("Creating New Dataset")
         if debug:
@@ -251,6 +265,7 @@ class Data_manager:
         )
 
     def get_train_data(self):
+        """get_train_data [returns the current state of the trainingspool]"""
         ## Returns all data that has been labelled so far
 
         assert (
@@ -264,6 +279,7 @@ class Data_manager:
         return train_data, train_labels
 
     def get_ood_data(self):
+        """get_ood_data [returns the current state of the out-of-distribution data in the unlabelled pool]"""
         assert (
             self.iter is not None
         ), "Dataset not initialized. Call create_merged_data()"
@@ -275,7 +291,7 @@ class Data_manager:
         return ood_train_data, ood_train_labels
 
     def get_test_data(self):
-        ## Returns all test data with labels
+        """get_test_data [returns the testset]"""
 
         assert (
             self.iter is not None
@@ -284,8 +300,7 @@ class Data_manager:
         return self.test_data, self.test_labels
 
     def get_unlabelled_pool_data(self):
-        ## Returns all data in pool, None is returned instead of labels.
-
+        """get_unlabelled_pool_data [returns the state of the unlabelled pool]"""
         assert (
             self.iter is not None
         ), "Dataset not initialized. Call create_merged_data()"
@@ -307,38 +322,36 @@ class Data_manager:
             "OOD_examples_labelled": len(
                 self.status_manager[self.status_manager["status"] < 0]
             ),
-            "Remaining_pool_samples": len(
-                self.status_manager[self.status_manager["status"] == 0]
-            ),
         }
         print("Sampling result", current_iter_log, self.iter)
         writer.add_scalars(
-            f"{metric}/{dataset}/{oracle}/examples_labelled",
+            f"{metric}/{oracle}/examples_labelled",
             current_iter_log,
             self.iter,
         )
 
         current_iter_log["Iteration"] = self.iter
-
+        current_iter_log["Remaining_pool_samples"] = len(
+            self.status_manager[self.status_manager["status"] == 0]
+        )
         if log_dict is not None:
-            acc_dict = {}
-            acc_dict["test_accuracy"] = log_dict["test_accuracy"]
-            acc_dict["train_accuracy"] = log_dict["train_accuracy"]
+            if metric == "accuracy":
+                acc_dict = {}
+                acc_dict["test_accuracy"] = log_dict["test_accuracy"]
+                acc_dict["train_accuracy"] = log_dict["train_accuracy"]
 
-            writer.add_scalars(
-                f"{metric}/{dataset}/{oracle}/{metric}", acc_dict, self.iter
-            )
-            loss_dict = {}
-            loss_dict["train_loss"] = log_dict["train_loss"]
-            loss_dict["test_loss"] = log_dict["test_loss"]
-            writer.add_scalars(
-                f"{metric}/{dataset}/{oracle}/loss", loss_dict, self.iter
-            )
+                writer.add_scalars(f"{metric}/{oracle}/{metric}", acc_dict, self.iter)
+                loss_dict = {}
+                loss_dict["train_loss"] = log_dict["train_loss"]
+                loss_dict["test_loss"] = log_dict["test_loss"]
+                writer.add_scalars(f"{metric}/{oracle}/loss", loss_dict, self.iter)
+            else:
+                writer.add_scalars(f"{metric}/{oracle}/loss", log_dict, self.iter)
             current_iter_log.update(log_dict)
 
         self.log[self.iter] = current_iter_log
 
-    def get_logs(self):
+    def get_logs(self) -> pd.DataFrame:
         log_df = pd.DataFrame.from_dict(self.log, orient="index").set_index("Iteration")
         for key in self.config.keys():
             log_df[key] = self.config[key]
@@ -350,7 +363,10 @@ class Data_manager:
         self.status_manager.loc[self.status_manager["status"] != 1, "status"] = 0
 
 
-def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "SVHN"]):
+def get_datamanager(
+    indistribution: list[str] = ["Cifar10"],
+    ood: list[str] = ["MNIST", "Fashion_MNIST", "SVHN"],
+) -> object:
     """get_datamanager [Creates a datamanager instance with the In-/Out-of-Distribution Data]
 
     [List based processing of Datasets. Images are resized / croped on 32x32]

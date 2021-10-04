@@ -13,12 +13,22 @@ def _transform(x):
 
 
 def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
+    """density_plot [plots the density of the predicted distribution via entropy and g values ]
+
+    [extended_summary]
+
+    Args:
+        pert_preds ([array]): [description]
+        gs ([array]): [description]
+        hs ([arry]): [description]
+        targets ([array]): [description]
+        writer ([torch.SummaryWriter]): [description]
+        oracle_step ([current AL iteration]): [description]
+    """
     targets = np.concatenate(targets, axis=0)
     pert_preds = np.concatenate(pert_preds, axis=0)
     gs = np.concatenate(gs, axis=0)
     hs = np.concatenate(hs, axis=0)
-
-    
 
     source = np.array([_transform(xi) for xi in np.array(targets)])
     entropies = -np.sum(pert_preds * np.log(pert_preds), axis=1)
@@ -37,7 +47,7 @@ def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
     )
     map_labels = {-1: "OoD"}
     map_labels.update({ii: f"In_dist{ii}" for ii in range(10)})
-    source_labels = {-1: "OoD", 1: "InDist", 0:'Trained Data'}
+    source_labels = {-1: "OoD", 1: "InDist", 0: "Trained Data"}
     df_perturbed["source_names"] = df_perturbed.source.astype(int).map(source_labels)
     df_perturbed["g_s*e"] = df_perturbed["g_s"] * df_perturbed["entropies"]
     # fig, ax = plt.subplots(1, 1, figsize=(8, 8))
@@ -51,7 +61,7 @@ def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
             hue="source_names",
             fill=False,
             ax=ax1,
-            )
+        )
     except:
         print("Can't produce KDE, working on scatter plot instead")
         plot = seaborn.scatterplot(

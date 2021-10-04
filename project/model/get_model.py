@@ -36,8 +36,10 @@ def get_model(
     [extended_summary]
 
     Args:
-        model_name ([string]): ["base":conv_net, "gen_odin_conv":conv_net with GenOdin, ]
-        similarity ([type], optional): [For genOdinMode "E":Euclidean distance, "I": , "C": Cosine Similarity]. Defaults to None.
+        model_name ([string]): ["base":conv_net, "gen_odin_conv":conv_net with GenOdin,
+            "gen_odin_res": large resnet with GenOdin Layer, "small_gen_odin_res": small resnet with GenOdin Layer,
+            "small_resnet_with_spec": small resnet with spectral normalization, "base_small_resnet": abdurs resnet (working the best as per usual)  ]
+        similarity ([type], optional): [For genOdinMode "E":Euclidean distance, "I": FC Layer, "C": Cosine Similarity, "IR": I-reversed , "ER": E-revesered, "CR": "C-reversed" ]. Defaults to None.
         out_classes (int, optional): [Number of classes]. Defaults to 10.
         include_bn (bool, optional): [Include batchnorm]. Defaults to False.
         channel_input (int, optional): [dataset channel]. Defaults to 3.
@@ -80,8 +82,9 @@ def get_model(
         )
 
     elif model_name == "base_small_resnet":
-        return resnet20_original(num_classes=kwargs.get("num_classes", 10),
-                                 similarity=similarity)
+        return resnet20_original(
+            num_classes=kwargs.get("num_classes", 10), similarity=similarity
+        )
 
     else:
         raise ValueError(f"Model {model_name} not found")

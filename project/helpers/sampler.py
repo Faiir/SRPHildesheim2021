@@ -2,8 +2,13 @@ import numpy as np
 
 
 def random_sample(dataset_manager, number_samples, net, predictions=None):
-    ## This function selects num_samples from the pool of  all the unlabelled data at random
-    ## and add them to labelled training data
+    """random_sample [Randomly adds images from the unlabelled pool to the training set]
+    Args:
+        dataset_manager ([object]): [description]
+        number_samples ([int]): [oracle stepsize]
+        net ([nn.Module]): [description]
+        predictions ([type], optional): [description]. Defaults to None.
+    """
 
     status_manager = dataset_manager.status_manager
     pool_samples_count = len(status_manager[status_manager["status"] == 0])
@@ -27,9 +32,17 @@ def random_sample(dataset_manager, number_samples, net, predictions=None):
 def uncertainity_sampling_least_confident(
     dataset_manager, number_samples, net, predictions=None
 ):
-    ## This function selects num_samples from the pool of  all the unlabelled data at random
-    ## and add them to labelled training data
-    ## assumes prediction is in shape (number_of_samples,num_classes)
+    """uncertainity_sampling_least_confident [Uses least confidence to sample training data from the unlabelled poo]
+
+        [This function selects num_samples from the pool of  all the unlabelled data at random and add them to labelled training data assumes prediction is in shape (number_of_samples,num_classes)
+    ]
+
+        Args:
+            dataset_manager ([object]): [description]
+            number_samples ([int]): [oracle stepsize]
+            net ([nn.Module]): [description]
+            predictions ([type], optional): [description]. Defaults to None.
+    """
 
     status_manager = dataset_manager.status_manager
     pool_samples_count = len(status_manager[status_manager["status"] == 0])
@@ -50,9 +63,16 @@ def uncertainity_sampling_least_confident(
 def uncertainity_sampling_highest_entropy(
     dataset_manager, number_samples, net, predictions=None
 ):
-    ## This function selects num_samples from the pool of  all the unlabelled data at random
-    ## and add them to labelled training data
-    ## assumes prediction is in shape (number_of_samples,num_classes)
+    """uncertainity_sampling_highest_entropy [Uses highest entropy to sample training data from the unlabelled pool]
+
+    [This function selects num_samples from the pool of  all the unlabelled data at random and add them to labelled training data assumes prediction is in shape (number_of_samples,num_classes)]
+
+    Args:
+        dataset_manager ([type]): [description]
+        number_samples ([type]): [description]
+        net ([type]): [description]
+        predictions ([type], optional): [description]. Defaults to None.
+    """
 
     status_manager = dataset_manager.status_manager
     pool_samples_count = len(status_manager[status_manager["status"] == 0])
