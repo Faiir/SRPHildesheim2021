@@ -51,6 +51,47 @@ class LambdaLayer(nn.Module):
         return self.lambd(x)
 
 
+
+class euc_dist_layer(nn.Module):
+    def __init__(self, in_dimensions, out_dimensions):
+        super().__init__()
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
+        
+        weights = torch.empty((1, in_dimensions, out_dimensions),dtype=torch.float32)
+
+        self.weights = nn.Parameter(weights)
+        init.kaiming_normal_(self.weights)  
+
+    def forward(self, x):
+        x = x.unsqueeze(dim=-1)
+        diff = x - self.weights
+        diff_squared = torch.square(diff)
+        diff_summed = torch.sum(diff_squared, dim=1)
+        out = torch.sqrt(diff_summed)
+        return out  
+
+class cosine_layer(nn.Module):
+    def __init__(self, in_dimensions, out_dimensions):
+        super().__init__()
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
+        
+        weights = torch.empty((1, in_dimensions, out_dimensions),dtype=torch.float32)
+
+        self.weights = nn.Parameter(weights)
+        init.kaiming_normal_(self.weights)  
+
+    def forward(self, x):
+        x = x.unsqueeze(-1)
+        cos = nn.CosineSimilarity(dim=1)
+        return cos(self.weights, x)
+
+
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -84,16 +125,40 @@ class BasicBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10):
+    def __init__(self, block, num_blocks, num_classes=10, similarity=None):
         super(ResNet, self).__init__()
         self.in_planes = 16
+        self.similarity = similarity
+
+        if self.similarity not in ['I','E','C','IR','ER','CR']:
+            print('INFO ----- ResNet has been initialized without a similarity measure')
+        else:
+            print(f'INFO ----- ResNet has been initialized with a similarity measure : {self.similarity}')
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
-        self.linear = nn.Linear(64, num_classes)
+        self.softmax = nn.Softmax()
+
+        if self.similarity not in ['I','E','C','IR','ER','CR']:
+            self.linear = nn.Linear(64, num_classes)
+        else:
+            self.g_activation = nn.Sigmoid()
+            self.g_func = nn.Linear(64, 1)
+            self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
+            
+            if 'I' in self.similarity:
+                self.h_func = nn.Linear(64, num_classes)
+            elif 'E' in self.similarity:
+                self.h_func = euc_dist_layer(64, num_classes)
+            elif 'C' in self.similarity:
+                self.h_func = cosine_layer(64, num_classes)
+
+            if 'R' in self.similarity:
+                self.scaling_factor = nn.Parameter(torch.Tensor(1, 1))
+                init.kaiming_normal_(self.scaling_factor)
 
         self.apply(_weights_init)
 
@@ -106,39 +171,56 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, get_test_model=False):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
         out = F.avg_pool2d(out, out.size()[3])
         out = out.view(out.size(0), -1)
-        out = self.linear(out)
-        return out
+        if self.similarity not in ['I','E','C','IR','ER','CR']:
+            out = self.linear(out)      
+        else:
+            h = self.h_func(out)
+            g = self.g_func(out)
+            g = self.g_norm(g)
+            g = self.g_activation(g) 
+
+            if "R" in self.similarity:
+                scale = torch.add(1,torch.mul(self.scaling_factor.exp(),1-g))
+                out = torch.mul(h,scale)
+            else:
+                out = torch.div(h, g)
+        
+        if get_test_model:
+            return out, g, h
+        else:
+            return out
+            
 
 
-def resnet20(num_classes):
-    return ResNet(BasicBlock, [3, 3, 3],num_classes)
+def resnet20(num_classes, similarity):
+    return ResNet(BasicBlock, [3, 3, 3], num_classes, similarity)
 
 
-def resnet32():
-    return ResNet(BasicBlock, [5, 5, 5])
+def resnet32(num_classes, similarity):
+    return ResNet(BasicBlock, [5, 5, 5],num_classes, similarity)
 
 
-def resnet44():
-    return ResNet(BasicBlock, [7, 7, 7])
+def resnet44(num_classes, similarity):
+    return ResNet(BasicBlock, [7, 7, 7].num_classes, similarity)
 
 
-def resnet56():
-    return ResNet(BasicBlock, [9, 9, 9])
+def resnet56(num_classes, similarity):
+    return ResNet(BasicBlock, [9, 9, 9],num_classes, similarity)
 
 
-def resnet110():
-    return ResNet(BasicBlock, [18, 18, 18])
+def resnet110(num_classes, similarity):
+    return ResNet(BasicBlock, [18, 18, 18],num_classes, similarity)
 
 
-def resnet1202():
-    return ResNet(BasicBlock, [200, 200, 200])
+def resnet1202(num_classes, similarity):
+    return ResNet(BasicBlock, [200, 200, 200],num_classes, similarity)
 
 
 def test(net):
