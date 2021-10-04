@@ -13,8 +13,6 @@
       "weight_decay": 1e-4,
       "metric": "accuracy",
       "model_name": "base_small_resnet",
-<<<<<<< HEAD
-=======
       "similarity": "CR",
       "include_bn": false,
       "nesterov": false,
@@ -40,7 +38,6 @@
       "weight_decay": 1e-4,
       "metric": "accuracy",
       "model_name": "base_small_resnet",
->>>>>>> d820f3117c6fdb37879abf333c0b7c866142c231
       "similarity": "ER",
       "include_bn": false,
       "nesterov": false,
@@ -51,11 +48,7 @@
       "lr_sheduler": true,
       "do_desity_plot": true,
       "do_pertubed_images": false,
-<<<<<<< HEAD
       "verbose" : 2
-=======
-      "verbose": 1
->>>>>>> d820f3117c6fdb37879abf333c0b7c866142c231
     },
     {
       "test_size": 10000,
@@ -105,10 +98,7 @@
       "lr_sheduler": true,
       "do_desity_plot": true,
       "do_pertubed_images": false,
-<<<<<<< HEAD
       "verbose" : 2
-=======
-      "verbose": 2
     },
     {
       "test_size": 10000,
@@ -159,7 +149,6 @@
       "do_desity_plot": true,
       "do_pertubed_images": false,
       "verbose": 2
->>>>>>> d820f3117c6fdb37879abf333c0b7c866142c231
     }
   ],
   "in_dist_data": ["Cifar10"],
