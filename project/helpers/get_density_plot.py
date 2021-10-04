@@ -37,30 +37,52 @@ def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
     )
     map_labels = {-1: "OoD"}
     map_labels.update({ii: f"In_dist{ii}" for ii in range(10)})
-    source_labels = {-1: "OoD", 1: "InDist"}
+    source_labels = {-1: "OoD", 1: "InDist",0:'Trained Data'}
     df_perturbed["source_names"] = df_perturbed.source.astype(int).map(source_labels)
     df_perturbed["g_s*e"] = df_perturbed["g_s"] * df_perturbed["entropies"]
     # fig, ax = plt.subplots(1, 1, figsize=(8, 8))
 
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(6, 18))
-    plot = seaborn.kdeplot(
-        data=df_perturbed[df_perturbed["source"] != 0],
-        x="g_s",
-        y="entropies",
-        hue="source_names",
-        fill=False,
-        ax=ax1,
-    )
-    plot = seaborn.kdeplot(
-        data=df_perturbed[df_perturbed["source"] != 0],
-        x="g_s",
-        y="g_s*e",
-        hue="source_names",
-        fill=False,
-        ax=ax2,
-    )
+    try:
+        plot = seaborn.kdeplot(
+            data=df_perturbed,
+            x="g_s",
+            y="entropies",
+            hue="source_names",
+            fill=False,
+            ax=ax1,
+            )
+    except:
+        print("Can't produce KDE, working on scatter plot instead")
+        plot = seaborn.scatterplot(
+            data=df_perturbed,
+            x="g_s",
+            y="entropies",
+            hue="source_names",
+            alpha=0.5,
+            ax=ax1,
+        )
+    try:
+        plot = seaborn.kdeplot(
+            data=df_perturbed,
+            x="g_s",
+            y="g_s*e",
+            hue="source_names",
+            fill=False,
+            ax=ax2,
+        )
+    except IndexError:
+        print("Can't produce KDE, working on scatter plot instead")
+        plot = seaborn.scatterplot(
+            data=df_perturbed,
+            x="g_s",
+            y="g_s*e",
+            hue="source_names",
+            alpha=0.5,
+            ax=ax2,
+        )
     seaborn.histplot(
-        data=df_perturbed[df_perturbed["source"] != 0],
+        data=df_perturbed,
         x="g_s",
         hue="source_names",
         ax=ax3,
