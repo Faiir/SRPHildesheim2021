@@ -59,6 +59,11 @@ debug = False
 
 
 class Data_manager:
+    """[Datamanager which is the backbone of the active learning pipeline]
+
+    [Datamanager which is the backbone of the active learning pipeline and keeps track of the images used & samples as well as logs the results]
+
+    """
 
     ## DataManager would either get the extact data (array/tensors) or it'll have a df of filenames
 
@@ -213,10 +218,10 @@ class Data_manager:
         print("Status_manager intialised")
 
         ## need these for multiple experiemnts, setting them to None breaks that functionality
-        #self.OOD_data = None
-        #self.OOD_labels = None
-        #self.base_data = None
-        #self.base_labels = None
+        # self.OOD_data = None
+        # self.OOD_labels = None
+        # self.base_data = None
+        # self.base_labels = None
         if debug:
             snapshot = tracemalloc.take_snapshot()
             display_top(snapshot)
@@ -731,7 +736,7 @@ def get_datamanager(indistribution=["Cifar10"], ood=["MNIST", "Fashion_MNIST", "
         OOD_data=OOD_data,
         OOD_labels=OOD_labels,
     )
-    del (base_data, base_labels, OOD_data, OOD_labels)
+    # del (base_data, base_labels, OOD_data, OOD_labels)
     gc.collect()
     if debug:
         snapshot = tracemalloc.take_snapshot()

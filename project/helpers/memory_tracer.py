@@ -5,6 +5,15 @@ import tracemalloc
 
 
 def display_top(snapshot, key_type="lineno", limit=3):
+    """display_top [uses tracemalloc to print a snapshot of current ram consumption]
+
+    [stolen from stackoverflow]
+
+    Args:
+        snapshot ([tracemalloc snapshot]): [description]
+        key_type (str, optional): [description]. Defaults to "lineno".
+        limit (int, optional): [no. of items displays]. Defaults to 3.
+    """
     snapshot = snapshot.filter_traces(
         (
             tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
