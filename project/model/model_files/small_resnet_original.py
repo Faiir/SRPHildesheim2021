@@ -187,8 +187,8 @@ class ResNet(nn.Module):
             g = self.g_activation(g) 
 
             if "R" in self.similarity:
-                g = torch.add(1,torch.mul(self.scaling_factor.exp(),g))
-                out = torch.mul(h,g)
+                scale = torch.add(1,torch.mul(self.scaling_factor.exp(),1-g))
+                out = torch.mul(h,scale)
             else:
                 out = torch.div(h, g)
         

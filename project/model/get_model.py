@@ -96,12 +96,13 @@ def save_model(
 ):
     time = datetime.now().strftime("%d-%m-%H")
     path = os.path.join(path, desc_str)
+    status_manager_copy = datamanager.status_manager.copy()
     torch.save(
         {
             "model_state_dict": net.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
             "experiment config": exp_conf,
-            "datamanager": datamanager.status_manager,
+            "status_manager": status_manager_copy,
             "in_dist": in_dist,
             "ood_data": ood_data,
         },

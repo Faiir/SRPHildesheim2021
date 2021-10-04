@@ -62,6 +62,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     lr_sheduler = param_dict["lr_sheduler"]
     verbose = param_dict["verbose"]
     do_pertubed_images = param_dict["do_pertubed_images"]
+    do_desity_plot = param_dict["do_desity_plot"]
 
     if oracle == "random":
         from .helpers.sampler import random_sample
@@ -106,6 +107,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                                                             batch_size=batch_size, 
                                                             validation_source=validation_source, 
                                                             validation_split=validation_split)
+        
         if validation_source is not None:
             train_loader, test_loader, pool_loader, val_loader = data_loader_tuple
         else:
@@ -142,9 +144,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         avg_test_loss = test(
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
-        if do_pertubed_images:
+        if do_desity_plot:
             pert_preds, gs, hs, targets = get_density_vals(
-                pool_loader, test_loader, trained_net
+                pool_loader, test_loader, trained_net, do_pertubed_images
             )
             
             density_plot(pert_preds, gs, hs, targets, writer, i)
