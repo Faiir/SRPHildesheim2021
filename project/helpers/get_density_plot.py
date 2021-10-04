@@ -2,6 +2,7 @@ import seaborn
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from torch import nn
 
 
 def _transform(x):
@@ -16,6 +17,8 @@ def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
     pert_preds = np.concatenate(pert_preds, axis=0)
     gs = np.concatenate(gs, axis=0)
     hs = np.concatenate(hs, axis=0)
+
+    
 
     source = np.array([_transform(xi) for xi in np.array(targets)])
     entropies = -np.sum(pert_preds * np.log(pert_preds), axis=1)
@@ -39,7 +42,9 @@ def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
     df_perturbed["g_s*e"] = df_perturbed["g_s"] * df_perturbed["entropies"]
     # fig, ax = plt.subplots(1, 1, figsize=(8, 8))
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 16))
+    print(df_perturbed.describe())
+
+    fig, (ax1, ax2, ax3) = plt.subplots(2, 1, figsize=(6, 18))
     plot = seaborn.kdeplot(
         data=df_perturbed[df_perturbed["source"] != 0],
         x="g_s",
@@ -48,11 +53,19 @@ def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
         fill=False,
         ax=ax1,
     )
+    plot = seaborn.kdeplot(
+        data=df_perturbed[df_perturbed["source"] != 0],
+        x="g_s",
+        y="g_s*e",
+        hue="source_names",
+        fill=False,
+        ax=ax2,
+    )
     seaborn.histplot(
         data=df_perturbed[df_perturbed["source"] != 0],
         x="g_s",
         hue="source_names",
-        ax=ax2,
+        ax=ax3,
     )
     writer.add_figure(tag=f"density_oracle_step_{oracle_step}", figure=fig)
 

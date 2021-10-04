@@ -103,13 +103,15 @@ class inverted_temp(nn.Module):
   
         self.h_func = nn.Linear(in_dimensions, out_dimensions)
         self.g_func = nn.Linear(in_dimensions, 1)
+        self.g_activation = nn.Sigmoid()
+        self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
     def forward(self, x):
         h = self.h_func(x)
-        g = self.g_func(x)
+        g = self.g_activation(self.g_norm(self.g_func(x)))
         g = torch.add(1,torch.mul(self.weights.exp(),g))
         out = torch.mul(h,g)
-        return out  
+        return out, g, h
 
 
 class BasicBlock(nn.Module):
@@ -160,7 +162,7 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
-        
+        self.softmax = nn.Softmax()
 
         if self.similarity not in ['I','E','C']:
             if self.similarity == 'R':
@@ -171,7 +173,7 @@ class ResNet(nn.Module):
             self.g_activation = nn.Sigmoid()
             self.g_func = nn.Linear(64, 1)
             self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
-            if similarity== 'I':
+            if similarity == 'I':
                 self.h_func = nn.Linear(64, num_classes)
             elif similarity == 'E':
                 self.h_func = euc_dist_layer(64, num_classes)
@@ -189,7 +191,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, get_test_model=False):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
@@ -197,16 +199,21 @@ class ResNet(nn.Module):
         out = F.avg_pool2d(out, out.size()[3])
         out = out.view(out.size(0), -1)
         if self.similarity not in ['I','E','C']:
-            out = self.linear(out)
-            return out
+            if self.similarity == 'R':
+                out, g, h = self.linear(out)
+            else:
+                out = self.linear(out)      
         else:
             h = self.h_func(out)
             g = self.g_func(out)
             g = self.g_norm(g)
             g = self.g_activation(g) 
             out = torch.div(h, g)
+        
+        if get_test_model:
+            return out, g, h
+        else:
             return out
-
             
 
 

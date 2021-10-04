@@ -5,6 +5,7 @@ import torch
 from torchsummary import summary
 import numpy as np
 import torch.nn.functional as F
+import torch.nn as nn
 from ..data.datahandler_for_array import get_ood_dataloader
 from ..helpers.early_stopping import EarlyStopping
 
@@ -178,6 +179,7 @@ def get_density_vals(
             data, target = data.to(device).float(), target.to(device).long()
             data.requires_grad = True
             yhat = trained_net(data)
+            yhat = F.softmax(yhat,dim=1)
             pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
 
             preds += torch.sum(pred)
@@ -196,6 +198,7 @@ def get_density_vals(
         data, target = data.to(device).float(), target.to(device).long()
         data.requires_grad = True
         output = trained_net(data)
+        output = F.softmax(output,dim=1)
         pred, _ = output.max(dim=-1, keepdim=True)
 
         pred.backward(backward_tensor)
@@ -212,6 +215,7 @@ def get_density_vals(
     with torch.no_grad():
         for p_img in pert_imgs:
             pert_pred, g, h = trained_net(p_img.to(device), get_test_model=True)
+            pert_pred = F.softmax(pert_pred,dim=1)
             gs.append(g.detach().to("cpu").numpy().astype(np.float16))
             hs.append(h.detach().to("cpu").numpy().astype(np.float16))
             pert_preds.append(pert_pred.detach().to("cpu").numpy())
