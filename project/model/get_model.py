@@ -1,8 +1,11 @@
 from .model_files.mnist_model import Net
 from .model_files.genOdinModel import genOdinModel
 from .model_files.big_resnet import resnet18
-from .model_files.small_resnet__wPTSpec import resnet20 as resnet20Spec
+from .model_files.small_resnet__wPTSpec import resnet20 as resnet20SpecGenOdin
 from .model_files.small_resnet_original import resnet20 as resnet20_original
+from .model_files.small_resnet_only_specnorm import (
+    resnet20 as resnet20_original_spec_norm,
+)
 from .model_files.small_resnet import resnet20
 
 
@@ -69,7 +72,7 @@ def get_model(
         )
 
     elif model_name == "small_resnet_with_spec":
-        return resnet20Spec(
+        return resnet20SpecGenOdin(
             similarity=similarity,
             selfsupervision=kwargs.get("selfsupervision", False),
             num_classes=kwargs.get("num_classes", 10),
@@ -78,6 +81,8 @@ def get_model(
 
     elif model_name == "base_small_resnet":
         return resnet20_original(num_classes=kwargs.get("num_classes", 10))
+    elif model_name == "base_small_resnet_spec_norm":
+        return resnet20_original_spec_norm(num_classes=kwargs.get("num_classes", 10))
 
     else:
         raise ValueError(f"Model {model_name} not found")

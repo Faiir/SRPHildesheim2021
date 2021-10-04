@@ -1,10 +1,38 @@
+"""
+Properly implemented ResNet-s for CIFAR10 as described in paper [1].
+
+The implementation and structure of this file is hugely influenced by [2]
+which is implemented for ImageNet and doesn't have option A for identity.
+Moreover, most of the implementations on the web is copy-paste from
+torchvision's resnet and has wrong number of params.
+
+Proper ResNet-s for CIFAR10 (for fair comparision and etc.) has following
+number of layers and parameters:
+
+name      | layers | params
+ResNet20  |    20  | 0.27M
+ResNet32  |    32  | 0.46M
+ResNet44  |    44  | 0.66M
+ResNet56  |    56  | 0.85M
+ResNet110 |   110  |  1.7M
+ResNet1202|  1202  | 19.4m
+
+which this implementation indeed has.
+
+Reference:
+[1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
+    Deep Residual Learning for Image Recognition. arXiv:1512.03385
+[2] https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
+
+If you use this implementation in you work, please don't forget to mention the
+author, Yerlan Idelbayev.
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.nn.init as init
 from torch.nn.utils.parametrizations import spectral_norm
-from torch.nn import init
-from .genOdinModel import euc_dist_layer, cosine_layer
-
+from torch.autograd import Variable
 
 __all__ = [
     "ResNet",
@@ -36,20 +64,19 @@ class LambdaLayer(nn.Module):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, in_planes, planes, stride=1, option="A", mod=True):
+    def __init__(self, in_planes, planes, stride=1, option="A"):
         super(BasicBlock, self).__init__()
         self.conv1 = spectral_norm(
             nn.Conv2d(
                 in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
             )
         )
-        self.mod = mod
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = spectral_norm(
             nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
         )
         self.bn2 = nn.BatchNorm2d(planes)
-        self.activation = F.leaky_relu if self.mod else F.relu
+
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != planes:
             if option == "A":
@@ -79,33 +106,17 @@ class BasicBlock(nn.Module):
                 )
 
     def forward(self, x):
-        out = self.activation(self.bn1(self.conv1(x)))
+        out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
-        out = self.activation(out)
+        out = F.relu(out)
         return out
 
 
 class ResNet(nn.Module):
-    def __init__(
-        self,
-        block,
-        num_blocks,
-        num_classes=10,
-        similarity="E",
-        selfsupervision=False,
-        mod=True,
-        batch_size=128,
-        do_not_genOdin=False,
-    ):
+    def __init__(self, block, num_blocks, num_classes=10):
         super(ResNet, self).__init__()
         self.in_planes = 16
-        self.softmax = nn.Softmax(dim=-1)
-        self.batch_size = batch_size
-        self.do_not_genOdin = do_not_genOdin
-        self.similarity = similarity
-        self.mod = mod
-        print("similarity: ", similarity)
 
         self.conv1 = spectral_norm(
             nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
@@ -114,37 +125,9 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
-        self.linear = nn.Linear(64, num_classes)
-        if self.do_not_genOdin:
-            self.outlayer = spectral_norm(nn.Linear(64, num_classes))
-        else:
-            self.g_activation = nn.Sigmoid()
-            self.g_func = nn.Linear(64, 1)
-            self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
-
-            self.selfsupervision = selfsupervision
-            if self.selfsupervision:
-                self.x_trans_head = spectral_norm(nn.Linear(64, 3))
-                self.y_trans_head = spectral_norm(nn.Linear(64, 3))
-                self.rot_head = spectral_norm(nn.Linear(64, 4))
-            self.pred_layer = spectral_norm(nn.Linear(num_classes, num_classes - 1))
-
-            if self.similarity == "I":
-                self.dropout_3 = nn.Dropout(p=0.4)
-                self.h_func = spectral_norm(nn.Linear(64, num_classes))
-
-            elif self.similarity == "E":
-                self.dropout_3 = nn.Dropout(0)
-                self.h_func = euc_dist_layer(num_classes, 64)
-
-            elif self.similarity == "C":
-                self.dropout_3 = nn.Dropout(p=0)
-                self.h_func = cosine_layer(num_classes, 64)
-            else:
-                assert False, "Incorrect similarity Measure"
+        self.linear = spectral_norm(nn.Linear(64, num_classes))
 
         self.apply(_weights_init)
-        self.activation = F.leaky_relu if self.mod else F.relu
 
     def _make_layer(self, block, planes, num_blocks, stride):
         strides = [stride] + [1] * (num_blocks - 1)
@@ -155,52 +138,19 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x, get_test_model=False, train_g=False, self_sup_train=False):
-        out = self.activation(self.bn1(self.conv1(x)))
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
         out = F.avg_pool2d(out, out.size()[3])
-
         out = out.view(out.size(0), -1)
-
-        if self.do_not_genOdin:
-            return self.softmax(self.outlayer(out))
-
-        g = self.g_activation(self.g_norm(self.g_func(out)))
-
-        if train_g:
-            return g
-
-        h = self.h_func(out)
-        pred = self.softmax(torch.div(g, h))
-
-        if self_sup_train:
-            x_trans = self.x_trans_head(out[4 * self.batch_size :])
-            y_trans = self.y_trans_head(out[4 * self.batch_size :])  # 128 3
-            rot = self.rot_head(out[: 4 * self.batch_size])  # 512 4
-            return pred, x_trans, y_trans, rot
-
-        if self.selfsupervision:
-            return self.softmax(pred_layer(pred))
-
-        if not get_test_model:
-            return pred
-        else:
-            return pred, g, h
+        out = self.linear(out)
+        return out
 
 
-def resnet20(similarity="C", **kwargs):
-    return ResNet(
-        BasicBlock,
-        [3, 3, 3],
-        similarity=similarity,
-        mod=kwargs.get("mod", True),
-        num_classes=kwargs.get("num_classes"),
-        selfsupervision=kwargs.get("selfsupervision"),
-        do_not_genOdin=kwargs.get("do_not_genOdin", False),
-        batch_size=kwargs.get("batch_size", 64),
-    )
+def resnet20(num_classes):
+    return ResNet(BasicBlock, [3, 3, 3], num_classes)
 
 
 def resnet32():
@@ -221,3 +171,24 @@ def resnet110():
 
 def resnet1202():
     return ResNet(BasicBlock, [200, 200, 200])
+
+
+def test(net):
+    import numpy as np
+
+    total_params = 0
+
+    for x in filter(lambda p: p.requires_grad, net.parameters()):
+        total_params += np.prod(x.data.numpy().shape)
+    print("Total number of params", total_params)
+    print(
+        "Total layers",
+        len(
+            list(
+                filter(
+                    lambda p: p.requires_grad and len(p.data.size()) > 1,
+                    net.parameters(),
+                )
+            )
+        ),
+    )
