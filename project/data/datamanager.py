@@ -364,9 +364,9 @@ class Data_manager:
 
 
 def get_datamanager(
-    indistribution: list[str] = ["Cifar10"],
-    ood: list[str] = ["MNIST", "Fashion_MNIST", "SVHN"],
-) -> object:
+    indistribution=["Cifar10"],
+    ood=["MNIST", "Fashion_MNIST", "SVHN"],
+):
     """get_datamanager [Creates a datamanager instance with the In-/Out-of-Distribution Data]
 
     [List based processing of Datasets. Images are resized / croped on 32x32]
