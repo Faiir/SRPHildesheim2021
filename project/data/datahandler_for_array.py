@@ -9,6 +9,9 @@ from torchvision.transforms import transforms
 import torch
 
 
+##setting pin_memory to False to see if the errors go away
+pin_memory = False
+
 class DataHandler_For_Arrays(Dataset):
     """DataHandler_For_Arrays [Base pytorch dataset for all experiments]"""
 
@@ -120,7 +123,7 @@ def create_dataloader(
         sampler=RandomSampler(train_dataset),
         batch_size=batch_size,
         num_workers=2,
-        pin_memory=True,
+        pin_memory=pin_memory,
     )
 
     test_loader = DataLoader(
@@ -128,11 +131,15 @@ def create_dataloader(
         sampler=SequentialSampler(test_dataset),
         batch_size=batch_size,
         num_workers=2,
-        pin_memory=True,
+        pin_memory=pin_memory,
     )
 
     pool_loader = DataLoader(
-        pool_dataset, batch_size=batch_size, num_workers=2, pin_memory=True
+
+        pool_dataset, 
+        batch_size=batch_size, 
+        num_workers=2, 
+        pin_memory=pin_memory
     )
 
     if validation_source is not None:
@@ -141,22 +148,15 @@ def create_dataloader(
             sampler=SequentialSampler(validation_dataset),
             batch_size=batch_size,
             num_workers=2,
-            pin_memory=True,
-        )
+            pin_memory=pin_memory,
+            )
+
 
         return (train_loader, test_loader, pool_loader, val_loader)
 
     else:
         return (train_loader, test_loader, pool_loader)
 
-
-def get_dataloader(data_manager, batch_size=128):
-
-    train_loader, test_loader, pool_loader = create_dataloader(
-        data_manager, batch_size=128
-    )
-
-    return train_loader, test_loader, pool_loader
 
 
 def get_ood_dataloader(data_manager, batch_size: int = 16):
@@ -200,7 +200,7 @@ def get_ood_dataloader(data_manager, batch_size: int = 16):
         sampler=RandomSampler(train_dataset),
         batch_size=batch_size * 4,
         num_workers=2,
-        pin_memory=True,
+        pin_memory=pin_memory,
     )
 
     outlier_loader = DataLoader(
@@ -208,6 +208,6 @@ def get_ood_dataloader(data_manager, batch_size: int = 16):
         sampler=RandomSampler(outlier_data),
         batch_size=batch_size,
         num_workers=2,
-        pin_memory=True,
+        pin_memory=pin_memory,
     )
     return train_loader, outlier_loader

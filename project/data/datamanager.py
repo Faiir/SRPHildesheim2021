@@ -799,7 +799,8 @@ def get_datamanager(
         OOD_data=OOD_data,
         OOD_labels=OOD_labels,
     )
-    # del (base_data, base_labels, OOD_data, OOD_labels)
+    #del (base_data, base_labels, OOD_data, OOD_labels)
+
     gc.collect()
     if debug:
         snapshot = tracemalloc.take_snapshot()

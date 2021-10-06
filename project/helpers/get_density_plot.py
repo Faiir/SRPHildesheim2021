@@ -47,7 +47,8 @@ def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
     )
     map_labels = {-1: "OoD"}
     map_labels.update({ii: f"In_dist{ii}" for ii in range(10)})
-    source_labels = {-1: "OoD", 1: "InDist", 0: "Trained Data"}
+    source_labels = {-1: "OoD", 1: "InDist"}
+
     df_perturbed["source_names"] = df_perturbed.source.astype(int).map(source_labels)
     df_perturbed["g_s*e"] = df_perturbed["g_s"] * df_perturbed["entropies"]
     # fig, ax = plt.subplots(1, 1, figsize=(8, 8))
