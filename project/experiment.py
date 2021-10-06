@@ -120,7 +120,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         if torch.cuda.is_available():
             net.cuda()
 
-        if criterion not in ["arcface", "sphereface", "cosface"]:
+        if criterion in ["arcface", "sphereface", "cosface"]:
             in_features = 10
             num_classes = 10
             criterion = AngularPenaltySMLoss(in_features, num_classes, criterion)

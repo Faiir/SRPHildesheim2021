@@ -462,9 +462,9 @@ def get_datamanager(
                 ],
                 axis=0,
             )
-            base_data_test = np.concatenate(
+            base_labels_test = np.concatenate(
                 [
-                    base_data_test.copy(),
+                    base_labels_test.copy(),
                     CIFAR10_test_labels.copy(),
                 ]
             )
@@ -526,9 +526,9 @@ def get_datamanager(
                 ]
             )
 
-            base_data_test = np.concatenate(
+            base_labels_test = np.concatenate(
                 [
-                    base_data_test.copy(),
+                    base_labels_test.copy(),
                     MNIST_test_labels.copy(),
                 ]
             )
@@ -599,9 +599,9 @@ def get_datamanager(
                     Fashion_MNIST_train_labels.copy(),
                 ]
             )
-            base_data_test = np.concatenate(
+            base_labels_test = np.concatenate(
                 [
-                    base_data_test.copy(),
+                    base_labels_test.copy(),
                     Fashion_MNIST_test_labels.copy(),
                 ]
             )
