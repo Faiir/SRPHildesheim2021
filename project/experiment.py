@@ -20,8 +20,8 @@ from .data.datamanager import get_datamanager
 # train functions
 from .model.train import train, test, get_density_vals
 
-from .model.get_model import get_model,save_model
-
+from .model.get_model import get_model, save_model
+from .model.model_files.Angular_Penalty_Softmax_Losses import AngularPenaltySMLoss
 
 # helpers
 from .helpers.measures import accuracy, f1, auroc
@@ -57,12 +57,13 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     lr = param_dict["lr"]
     nesterov = param_dict["nesterov"]
     momentum = param_dict["momentum"]
-    validation_split = param_dict.get("validation_split",None)
-    validation_source = param_dict.get("validation_source",None)
+    validation_split = param_dict.get("validation_split", None)
+    validation_source = param_dict.get("validation_source", None)
     lr_sheduler = param_dict["lr_sheduler"]
     verbose = param_dict["verbose"]
     do_pertubed_images = param_dict["do_pertubed_images"]
     do_desity_plot = param_dict["do_desity_plot"]
+    criterion = param_dict["criterion"]
 
     if oracle == "random":
         from .helpers.sampler import random_sample
@@ -103,20 +104,28 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot
             )
 
-        data_loader_tuple = create_dataloader(data_manager, 
-                                                            batch_size=batch_size, 
-                                                            validation_source=validation_source, 
-                                                            validation_split=validation_split)
-        
+        data_loader_tuple = create_dataloader(
+            data_manager,
+            batch_size=batch_size,
+            validation_source=validation_source,
+            validation_split=validation_split,
+        )
+
         if validation_source is not None:
             train_loader, test_loader, pool_loader, val_loader = data_loader_tuple
         else:
             train_loader, test_loader, pool_loader = data_loader_tuple
             val_loader = None
-        
+
         if torch.cuda.is_available():
             net.cuda()
-        criterion = nn.CrossEntropyLoss()
+
+        if criterion in ["arcface", "sphereface", "cosface"]:
+            in_features = 10
+            num_classes = 10
+            criterion = AngularPenaltySMLoss(in_features, num_classes, criterion)
+        else:
+            criterion = nn.CrossEntropyLoss()
 
         optimizer = optim.SGD(
             net.parameters(),
@@ -126,19 +135,18 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             nesterov=nesterov,
         )
 
-
         trained_net, avg_train_loss = train(
-                net,
-                train_loader,
-                optimizer,
-                criterion,
-                device=device,
-                epochs=epochs,
-                verbose=verbose,
-                do_validation=True,
-                val_dataloader=val_loader,
-                patience=10,
-                lr_sheduler=lr_sheduler
+            net,
+            train_loader,
+            optimizer,
+            criterion,
+            device=device,
+            epochs=epochs,
+            verbose=verbose,
+            do_validation=True,
+            val_dataloader=val_loader,
+            patience=10,
+            lr_sheduler=lr_sheduler,
         )
 
         avg_test_loss = test(
@@ -148,9 +156,8 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             pert_preds, gs, hs, targets = get_density_vals(
                 pool_loader, test_loader, trained_net, do_pertubed_images
             )
-            
-            density_plot(pert_preds, gs, hs, targets, writer, i)
 
+            density_plot(pert_preds, gs, hs, targets, writer, i)
 
         if len(pool_loader) > 0:
             # unlabelled pool predictions
@@ -244,8 +251,7 @@ def start_experiment(config_path, log):
         data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
 
         for exp in config["experiment-list"]:
-
-            if exp["verbose"]>1:
+            if exp["verbose"] > 1:
                 print("Experiment Config :")
                 for variable in exp:
                     if exp[variable] is not None:
