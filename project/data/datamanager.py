@@ -68,10 +68,10 @@ class Data_manager:
     ## DataManager would either get the extact data (array/tensors) or it'll have a df of filenames
 
     def __init__(self, base_data, base_labels, OOD_data, OOD_labels):
-        self.base_data = base_data.copy()
-        self.base_labels = base_labels.copy()
-        self.OOD_data = OOD_data.copy()
-        self.OOD_labels = OOD_labels.copy()
+        self.base_data = base_data
+        self.base_labels = base_labels
+        self.OOD_data = OOD_data
+        self.OOD_labels = OOD_labels
         self.log = {}
         self.iter = None
         self.config = {}
@@ -752,7 +752,8 @@ def get_datamanager(
         OOD_data=OOD_data,
         OOD_labels=OOD_labels,
     )
-    # del (base_data, base_labels, OOD_data, OOD_labels)
+    #del (base_data, base_labels, OOD_data, OOD_labels)
+
     gc.collect()
     if debug:
         snapshot = tracemalloc.take_snapshot()

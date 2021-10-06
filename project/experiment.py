@@ -244,6 +244,7 @@ def start_experiment(config_path, log):
         data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
 
         for exp in config["experiment-list"]:
+
             if exp["verbose"]>1:
                 print("Experiment Config :")
                 for variable in exp:
@@ -278,6 +279,8 @@ def start_experiment(config_path, log):
                     net=net,
                 )
 
+                
+
                 log_df = data_manager.get_logs()
 
                 current_time = datetime.now().strftime("%H-%M-%S")
@@ -293,16 +296,17 @@ def start_experiment(config_path, log):
                 if os.path.exists(model_dir) == False:
                     os.mkdir(os.path.join(".", "saved_models"))
 
-                save_model(
-                    trained_net,
-                    optimizer,
-                    exp,
-                    data_manager,
-                    model_dir,
-                    in_dist_data,
-                    ood_data,
-                    desc_str="Experiment-from-" + str(current_time),
-                )
+                if exp.get('do_save_model',False):
+                    save_model(
+                        trained_net,
+                        optimizer,
+                        exp,
+                        data_manager,
+                        model_dir,
+                        in_dist_data,
+                        ood_data,
+                        desc_str="Experiment-from-" + str(current_time),
+                    )
 
                 log_path = os.path.join(log_dir, log_file_name)
 
@@ -316,6 +320,8 @@ def start_experiment(config_path, log):
                             logfile.write(str(row[c].item()))
                             logfile.write(",")
                         logfile.write("\n")
+
+            writer.close()
     print(
         """
     **********************************************

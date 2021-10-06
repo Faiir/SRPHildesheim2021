@@ -82,6 +82,26 @@ class euc_dist_layer(nn.Module):
         out = torch.sqrt(diff_summed)
         return out
 
+class euc_dist_layer_corrected(nn.Module):
+    def __init__(self, in_dimensions, out_dimensions):
+        super().__init__()
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
+
+        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+
+        self.weights = nn.Parameter(weights)
+        init.kaiming_normal_(self.weights)
+
+    def forward(self, x):
+        x = x.unsqueeze(dim=-1)
+        diff = x - self.weights
+        diff_squared = torch.square(diff)
+        diff_summed = torch.sum(diff_squared, dim=1)
+        out = -torch.sqrt(diff_summed)
+        return out
 
 class cosine_layer(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
@@ -100,6 +120,24 @@ class cosine_layer(nn.Module):
         x = x.unsqueeze(-1)
         cos = nn.CosineSimilarity(dim=1)
         return cos(self.weights, x)
+
+class cosine_layer_holy(nn.Module):
+    def __init__(self, in_dimensions, out_dimensions):
+        super().__init__()
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
+
+        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+
+        self.weights = nn.Parameter(weights)
+        init.kaiming_normal_(self.weights)
+
+    def forward(self, x):
+        x = x.unsqueeze(-1)
+        cos = nn.CosineSimilarity(dim=1)
+        return -cos(self.weights, x)
 
 
 class BasicBlock(nn.Module):
@@ -156,7 +194,7 @@ class ResNet(nn.Module):
         self.in_planes = 16
         self.similarity = similarity
 
-        if self.similarity not in ["I", "E", "C", "IR", "ER", "CR"]:
+        if self.similarity is None:
             print("INFO ----- ResNet has been initialized without a similarity measure")
         else:
             print(
@@ -170,7 +208,7 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
         self.softmax = nn.Softmax()
 
-        if self.similarity not in ["I", "E", "C", "IR", "ER", "CR"]:
+        if self.similarity is None:
             self.linear = nn.Linear(64, num_classes)
         else:
             self.g_activation = nn.Sigmoid()
@@ -183,6 +221,10 @@ class ResNet(nn.Module):
                 self.h_func = euc_dist_layer(64, num_classes)
             elif "C" in self.similarity:
                 self.h_func = cosine_layer(64, num_classes)
+            elif "E_U" in self.similarity:
+                 self.h_func = euc_dist_layer_corrected(64, num_classes) 
+            elif "C_H" in self.similarity:
+                 self.h_func = cosine_layer_holy(64, num_classes) 
 
             if "R" in self.similarity:
                 self.scaling_factor = nn.Parameter(torch.Tensor(1, 1))
@@ -206,7 +248,7 @@ class ResNet(nn.Module):
         out = self.layer3(out)
         out = F.avg_pool2d(out, out.size()[3])
         out = out.view(out.size(0), -1)
-        if self.similarity not in ["I", "E", "C", "IR", "ER", "CR"]:
+        if self.similarity is None:
             out = self.linear(out)
         else:
             h = self.h_func(out)
