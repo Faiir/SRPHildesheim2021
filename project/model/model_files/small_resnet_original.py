@@ -224,7 +224,8 @@ class ResNet(nn.Module):
                 self.h_func = euc_dist_layer(64, num_classes)
             elif "C" in self.similarity:
                 self.h_func = cosine_layer(64, num_classes)
-            elif "E_U" in self.similarity:
+
+            if "E_U" in self.similarity:
                 self.h_func = euc_dist_layer_corrected(64, num_classes)
             elif "C_H" in self.similarity:
                 self.h_func = cosine_layer_holy(64, num_classes)
