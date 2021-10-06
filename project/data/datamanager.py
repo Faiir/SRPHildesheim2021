@@ -67,8 +67,18 @@ class Data_manager:
 
     ## DataManager would either get the extact data (array/tensors) or it'll have a df of filenames
 
-    def __init__(self, base_data, base_labels, OOD_data, OOD_labels):
+    def __init__(
+        self,
+        base_data,
+        base_data_test,
+        base_labels,
+        base_labels_test,
+        OOD_data,
+        OOD_labels,
+    ):
         self.base_data = base_data.copy()
+        self.base_data_test = base_data_test.copy()
+        self.base_labels_test = base_labels_test.copy()
         self.base_labels = base_labels.copy()
         self.OOD_data = OOD_data.copy()
         self.OOD_labels = OOD_labels.copy()
@@ -110,12 +120,17 @@ class Data_manager:
             test_size + base_pool_size + labelled_size <= self.base_data.shape[0]
         ), f"Insufficient Samples in Base Dataset: test_size + labelled_size > base_data_size : {test_size} + {labelled_size} > {self.base_data.shape[0]}"
 
-        train_data, self.test_data, train_labels, self.test_labels = train_test_split(
-            self.base_data,
-            self.base_labels,
-            test_size=test_size,
-            stratify=self.base_labels,
-        )
+        # train_data, self.test_data, train_labels, self.test_labels = train_test_split(
+        #     self.base_data,
+        #     self.base_labels,
+        #     test_size=test_size,
+        #     stratify=self.base_labels,
+        # )
+
+        self.test_data = self.base_data_test
+        self.test_labels = self.base_labels_test
+        train_data = self.base_data
+        train_labels = self.base_labels
 
         if base_pool_size > 0:
 
@@ -381,7 +396,9 @@ def get_datamanager(
 
     # TODO ADD Target transform?
     base_data = np.empty(shape=(1, 3, 32, 32))
+    base_data_test = np.empty(shape=(1, 3, 32, 32))
     base_labels = np.empty(shape=(1,))
+    base_labels_test = np.empty(shape=(1,))
 
     OOD_data = np.empty(shape=(1, 3, 32, 32))
     OOD_labels = np.empty(shape=(1,))
@@ -430,17 +447,28 @@ def get_datamanager(
             CIFAR10_test_labels = np.array(CIFAR10_test.targets)
 
             base_data = np.concatenate(
-                [base_data.copy(), CIFAR10_train_data.copy(), CIFAR10_test_data.copy()],
+                [base_data.copy(), CIFAR10_train_data.copy()],
                 axis=0,
             )
+
+            base_data_test = np.concatenate(
+                [base_data_test.copy(), CIFAR10_test_data.copy()]
+            )
+
             base_labels = np.concatenate(
                 [
                     base_labels.copy(),
                     CIFAR10_train_labels.copy(),
-                    CIFAR10_test_labels.copy(),
                 ],
                 axis=0,
             )
+            base_data_test = np.concatenate(
+                [
+                    base_data_test.copy(),
+                    CIFAR10_test_labels.copy(),
+                ]
+            )
+
             del (
                 CIFAR10_train_data,
                 CIFAR10_test_data,
@@ -485,13 +513,22 @@ def get_datamanager(
                 MNIST_train_labels = MNIST_train.targets
                 MNIST_test_labels = MNIST_test.targets
 
-            base_data = np.concatenate(
-                [base_data.copy(), MNIST_train_data.copy(), MNIST_test_data.copy()]
+            base_data = np.concatenate([base_data.copy(), MNIST_train_data.copy()])
+
+            base_data_test = np.concatenate(
+                [base_data_test.copy(), MNIST_test_labels.copy()]
             )
+
             base_labels = np.concatenate(
                 [
                     base_labels.copy(),
                     MNIST_train_labels.copy(),
+                ]
+            )
+
+            base_data_test = np.concatenate(
+                [
+                    base_data_test.copy(),
                     MNIST_test_labels.copy(),
                 ]
             )
@@ -549,16 +586,22 @@ def get_datamanager(
                 Fashion_MNIST_test_labels = Fashion_MNIST_test.targets.numpy()
 
             base_data = np.concatenate(
-                [
-                    base_data.copy(),
-                    Fashion_MNIST_train_data.copy(),
-                    Fashion_MNIST_test_data.copy(),
-                ]
+                [base_data.copy(), Fashion_MNIST_train_data.copy()]
             )
+
+            base_data_test = np.concatenate(
+                [base_data_test.copy(), Fashion_MNIST_test_data.copy()]
+            )
+
             base_labels = np.concatenate(
                 [
                     base_labels.copy(),
                     Fashion_MNIST_train_labels.copy(),
+                ]
+            )
+            base_data_test = np.concatenate(
+                [
+                    base_data_test.copy(),
                     Fashion_MNIST_test_labels.copy(),
                 ]
             )
@@ -742,13 +785,17 @@ def get_datamanager(
         display_top(snapshot)
 
     base_data = np.delete(base_data, 0, axis=0)
+    base_data_test = np.delete(base_data_test, 0, axis=0)
     base_labels = np.delete(base_labels, 0)
+    base_labels_test = np.delete(base_labels_test, 0)
     OOD_data = np.delete(OOD_data, 0, axis=0)
     OOD_labels = np.delete(OOD_labels, 0)
 
     data_manager = Data_manager(
         base_data=base_data,
         base_labels=base_labels,
+        base_data_test=base_data_test,
+        base_labels_test=base_labels_test,
         OOD_data=OOD_data,
         OOD_labels=OOD_labels,
     )
