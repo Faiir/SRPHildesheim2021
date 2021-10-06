@@ -194,7 +194,7 @@ class ResNet(nn.Module):
         self.in_planes = 16
         self.similarity = similarity
 
-        if self.similarity is None::
+        if self.similarity is None:
             print("INFO ----- ResNet has been initialized without a similarity measure")
         else:
             print(
