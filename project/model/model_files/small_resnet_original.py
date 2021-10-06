@@ -82,6 +82,7 @@ class euc_dist_layer(nn.Module):
         out = torch.sqrt(diff_summed)
         return out
 
+
 class euc_dist_layer_corrected(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
         super().__init__()
@@ -103,6 +104,7 @@ class euc_dist_layer_corrected(nn.Module):
         out = -torch.sqrt(diff_summed)
         return out
 
+
 class cosine_layer(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
         super().__init__()
@@ -120,6 +122,7 @@ class cosine_layer(nn.Module):
         x = x.unsqueeze(-1)
         cos = nn.CosineSimilarity(dim=1)
         return cos(self.weights, x)
+
 
 class cosine_layer_holy(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
@@ -222,9 +225,9 @@ class ResNet(nn.Module):
             elif "C" in self.similarity:
                 self.h_func = cosine_layer(64, num_classes)
             elif "E_U" in self.similarity:
-                 self.h_func = euc_dist_layer_corrected(64, num_classes) 
+                self.h_func = euc_dist_layer_corrected(64, num_classes)
             elif "C_H" in self.similarity:
-                 self.h_func = cosine_layer_holy(64, num_classes) 
+                self.h_func = cosine_layer_holy(64, num_classes)
 
             if "R" in self.similarity:
                 self.scaling_factor = nn.Parameter(torch.Tensor(1, 1))
