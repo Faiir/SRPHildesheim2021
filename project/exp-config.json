@@ -5,9 +5,9 @@
       "pool_size": 0,
       "labelled_size": 50000,
       "OOD_ratio": 0.5,
-      "oracle_stepsize": 128,
+      "oracle_stepsize": 50,
       "oracle_steps": 1,
-      "epochs": 100,
+      "epochs": 1,
       "batch_size": 128,
       "oracles": ["random"],
       "weight_decay": 1e-4,
@@ -38,6 +38,7 @@
       "weight_decay": 1e-4,
       "metric": "accuracy",
       "model_name": "base_small_resnet",
+
       "similarity": "E)U",
       "include_bn": false,
       "nesterov": false,
@@ -58,17 +59,20 @@
       "oracle_stepsize": 128,
       "oracle_steps": 1,
       "epochs": 100,
+
       "batch_size": 128,
       "oracles": ["random"],
       "weight_decay": 1e-4,
       "metric": "accuracy",
       "model_name": "base_small_resnet",
       "similarity": "C_H",
+
       "include_bn": false,
       "nesterov": false,
       "lr": 0.1,
       "momentum": 0.9,
       "validation_source": "test",
+
       "validation_split": 0.95,
       "lr_sheduler": true,
       "do_desity_plot": true,
@@ -78,4 +82,5 @@
   ],
   "in_dist_data": ["Cifar10"],
   "ood_data": ["Fashion_MNIST", "MNIST"]
+
 }

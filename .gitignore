@@ -2,6 +2,7 @@
 *.ipynb
 SRP_Project.ipynb
 
+
 #single files
 test.py
 todo.txt
@@ -50,3 +51,7 @@ events*
 __pypackages__/
 
 project/test.png
+project/exp-config.json
+
+exp-config*
+

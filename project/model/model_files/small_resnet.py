@@ -250,7 +250,7 @@ class ResNet(nn.Module):
         out = self.activation(self.fc(out))
         f_out = self.fc1(out)
         if self.do_not_genOdin:
-            return self.softmax(self.outlayer(f_out))
+            return self.outlayer(f_out)
         # if self_supervision:
         #     return f_out, out  # (128,10) (n,128)
 
@@ -261,7 +261,7 @@ class ResNet(nn.Module):
             return g
 
         h = self.h_func(f_out)
-        pred = self.softmax(torch.div(g, h))  # 128 11
+        pred = torch.div(g, h)  # 128 11
 
         if self_sup_train:
             x_trans = self.x_trans_head(out[4 * self.batch_size :])
@@ -270,7 +270,7 @@ class ResNet(nn.Module):
             return pred, x_trans, y_trans, rot
 
         if self.selfsupervision:
-            return self.softmax(pred_layer(pred))
+            return pred_layer(pred)
 
         if not get_test_model:
             return pred

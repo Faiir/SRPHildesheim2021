@@ -15,7 +15,17 @@ def cosine_annealing(step, total_steps, lr_max, lr_min):
 
 
 def create_lr_sheduler(optimizer, epochs, pert_loader, learning_rate):
+    """create_lr_sheduler [Creates lr scheduler with cosine shedule]
 
+    Args:
+        optimizer ([torch.optim]): [description]
+        epochs ([int]): [max epochs]
+        pert_loader ([dataloader]): [description]
+        learning_rate ([float]): [initial learning rate]
+
+    Returns:
+        [torch.lr_scheduler]: [description]
+    """
     return torch.optim.lr_scheduler.LambdaLR(
         optimizer,
         lr_lambda=lambda step: cosine_annealing(
@@ -37,19 +47,34 @@ def verbosity(message, verbose, epoch):
 
 
 def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
+    """train [main training function of the project]
+
+    [extended_summary]
+
+    Args:
+        net ([torch.nn.Module]): [Neural network to train]
+        train_loader ([torch.Dataloader]): [dataloader with the training data]
+        optimizer ([torch.optim]): [optimizer for the network]
+        criterion ([Loss function]): [Pytorch loss function]
+        device ([str]): [device to train on cpu/cuda]
+        epochs (int, optional): [epochs to run]. Defaults to 5.
+        **kwargs (verbose and validation dataloader)
+    Returns:
+        [tupel(trained network, train_loss )]:
+    """
     verbose = kwargs.get("verbose", 1)
     val_dataloader = kwargs.get("val_dataloader", None)
-        
+
     if verbose > 0:
         print("\nTraining with device :", device)
         print("Number of Training Samples : ", len(train_loader.dataset))
         if val_dataloader is not None:
             print("Number of Validation Samples : ", len(val_dataloader.dataset))
         print("Number of Epochs : ", epochs)
-    
-        if verbose>1:
+
+        if verbose > 1:
             summary(net, input_size=(3, 32, 32))
-    
+
     if device == "cuda":
         torch.backends.cudnn.benchmark = True
 
@@ -79,18 +104,20 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
         train_loss = 0
         train_acc = 0
         for batch_idx, (data, target) in enumerate(train_loader):
+            if len(data) > 1:
+                net.train()
+                data, target = data.to(device).float(), target.to(device).long()
 
-            net.train()
-            data, target = data.to(device).float(), target.to(device).long()
+                optimizer.zero_grad(set_to_none=True)
+                yhat = net(data).to(device)
+                loss = criterion(yhat, target)
+                train_loss += loss.item()
+                train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
 
-            optimizer.zero_grad(set_to_none=True)
-            yhat = net(data).to(device)
-            loss = criterion(yhat, target)
-            train_loss += loss.item()
-            train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
-
-            loss.backward()
-            optimizer.step()
+                loss.backward()
+                optimizer.step()
+            else:
+                pass
 
         avg_train_loss = train_loss / len(train_loader)
         avg_train_acc = train_acc / len(train_loader.dataset)
@@ -142,6 +169,18 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
 
 
 def test(model, criterion, test_dataloader, device, verbose=0):
+    """test [Function to measure performance on the test set]
+
+
+    Args:
+        model ([type]): [description]
+        criterion ([type]): [description]
+        test_dataloader ([type]): [description]
+        device ([type]): [description]
+
+    Returns:
+        [float]: [avg. test loss]
+    """
     test_loss = 0
 
     for (t_data, t_target) in test_dataloader:
@@ -161,11 +200,20 @@ def test(model, criterion, test_dataloader, device, verbose=0):
     )  # return avg testloss
 
 
-def get_density_vals(pool_loader,
-                    val_loader,
-                    trained_net,
-                    do_pertubed_images):
+def get_density_vals(pool_loader, val_loader, trained_net, do_pertubed_images):
+    """get_density_vals [Model to measure the density of the pool data to create distribution plots]
 
+    [extended_summary]
+
+    Args:
+        pool_loader ([Dataloader]): [description]
+        val_loader ([Dataloader]): [description]
+        trained_net ([nn-Module]): [description]
+        do_pertubed_images ([bool]): [description]
+
+    Returns:
+        [tupel(pert_preds, gs, hs, targets)]: [predictions for the pool data, coressponding g / h values, actual targets]
+    """
     gs = []
     hs = []
     pert_preds = []
@@ -173,7 +221,7 @@ def get_density_vals(pool_loader,
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     if do_pertubed_images:
-        
+
         epsi_list = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]
         best_eps = 0
         scores = []
@@ -185,7 +233,7 @@ def get_density_vals(pool_loader,
                 data, target = data.to(device).float(), target.to(device).long()
                 data.requires_grad = True
                 yhat = trained_net(data)
-                yhat = F.softmax(yhat,dim=1)
+                yhat = F.softmax(yhat, dim=1)
                 pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
 
                 preds += torch.sum(pred)
@@ -204,7 +252,7 @@ def get_density_vals(pool_loader,
             data, target = data.to(device).float(), target.to(device).long()
             data.requires_grad = True
             output = trained_net(data)
-            output = F.softmax(output,dim=1)
+            output = F.softmax(output, dim=1)
             pred, _ = output.max(dim=-1, keepdim=True)
 
             pred.backward(backward_tensor)
@@ -218,7 +266,7 @@ def get_density_vals(pool_loader,
         with torch.no_grad():
             for p_img in pert_imgs:
                 pert_pred, g, h = trained_net(p_img.to(device), get_test_model=True)
-                pert_pred = F.softmax(pert_pred,dim=1)
+                pert_pred = F.softmax(pert_pred, dim=1)
                 gs.append(g.detach().to("cpu").numpy().astype(np.float16))
                 hs.append(h.detach().to("cpu").numpy().astype(np.float16))
                 pert_preds.append(pert_pred.detach().to("cpu").numpy())
@@ -229,7 +277,7 @@ def get_density_vals(pool_loader,
             for batch_idx, (data, target) in enumerate(pool_loader):
                 data = data.to(device).float()
                 pert_pred, g, h = trained_net(data, get_test_model=True)
-                pert_pred = F.softmax(pert_pred,dim=1)
+                pert_pred = F.softmax(pert_pred, dim=1)
                 gs.append(g.detach().to("cpu").numpy().astype(np.float16))
                 hs.append(h.detach().to("cpu").numpy().astype(np.float16))
                 pert_preds.append(pert_pred.detach().to("cpu").numpy())
