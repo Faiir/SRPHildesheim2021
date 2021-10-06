@@ -127,13 +127,41 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         else:
             criterion = nn.CrossEntropyLoss()
 
+        base_params = []
+        gen_odin_params = []
+        for name, param in net.named_parameters():
+            if name not in [
+                "g_func.weight",
+                "g_func.bias",
+                "g_norm.weight",
+                "g_norm.bias",
+                "h_func.weights",
+                "scaling_factor",
+            ]:
+                base_params.append(param)  # can't do the name tupel
+            else:
+                if verbose >= 2:
+                    print("added name: ", name)
+                gen_odin_params.append(param)
+
         optimizer = optim.SGD(
-            net.parameters(),
+            [
+                {"params": base_params},
+                {"params": gen_odin_params, "weight_decay": 0.0},
+            ],
             weight_decay=weight_decay,
-            momentum=momentum,
             lr=lr,
+            momentum=momentum,
             nesterov=nesterov,
         )
+
+        # optimizer = optim.SGD(
+        #     net.parameters(),
+        #     weight_decay=weight_decay,
+        #     momentum=momentum,
+        #     lr=lr,
+        #     nesterov=nesterov,
+        # )
 
         trained_net, avg_train_loss = train(
             net,
@@ -285,8 +313,6 @@ def start_experiment(config_path, log):
                     net=net,
                 )
 
-                
-
                 log_df = data_manager.get_logs()
 
                 current_time = datetime.now().strftime("%H-%M-%S")
@@ -302,7 +328,7 @@ def start_experiment(config_path, log):
                 if os.path.exists(model_dir) == False:
                     os.mkdir(os.path.join(".", "saved_models"))
 
-                if exp.get('do_save_model',False):
+                if exp.get("do_save_model", False):
                     save_model(
                         trained_net,
                         optimizer,
