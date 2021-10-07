@@ -276,14 +276,14 @@ def start_experiment(config_path, log):
     ood_data = config["ood_data"]
     for dataset in in_dist_data:
 
-        data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
-
         for exp in config["experiment-list"]:
             if exp["verbose"] > 1:
                 print("Experiment Config :")
                 for variable in exp:
                     if exp[variable] is not None:
                         print(f"{variable} : ", exp[variable])
+
+            data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
 
             metric = exp["metric"]
 
