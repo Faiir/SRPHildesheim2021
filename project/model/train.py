@@ -8,6 +8,10 @@ import torch.nn.functional as F
 import torch.nn as nn
 from ..data.datahandler_for_array import get_ood_dataloader
 from ..helpers.early_stopping import EarlyStopping
+import gc
+import torch.backends.cudnn as cudnn
+
+
 
 
 def cosine_annealing(step, total_steps, lr_max, lr_min):
@@ -64,6 +68,7 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
     """
     verbose = kwargs.get("verbose", 1)
     val_dataloader = kwargs.get("val_dataloader", None)
+    cudnn.benchmark = True
 
     if verbose > 0:
         print("\nTraining with device :", device)
@@ -224,11 +229,14 @@ def pertube_image(pool_loader, val_loader, trained_net):
 
             pred.backward(backward_tensor)
             pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
-            del data
-
+            del data, output, target
+            gc.collect()
+    
             yhat = trained_net(pert_imgage, apply_softmax=True)
             pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
             preds += torch.sum(pred)
+            del pred, yhat, pert_imgage
+            gc.collect()
         scores.append(preds.detach().cpu().numpy())
     
     torch.cuda.empty_cache()
@@ -251,6 +259,7 @@ def pertube_image(pool_loader, val_loader, trained_net):
         )
         targets.append(target.to("cpu").numpy().astype(np.float16))
         del data, output, target
+        gc.collect()
     torch.cuda.empty_cache()
     trained_net.zero_grad(set_to_none=True)
     with torch.no_grad():

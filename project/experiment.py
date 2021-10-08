@@ -11,6 +11,7 @@ import os
 from tqdm import tqdm
 import json
 import pandas as pd
+import numpy as np
 
 
 # data imports
@@ -182,14 +183,14 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         )
         if do_desity_plot:
             pert_preds, gs, hs, targets = get_density_vals(
-                pool_loader, test_loader, trained_net, do_pertubed_images
+                pool_loader, val_loader, trained_net, do_pertubed_images
             )
 
             density_plot(pert_preds, gs, hs, targets, writer, i)
             
         if len(pool_loader) > 0:
             if do_desity_plot:
-                pool_predictions, pool_labels_list, weighting_factors = pert_preds, targets, gs 
+                pool_predictions, pool_labels_list, weighting_factors = np.array(pert_preds), np.array(targets), np.array(gs) 
             else:
                 # unlabelled pool predictions
                 pool_predictions, pool_labels_list, weighting_factors = get_pool_predictions(
