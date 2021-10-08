@@ -29,6 +29,7 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False):
         if trained_net.has_weighing_factor:
             tuple_data = trained_net(data.to(device).float(), get_test_model=True)
             pred = tuple_data[0]
+            pred = torch.nn.Function.softmax(pred,dim=1)
             weighting_factor = tuple_data[1]
             weighting_factor_list.append(weighting_factor.to("cpu").detach().numpy())
         else:
@@ -42,10 +43,7 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False):
         weighting_factor_list = np.concatenate(weighting_factor_list)
     else:
         weighting_factor_list = None
-    ## checking if the results are normalized or not. If not then applying softmax
-    if not np.allclose(predictions.sum(axis=1),1):
-        predictions = np.exp(predictions) / np.sum(np.exp(predictions), axis=0)
-        
+
     labels_list = np.concatenate(labels_list)
 
     if return_labels:

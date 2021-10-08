@@ -212,7 +212,6 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
-        self.softmax = nn.Softmax()
 
         if self.similarity is None:
             self.linear = nn.Linear(64, num_classes)
