@@ -190,7 +190,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             
         if len(pool_loader) > 0:
             if do_desity_plot:
-                pool_predictions, pool_labels_list, weighting_factors = np.array(pert_preds), np.array(targets), np.array(gs) 
+                pool_predictions, pool_labels_list, weighting_factors = (np.concatenate(pert_preds,axis=0),
+                                                                        np.concatenate(targets,axis=0), 
+                                                                        np.concatenate(gs,axis=0))
             else:
                 # unlabelled pool predictions
                 pool_predictions, pool_labels_list, weighting_factors = get_pool_predictions(

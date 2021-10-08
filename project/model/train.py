@@ -243,7 +243,7 @@ def pertube_image(pool_loader, val_loader, trained_net):
     trained_net.zero_grad(set_to_none=True)
     eps = epsi_list[np.argmax(scores)]
     del scores
-    pert_imgs = []
+
     targets = []
     for batch_idx, (data, target) in enumerate(pool_loader):
         trained_net.zero_grad(set_to_none=True)
@@ -254,23 +254,18 @@ def pertube_image(pool_loader, val_loader, trained_net):
         pred, _ = output.max(dim=-1, keepdim=True)
 
         pred.backward(backward_tensor)
-        pert_imgs.append(
-            fgsm_attack(data, epsilon=eps, data_grad=data.grad.data).to("cpu")
-        )
+        pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
         targets.append(target.to("cpu").numpy().astype(np.float16))
         del data, output, target
-        gc.collect()
-    torch.cuda.empty_cache()
-    trained_net.zero_grad(set_to_none=True)
-    with torch.no_grad():
-        for p_img in pert_imgs:
-            pert_pred, g, h = trained_net(p_img.to(device), get_test_model=True, apply_softmax=True)
+
+        with torch.no_grad():
+            pert_pred, g, h = trained_net(pert_imgage, get_test_model=True, apply_softmax=True)
             gs.append(g.detach().to("cpu").numpy().astype(np.float16))
             hs.append(h.detach().to("cpu").numpy().astype(np.float16))
             pert_preds.append(pert_pred.detach().to("cpu").numpy())
-            p_img.detach().to("cpu").numpy().astype(np.float16)
-    del pert_imgs
-    
+        del pert_pred, g, h
+        gc.collect()
+ 
     return pert_preds, gs, hs, targets
 
 
