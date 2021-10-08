@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def random_sample(dataset_manager, number_samples, net, predictions=None):
+def random_sample(dataset_manager, number_samples, net, predictions=None, weights = None):
     """random_sample [Randomly adds images from the unlabelled pool to the training set]
     Args:
         dataset_manager ([object]): [description]
@@ -30,7 +30,7 @@ def random_sample(dataset_manager, number_samples, net, predictions=None):
 
 
 def uncertainity_sampling_least_confident(
-    dataset_manager, number_samples, net, predictions=None
+    dataset_manager, number_samples, net, predictions=None, weights = None
 ):
     """uncertainity_sampling_least_confident [Uses least confidence to sample training data from the unlabelled poo]
 
@@ -52,6 +52,8 @@ def uncertainity_sampling_least_confident(
         pool_samples_count > number_samples
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
+    if weights is not None:
+        predictions = weights*predictions
     inds = np.argsort(np.max(predictions, axis=1))[:number_samples]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()
@@ -84,7 +86,7 @@ def uncertainity_sampling_highest_entropy(
 
     entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
     if weights is not None:
-        entropy = weights*entropy
+        entropy = np.squeeze(weights)*entropy
     inds = np.argsort(entropy)[:number_samples]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()
