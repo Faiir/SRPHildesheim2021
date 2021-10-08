@@ -61,7 +61,7 @@ def uncertainity_sampling_least_confident(
 
 
 def uncertainity_sampling_highest_entropy(
-    dataset_manager, number_samples, net, predictions=None
+    dataset_manager, number_samples, net, predictions=None, weights = None
 ):
     """uncertainity_sampling_highest_entropy [Uses highest entropy to sample training data from the unlabelled pool]
 
@@ -83,6 +83,8 @@ def uncertainity_sampling_highest_entropy(
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
     entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
+    if weights is not None:
+        entropy = weights*entropy
     inds = np.argsort(entropy)[:number_samples]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()

@@ -189,9 +189,12 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
 
         if len(pool_loader) > 0:
             # unlabelled pool predictions
-            pool_predictions, pool_labels_list = get_pool_predictions(
+            pool_predictions, pool_labels_list, weighting_factor_list = get_pool_predictions(
                 trained_net, pool_loader, device=device, return_labels=True
             )
+
+            if len(weighting_factor_list)==0:
+                weighting_factor_list = None
 
             # samples from unlabelled pool predictions
             sampler(
@@ -199,12 +202,13 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 number_samples=oracle_stepsize,
                 net=trained_net,
                 predictions=pool_predictions,
+                weights = weighting_factor_list
             )
 
-        test_predictions, test_labels = get_pool_predictions(
+        test_predictions, test_labels, _ = get_pool_predictions(
             trained_net, test_loader, device=device, return_labels=True
         )
-        train_predictions, train_labels = get_pool_predictions(
+        train_predictions, train_labels, _  = get_pool_predictions(
             trained_net, train_loader, device=device, return_labels=True
         )
 

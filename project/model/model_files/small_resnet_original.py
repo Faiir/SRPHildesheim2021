@@ -196,13 +196,16 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         self.in_planes = 16
         self.similarity = similarity
+        
 
         if self.similarity is None:
             print("INFO ----- ResNet has been initialized without a similarity measure")
+            self.has_weighing_factor = False
         else:
             print(
                 f"INFO ----- ResNet has been initialized with a similarity measure : {self.similarity}"
             )
+            self.has_weighing_factor = True
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
