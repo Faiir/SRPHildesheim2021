@@ -22,6 +22,9 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False):
     yhat = []
     weighting_factor_list = []
     labels_list = []
+    if trained_net.has_weighing_factor:
+        print("Getting weight factor as well")
+    
     for (data, labels) in pool_loader:
         if trained_net.has_weighing_factor:
             tuple_data = trained_net(data.to(device).float(), get_test_model=True)
@@ -37,8 +40,10 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False):
     predictions = np.concatenate(yhat)
     if len(weighting_factor_list)>0:
         weighting_factor_list = np.concatenate(weighting_factor_list)
+    else:
+        weighting_factor_list = None
     ## checking if the results are normalized or not. If not then applying softmax
-    if not allclose(predictions.sum(axis=1),1):
+    if not np.allclose(predictions.sum(axis=1),1):
         predictions = np.exp(predictions) / np.sum(np.exp(predictions), axis=0)
         
     labels_list = np.concatenate(labels_list)
