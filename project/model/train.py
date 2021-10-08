@@ -216,16 +216,17 @@ def pertube_image(pool_loader, val_loader, trained_net):
         preds = 0
         for batch_idx, (data, target) in enumerate(val_loader):
             trained_net.zero_grad(set_to_none=True)
-            #backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
+            backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
             data, target = data.to(device).float(), target.to(device).long()
             data.requires_grad = True
             output = trained_net(data, apply_softmax=True)
             pred, _ = output.max(dim=-1, keepdim=True)
 
-            pred.backward()
+            pred.backward(backward_tensor)
             pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
-            yhat = trained_net(pert_imgage, apply_softmax=True)
+            del data
 
+            yhat = trained_net(pert_imgage, apply_softmax=True)
             pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
             preds += torch.sum(pred)
         scores.append(preds.detach().cpu().numpy())
