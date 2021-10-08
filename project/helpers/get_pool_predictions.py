@@ -27,14 +27,14 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False):
     
     for (data, labels) in pool_loader:
         if trained_net.has_weighing_factor:
-            tuple_data = trained_net(data.to(device).float(), get_test_model=True)
+            tuple_data = trained_net(data.to(device).float(), get_test_model=True, apply_softmax=True)
             pred = tuple_data[0]
             weighting_factor = tuple_data[1]
             weighting_factor_list.append(weighting_factor.to("cpu").detach().numpy())
         else:
             pred = trained_net(data.to(device).float())
         
-        pred = torch.nn.functional.softmax(pred,dim=1)      
+   
         yhat.append(pred.to("cpu").detach().numpy())
         labels_list.append(labels)
 

@@ -224,12 +224,12 @@ def pertube_image(pool_loader, val_loader, trained_net):
             backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
             data, target = data.to(device).float(), target.to(device).long()
             data.requires_grad = True
-            output = trained_net(data, apply_softmax=True)
-            pred, _ = output.max(dim=-1, keepdim=True)
+            output, g, h = trained_net(data,get_test_model=True, apply_softmax=True)
+            #pred, _ = output.max(dim=-1, keepdim=True)
 
-            pred.backward(backward_tensor)
+            g.backward(backward_tensor)
             pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
-            del data, output, target
+            del data, output, target, g, h
             gc.collect()
     
             yhat = trained_net(pert_imgage, apply_softmax=True)
@@ -250,13 +250,13 @@ def pertube_image(pool_loader, val_loader, trained_net):
         backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
         data, target = data.to(device).float(), target.to(device).long()
         data.requires_grad = True
-        output = trained_net(data, apply_softmax=True)
-        pred, _ = output.max(dim=-1, keepdim=True)
+        output, g, h = trained_net(data,get_test_model=True, apply_softmax=True)
+        #pred, _ = output.max(dim=-1, keepdim=True)
 
-        pred.backward(backward_tensor)
+        g.backward(backward_tensor)
         pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
         targets.append(target.to("cpu").numpy().astype(np.float16))
-        del data, output, target
+        del data, output, target, g, h
 
         with torch.no_grad():
             pert_pred, g, h = trained_net(pert_imgage, get_test_model=True, apply_softmax=True)

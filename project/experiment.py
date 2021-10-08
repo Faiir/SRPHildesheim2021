@@ -132,10 +132,10 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         gen_odin_params = []
         for name, param in net.named_parameters():
             if name not in [
-                "g_func.weight",
-                "g_func.bias",
-                "g_norm.weight",
-                "g_norm.bias",
+               # "g_func.weight",
+                "h_func.bias",
+               # "g_norm.weight",
+               # "g_norm.bias",
                 "h_func.weights",
                 "scaling_factor",
             ]:
