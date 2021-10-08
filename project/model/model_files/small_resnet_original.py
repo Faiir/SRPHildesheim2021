@@ -196,6 +196,7 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         self.in_planes = 16
         self.similarity = similarity
+        self.softmax = nn.Softmax(dim=1)
         
 
         if self.similarity is None:
@@ -247,7 +248,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x, get_test_model=False):
+    def forward(self, x, get_test_model=False, apply_softmax=False):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
@@ -267,6 +268,9 @@ class ResNet(nn.Module):
                 out = torch.mul(h, scale)
             else:
                 out = torch.div(h, g)
+
+        if apply_softmax:
+            out = self.softmax(out)
 
         if get_test_model:
             return out, g, h

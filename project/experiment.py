@@ -186,15 +186,18 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             )
 
             density_plot(pert_preds, gs, hs, targets, writer, i)
-
+            
         if len(pool_loader) > 0:
-            # unlabelled pool predictions
-            pool_predictions, pool_labels_list, weighting_factor_list = get_pool_predictions(
+            if do_desity_plot:
+                pool_predictions, pool_labels_list, weighting_factors = pert_preds, targets, gs 
+            else:
+                # unlabelled pool predictions
+                pool_predictions, pool_labels_list, weighting_factors = get_pool_predictions(
                 trained_net, pool_loader, device=device, return_labels=True
-            )
+                )
 
-            if len(weighting_factor_list)==0:
-                weighting_factor_list = None
+            if len(weighting_factors)==0:
+                weighting_factors = None
 
             # samples from unlabelled pool predictions
             sampler(
@@ -202,7 +205,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 number_samples=oracle_stepsize,
                 net=trained_net,
                 predictions=pool_predictions,
-                weights = weighting_factor_list
+                weights = weighting_factors
             )
 
         test_predictions, test_labels, _ = get_pool_predictions(
