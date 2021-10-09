@@ -128,8 +128,6 @@ def extra_class_sampler(extra_class_thresholding):
             OoD_class_probablities = 1-predictions[:,-1]
         elif extra_class_thresholding=='hard':
             inds_OoD = ~(predictions.argmax(axis=1)==predictions.shape[1])
-            print(inds_OoD[:10])
-            print(inds_OoD.shape,predictions.shape)
         
 
         predictions = predictions[:,:-1]
@@ -143,16 +141,11 @@ def extra_class_sampler(extra_class_thresholding):
             inds = status_manager[status_manager["status"] == 0].index[inds]
         elif extra_class_thresholding=='hard':
             temp_status_manager = status_manager[status_manager["status"] == 0].copy()
-            print("temp_status_manager",temp_status_manager.shape,temp_status_manager.columns)
             temp_status_manager['OoD'] =  inds_OoD
             temp_status_manager['entropy'] = entropy
-            print("temp_status_manager",temp_status_manager.shape,temp_status_manager.columns)
             temp_status_manager = temp_status_manager[temp_status_manager['OoD']]
-            print("temp_status_manager",temp_status_manager.shape,temp_status_manager.columns)
             temp_status_manager.sort_values('entropy', inplace=True)
-            print(temp_status_manager)
             inds = temp_status_manager.index[:number_samples]
-            print(inds)
 
         iteration = 1 + status_manager["status"].max()
         status_manager['status'].iloc[inds] = iteration * status_manager['source'].iloc[inds]
