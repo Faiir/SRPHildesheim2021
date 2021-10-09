@@ -32,7 +32,7 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False):
             weighting_factor = tuple_data[1]
             weighting_factor_list.append(weighting_factor.to("cpu").detach().numpy())
         else:
-            pred = trained_net(data.to(device).float())
+            pred = trained_net(data.to(device).float(), apply_softmax=True)
         
    
         yhat.append(pred.to("cpu").detach().numpy())

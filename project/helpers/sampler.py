@@ -95,7 +95,7 @@ def uncertainity_sampling_highest_entropy(
     return None
 
 
-def extra_class_sampler(extra_class_thresholding)
+def extra_class_sampler(extra_class_thresholding):
     def extra_class_sampler(dataset_manager, number_samples, net, predictions=None, weights = None): 
         """uncertainity_sampling_highest_entropy [Uses highest entropy to sample training data from the unlabelled 
         pool with OoD samples as an extra class. The OoD class is separated from the rest and remaining class probablities
@@ -118,22 +118,23 @@ def extra_class_sampler(extra_class_thresholding)
 
         status_manager = dataset_manager.status_manager
         pool_samples_count = len(status_manager[status_manager["status"] == 0])
-
+        
         assert pool_samples_count > 0, "No sample left in pool to label"
         assert (
             pool_samples_count > number_samples
         ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
         if extra_class_thresholding=='soft':
-            OoD_class_probablities = predictions[:,-1]
-            print(OoD_class_probablities.shape,predictions.shape)
+            OoD_class_probablities = 1-predictions[:,-1]
         elif extra_class_thresholding=='hard':
             inds_OoD = predictions.argmax(axis=1)==predictions.shape[1]
+            print(inds_OoD[:10])
             print(inds_OoD.shape,predictions.shape)
-            
+        
+
         predictions = predictions[:,:-1]
-        predictions = predictions/np.sum(predictions,axis=1)
-        print(predictions.shape)
+        predictions = predictions/np.sum(predictions, axis=1, keepdims=True)
+
         entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
         
         if extra_class_thresholding=='soft':
@@ -142,6 +143,7 @@ def extra_class_sampler(extra_class_thresholding)
             inds = status_manager[status_manager["status"] == 0].index[inds]
         elif extra_class_thresholding=='hard':
             temp_status_manager = status_manager[status_manager["status"] == 0].copy()
+            print("temp_status_manager",temp_status_manager.shape,temp_status_manager.columns)
             temp_status_manager['OoD'] =  inds_OoD
             temp_status_manager['entropy'] = entropy
             temp_status_manager = temp_status_manager[temp_status_manager['OoD']]
@@ -149,7 +151,7 @@ def extra_class_sampler(extra_class_thresholding)
             inds = temp_status_manager.index[:number_samples]
 
         iteration = 1 + status_manager["status"].max()
-        status_manager.iloc[inds, -1] = iteration * status_manager.iloc[inds, -2]
+        status_manager['status'].iloc[inds] = iteration * status_manager['source'].iloc[inds]
 
         return None
     return extra_class_sampler

@@ -69,9 +69,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     OoD_extra_class = param_dict.get("OoD_extra_class", False)
     if OoD_extra_class:
         extra_class_thresholding = param_dict.get("extra_class_thresholding",'soft')
-        print('INFO --- Training OoD as extra class')
+        print(f'INFO --- Training OoD as extra class with {extra_class_thresholding} Thresholding')
         assert param_dict.get('similarity',None) is None, f"similarity must be None, found {param_dict.get('similarity',None)}"
-        assert oracle=="highest entropy", f"Only highest entropy oracle is supported found {oracle}"
+        assert oracle=="extra_class_entropy", f"Only extra_class_entropy oracle is supported found {oracle}"
     else:
         extra_class_thresholding = None
     
@@ -212,7 +212,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 trained_net, pool_loader, device=device, return_labels=True
                 )
 
-            if len(weighting_factors)==0:
+            if (weighting_factors is not None) and (len(weighting_factors)==0):
                 weighting_factors = None
 
             # samples from unlabelled pool predictions
