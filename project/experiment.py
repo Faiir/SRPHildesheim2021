@@ -65,7 +65,16 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     do_pertubed_images = param_dict["do_pertubed_images"]
     do_desity_plot = param_dict["do_desity_plot"]
     criterion = param_dict["criterion"]
-
+    
+    OoD_extra_class = param_dict.get("OoD_extra_class", False)
+    if OoD_extra_class:
+        extra_class_thresholding = param_dict.get("extra_class_thresholding",'soft')
+        print('INFO --- Training OoD as extra class')
+        assert param_dict.get('similarity',None) is None, f"similarity must be None, found {param_dict.get('similarity',None)}"
+        assert oracle=="highest entropy", f"Only highest entropy oracle is supported found {oracle}"
+    else:
+        extra_class_thresholding = None
+    
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -88,6 +97,10 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
 
         raise NotImplementedError
         # sampler = gen0din_sampler
+    elif oracle == 'extra_class_entropy':
+        from .helpers.sampler import extra_class_sampler
+
+        sampler = extra_class_sampler(extra_class_thresholding)
 
     # net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
     # net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
@@ -293,16 +306,24 @@ def start_experiment(config_path, log):
                     if exp[variable] is not None:
                         print(f"{variable} : ", exp[variable])
 
-            data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
+            OoD_extra_class = exp.get("OoD_extra_class", False)
+
+            data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data,
+                                             OoD_extra_class=OoD_extra_class)
 
             metric = exp["metric"]
 
             for oracle in exp["oracles"]:
+            
+                if OoD_extra_class:
+                    num_classes=11
+                else:
+                    num_classes=10
 
                 net = get_model(
                     exp["model_name"],
                     similarity=exp["similarity"],
-                    out_classes=10,
+                    num_classes=num_classes,
                     include_bn=False,
                     channel_input=3,
                 )
