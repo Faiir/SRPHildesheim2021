@@ -21,8 +21,8 @@
       "validation_source": "test",
       "validation_split": 0.1,
       "lr_sheduler": true,
-      "do_desity_plot": true,
-      "do_pertubed_images": true,
+      "do_desity_plot": false,
+      "do_pertubed_images": false,
       "criterion": "crossentropy",
       "verbose": 2
     }

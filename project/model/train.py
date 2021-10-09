@@ -225,9 +225,9 @@ def pertube_image(pool_loader, val_loader, trained_net):
             data, target = data.to(device).float(), target.to(device).long()
             data.requires_grad = True
             output, g, h = trained_net(data,get_test_model=True, apply_softmax=True)
-            #pred, _ = output.max(dim=-1, keepdim=True)
+            pred, _ = output.max(dim=-1, keepdim=True)
 
-            g.backward(backward_tensor)
+            pred.backward(backward_tensor)
             pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
             del data, output, target, g, h
             gc.collect()
@@ -251,9 +251,9 @@ def pertube_image(pool_loader, val_loader, trained_net):
         data, target = data.to(device).float(), target.to(device).long()
         data.requires_grad = True
         output, g, h = trained_net(data,get_test_model=True, apply_softmax=True)
-        #pred, _ = output.max(dim=-1, keepdim=True)
+        pred, _ = output.max(dim=-1, keepdim=True)
 
-        g.backward(backward_tensor)
+        pred.backward(backward_tensor)
         pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
         targets.append(target.to("cpu").numpy().astype(np.float16))
         del data, output, target, g, h
