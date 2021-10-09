@@ -15,7 +15,7 @@
       "model_name": "base_small_resnet",
       "similarity": null,
       "OoD_extra_class" : true,
-      "extra_class_thresholding" : "soft",
+      "extra_class_thresholding" : "hard",
       "include_bn": false,
       "nesterov": false,
       "lr": 0.1,
