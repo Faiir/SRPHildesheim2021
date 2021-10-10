@@ -128,9 +128,13 @@ class ResNet(nn.Module):
             self.gram_feats.append(t)
     
     def gram_feature_list(self,x):
+        if torch.cuda.is_available():
+            device = "cuda"
+        else:
+            device = "cpu"
         self.collecting = True
         self.gram_feats = []
-        self.forward(x)
+        self.forward(x.to(device))
         self.collecting = False
         temp = self.gram_feats
         self.gram_feats = []
