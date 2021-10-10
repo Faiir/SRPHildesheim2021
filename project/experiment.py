@@ -347,7 +347,7 @@ def start_experiment(config_path, log):
                 log_df = data_manager.get_logs()
 
                 current_time = datetime.now().strftime("%H-%M-%S")
-                log_file_name = "Experiment-from-" + str(current_time) + ".csv"
+                log_file_name = "Experiment-from-" + str(current_time)+ "-" + str(exp["similarity"]) + ".csv"
 
                 log_dir = os.path.join(".", "log_dir")
 
@@ -368,7 +368,7 @@ def start_experiment(config_path, log):
                         model_dir,
                         in_dist_data,
                         ood_data,
-                        desc_str="Experiment-from-" + str(current_time),
+                        desc_str="Experiment-from-" + str(current_time)+ "-" + str(exp["similarity"])
                     )
 
                 log_path = os.path.join(log_dir, log_file_name)
