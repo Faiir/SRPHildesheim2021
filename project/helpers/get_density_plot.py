@@ -99,8 +99,6 @@ def density_plot(pert_preds, gs, hs, targets, writer, oracle_step):
         ax=ax3,
     )
     writer.add_figure(tag=f"density_oracle_step_{oracle_step}", figure=fig)
-
-
 # for c,predictions_perturbed in enumerate(pretubed_preds):
 #   print(f"visualization after step {(c+1)*5}")
 #   labels = np.concatenate([CIFAR_train_labels,10+CIFAR_test_labels,-np.ones_like(MNIST_test_labels,dtype=np.int8)])

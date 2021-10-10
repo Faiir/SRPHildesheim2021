@@ -43,8 +43,9 @@ class AngularPenaltySMLoss(
         self.loss_type = loss_type
         self.in_features = in_features
         self.out_features = out_features
-        self.fc = nn.Linear(in_features, out_features, bias=False)
+        self.fc = nn.Linear(in_features, out_features, bias=False)  # 512 10
         self.eps = eps
+        # introduce to G - layer  and
 
     def forward(self, x, labels):
         """
@@ -60,6 +61,7 @@ class AngularPenaltySMLoss(
         x = F.normalize(x, p=2, dim=1)
 
         wf = self.fc(x)
+        # divide by G layer
         if self.loss_type == "cosface":
             numerator = self.s * (torch.diagonal(wf.transpose(0, 1)[labels]) - self.m)
         if self.loss_type == "arcface":

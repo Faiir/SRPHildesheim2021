@@ -26,7 +26,7 @@ def add_rot_heads(net, pernumile_layer_size=128):
 def get_model(
     model_name,
     similarity=None,
-    out_classes=10,
+    num_classes=10,
     include_bn=False,
     channel_input=3,
     **kwargs,
@@ -40,7 +40,7 @@ def get_model(
             "gen_odin_res": large resnet with GenOdin Layer, "small_gen_odin_res": small resnet with GenOdin Layer,
             "small_resnet_with_spec": small resnet with spectral normalization, "base_small_resnet": abdurs resnet (working the best as per usual)  ]
         similarity ([type], optional): [For genOdinMode "E":Euclidean distance, "I": FC Layer, "C": Cosine Similarity, "IR": I-reversed , "ER": E-revesered, "CR": "C-reversed" ]. Defaults to None.
-        out_classes (int, optional): [Number of classes]. Defaults to 10.
+        num_classes (int, optional): [Number of classes]. Defaults to 10.
         include_bn (bool, optional): [Include batchnorm]. Defaults to False.
         channel_input (int, optional): [dataset channel]. Defaults to 3.
 
@@ -56,7 +56,7 @@ def get_model(
     elif model_name == "gen_odin_conv":
         genOdin = genOdinModel(
             similarity=similarity,
-            out_classes=out_classes,
+            out_classes=num_classes,
             include_bn=include_bn,
             channel_input=channel_input,
         )
@@ -69,7 +69,7 @@ def get_model(
         return resnet20(
             similarity=similarity,
             selfsupervision=kwargs.get("selfsupervision", False),
-            num_classes=kwargs.get("num_classes", 10),
+            num_classes=num_classes,
             do_not_genOdin=kwargs.get("do_not_genOdin", False),
         )
 
@@ -77,13 +77,15 @@ def get_model(
         return resnet20SpecGenOdin(
             similarity=similarity,
             selfsupervision=kwargs.get("selfsupervision", False),
-            num_classes=kwargs.get("num_classes", 10),
+            num_classes=num_classes,
             do_not_genOdin=kwargs.get("do_not_genOdin", False),
         )
 
     elif model_name == "base_small_resnet":
+        if num_classes!=10:
+            print(f'INFO ---- Number of classes is {num_classes}')
         return resnet20_original(
-            num_classes=kwargs.get("num_classes", 10), similarity=similarity
+            num_classes=num_classes, similarity=similarity
         )
 
     else:
