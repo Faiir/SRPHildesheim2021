@@ -11,6 +11,7 @@ import os
 from tqdm import tqdm
 import json
 import pandas as pd
+import numpy as np
 
 
 # data imports
@@ -64,7 +65,16 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     do_pertubed_images = param_dict["do_pertubed_images"]
     do_desity_plot = param_dict["do_desity_plot"]
     criterion = param_dict["criterion"]
-
+    
+    OoD_extra_class = param_dict.get("OoD_extra_class", False)
+    if OoD_extra_class:
+        extra_class_thresholding = param_dict.get("extra_class_thresholding",'soft')
+        print(f'INFO --- Training OoD as extra class with {extra_class_thresholding} Thresholding')
+        assert param_dict.get('similarity',None) is None, f"similarity must be None, found {param_dict.get('similarity',None)}"
+        assert oracle=="extra_class_entropy", f"Only extra_class_entropy oracle is supported found {oracle}"
+    else:
+        extra_class_thresholding = None
+    
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -87,6 +97,10 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
 
         raise NotImplementedError
         # sampler = gen0din_sampler
+    elif oracle == 'extra_class_entropy':
+        from .helpers.sampler import extra_class_sampler
+
+        sampler = extra_class_sampler(extra_class_thresholding)
 
     # net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
     # net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
@@ -131,10 +145,10 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         gen_odin_params = []
         for name, param in net.named_parameters():
             if name not in [
-                "g_func.weight",
-                "g_func.bias",
-                "g_norm.weight",
-                "g_norm.bias",
+               # "g_func.weight",
+                "h_func.bias",
+               # "g_norm.weight",
+               # "g_norm.bias",
                 "h_func.weights",
                 "scaling_factor",
             ]:
@@ -182,16 +196,24 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         )
         if do_desity_plot:
             pert_preds, gs, hs, targets = get_density_vals(
-                pool_loader, test_loader, trained_net, do_pertubed_images
+                pool_loader, val_loader, trained_net, do_pertubed_images
             )
 
             density_plot(pert_preds, gs, hs, targets, writer, i)
-
+            
         if len(pool_loader) > 0:
-            # unlabelled pool predictions
-            pool_predictions, pool_labels_list = get_pool_predictions(
+            if do_desity_plot:
+                pool_predictions, pool_labels_list, weighting_factors = (np.concatenate(pert_preds,axis=0),
+                                                                        np.concatenate(targets,axis=0), 
+                                                                        np.concatenate(gs,axis=0))
+            else:
+                # unlabelled pool predictions
+                pool_predictions, pool_labels_list, weighting_factors = get_pool_predictions(
                 trained_net, pool_loader, device=device, return_labels=True
-            )
+                )
+
+            if (weighting_factors is not None) and (len(weighting_factors)==0):
+                weighting_factors = None
 
             # samples from unlabelled pool predictions
             sampler(
@@ -199,12 +221,13 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 number_samples=oracle_stepsize,
                 net=trained_net,
                 predictions=pool_predictions,
+                weights = weighting_factors
             )
 
-        test_predictions, test_labels = get_pool_predictions(
+        test_predictions, test_labels, _ = get_pool_predictions(
             trained_net, test_loader, device=device, return_labels=True
         )
-        train_predictions, train_labels = get_pool_predictions(
+        train_predictions, train_labels, _  = get_pool_predictions(
             trained_net, train_loader, device=device, return_labels=True
         )
 
@@ -283,16 +306,24 @@ def start_experiment(config_path, log):
                     if exp[variable] is not None:
                         print(f"{variable} : ", exp[variable])
 
-            data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
+            OoD_extra_class = exp.get("OoD_extra_class", False)
+
+            data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data,
+                                             OoD_extra_class=OoD_extra_class)
 
             metric = exp["metric"]
 
             for oracle in exp["oracles"]:
+            
+                if OoD_extra_class:
+                    num_classes=11
+                else:
+                    num_classes=10
 
                 net = get_model(
                     exp["model_name"],
                     similarity=exp["similarity"],
-                    out_classes=10,
+                    num_classes=num_classes,
                     include_bn=False,
                     channel_input=3,
                 )

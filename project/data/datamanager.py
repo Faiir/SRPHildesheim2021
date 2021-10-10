@@ -75,6 +75,7 @@ class Data_manager:
         base_labels_test,
         OOD_data,
         OOD_labels,
+        OoD_extra_class
     ):
         self.base_data = base_data.copy()
         self.base_data_test = base_data_test.copy()
@@ -83,6 +84,7 @@ class Data_manager:
         self.OOD_data = OOD_data.copy()
         self.OOD_labels = OOD_labels.copy()
         self.log = {}
+        self.OoD_extra_class = OoD_extra_class
         self.iter = None
         self.config = {}
 
@@ -224,6 +226,15 @@ class Data_manager:
             columns=["target", "source", "status"],
         )
 
+        if self.OoD_extra_class:
+            self.status_manager['original_targets'] = self.status_manager['target'].values
+            OoD_class_label = max(train_labels)+1
+            self.status_manager['target'] = np.where(self.status_manager['source'].values==1,
+                                                     self.status_manager['original_targets'].values,
+                                                     OoD_class_label)  
+            print(f'Setting OoD Targets as {OoD_class_label} class')
+            
+
         self.iter = 0
         if debug:
             snapshot = tracemalloc.take_snapshot()
@@ -287,7 +298,11 @@ class Data_manager:
             self.iter is not None
         ), "Dataset not initialized. Call create_merged_data()"
 
-        labelled_mask = self.status_manager[self.status_manager["status"] > 0].index
+        if self.OoD_extra_class:
+            labelled_mask = self.status_manager[self.status_manager["status"]!=0].index
+        else:
+            labelled_mask = self.status_manager[self.status_manager["status"] > 0].index
+        
         train_data = self.pool_data[labelled_mask]
         train_labels = self.status_manager.iloc[labelled_mask]["target"].values
 
@@ -381,7 +396,8 @@ class Data_manager:
 def get_datamanager(
     indistribution=["Cifar10"],
     ood=["MNIST", "Fashion_MNIST", "SVHN"],
-):
+    OoD_extra_class = False
+    ):
     """get_datamanager [Creates a datamanager instance with the In-/Out-of-Distribution Data]
 
     [List based processing of Datasets. Images are resized / croped on 32x32]
@@ -389,6 +405,7 @@ def get_datamanager(
     Args:
         indistribution (list, optional): [description]. Defaults to ["Cifar10"].
         ood (list, optional): [description]. Defaults to ["MNIST", "Fashion_MNIST", "SVHN"].
+        OoD_extra_calss (bool) : [flag for using OoD as extra class in training]. Defaults to False
 
     Returns:
         [datamager]: [Experiment datamanager for for logging and the active learning cycle]
@@ -798,6 +815,7 @@ def get_datamanager(
         base_labels_test=base_labels_test,
         OOD_data=OOD_data,
         OOD_labels=OOD_labels,
+        OoD_extra_class = OoD_extra_class
     )
     #del (base_data, base_labels, OOD_data, OOD_labels)
 
