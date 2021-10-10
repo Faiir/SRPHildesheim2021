@@ -66,6 +66,10 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     do_pertubed_images = param_dict["do_pertubed_images"]
     do_desity_plot = param_dict["do_desity_plot"]
     criterion = param_dict["criterion"]
+    model = param_dict['gram_resnet']
+
+
+
     if param_dict.get("bugged_and_working",None) is None:
         bugged_and_working = param_dict.get("bugged_and_working",True)
         print(f"INFO ---- flag bugged_and_working is not set. Using default value of {bugged_and_working}")
@@ -148,33 +152,42 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         else:
             criterion = nn.CrossEntropyLoss()
 
-        base_params = []
-        gen_odin_params = []
-        for name, param in net.named_parameters():
-            if name not in [
-               # "g_func.weight",
-                "h_func.bias",
-               # "g_norm.weight",
-               # "g_norm.bias",
-                "h_func.weights",
-                "scaling_factor",
-            ]:
-                base_params.append(param)  # can't do the name tupel
-            else:
-                if verbose >= 2:
-                    print("added name: ", name)
-                gen_odin_params.append(param)
+        if model_name in ["gen_odin_conv","gen_odin_res","small_gen_odin_res","small_resnet_with_spec","base_small_resnet"]:
+            base_params = []
+            gen_odin_params = []
+            for name, param in net.named_parameters():
+                if name not in [
+                # "g_func.weight",
+                    "h_func.bias",
+                # "g_norm.weight",
+                # "g_norm.bias",
+                    "h_func.weights",
+                    "scaling_factor",
+                ]:
+                    base_params.append(param)  # can't do the name tupel
+                else:
+                    if verbose >= 2:
+                        print("added name: ", name)
+                    gen_odin_params.append(param)
 
-        optimizer = optim.SGD(
-            [
-                {"params": base_params},
-                {"params": gen_odin_params, "weight_decay": 0.0},
-            ],
-            weight_decay=weight_decay,
-            lr=lr,
-            momentum=momentum,
-            nesterov=nesterov,
-        )
+            
+            optimizer = optim.SGD(
+                [
+                    {"params": base_params},
+                    {"params": gen_odin_params, "weight_decay": 0.0},
+                ],
+                weight_decay=weight_decay,
+                lr=lr,
+                momentum=momentum,
+                nesterov=nesterov,)
+        else:
+            optimizer = optim.SGD(
+                net.parameters(),
+                weight_decay=weight_decay,
+                lr=lr,
+                momentum=momentum,
+                nesterov=nesterov,
+            )
 
         # optimizer = optim.SGD(
         #     net.parameters(),
@@ -202,6 +215,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
         if do_desity_plot:
+            if model_name not in ['base_small_resnet']:
+                print('\n\n\WARNING ---------------------------------------------------------------------------',\
+                        f'Doing density plots while using model {model_name} is not supported\n\n')
             pert_preds, gs, hs, targets = get_density_vals(
                 pool_loader, val_loader, trained_net, do_pertubed_images, bugged_and_working
             )
@@ -218,6 +234,12 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 pool_predictions, pool_labels_list, weighting_factors = get_pool_predictions(
                 trained_net, pool_loader, device=device, return_labels=True, bugged_and_working=bugged_and_working
                 )
+
+
+            if model_name=='model_name':
+                mins,maxs = trained_net.get_min_max(train_loader)
+                weighting_factors = trained_net.get_deviations(pool_loader,power=[10],mins=mins,maxs=maxs)
+                weighting_factors = np.exp(-weighting_factors)
 
             if (weighting_factors is not None) and (len(weighting_factors)==0):
                 weighting_factors = None

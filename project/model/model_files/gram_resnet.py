@@ -66,6 +66,8 @@ class ResNet(nn.Module):
         self.linear = nn.Linear(64, num_classes)
         
         self.collecting = False
+        self.has_weighing_factor = False
+        self.softmax = nn.Softmax(dim=-1)
     
     def _make_layer(self, block, planes, num_blocks, stride):
         strides = [stride] + [1]*(num_blocks-1)
@@ -83,6 +85,9 @@ class ResNet(nn.Module):
         out = F.avg_pool2d(out, 4)
         out = out.view(out.size(0), -1)
         y = self.linear(out)
+
+        if apply_softmax:
+            y = self.softmax(y)
         return y
     
     def record(self, t):
@@ -102,13 +107,13 @@ class ResNet(nn.Module):
         tm = torch.load(path,map_location="cpu")        
         self.load_state_dict(tm)
     
-    def get_min_max(self, data, power):
+    def get_min_max(self, data_loader, power):
         mins = []
         maxs = []
         
-        for i in range(0,len(data),128):
-            batch = data[i:i+128].cuda()
-            feat_list = self.gram_feature_list(batch)
+        for batch_data in data_loader:
+            batch_data.cuda() #batch = data[i:i+128].cuda()
+            feat_list = self.gram_feature_list(batch_data)
             for L,feat_L in enumerate(feat_list):
                 if L==len(mins):
                     mins.append([None]*len(power))
@@ -129,12 +134,12 @@ class ResNet(nn.Module):
         
         return mins,maxs
     
-    def get_deviations(self,data,power,mins,maxs):
+    def get_deviations(self,data_loader,power,mins,maxs):
         deviations = []
         
-        for i in range(0,len(data),128):            
-            batch = data[i:i+128].cuda()
-            feat_list = self.gram_feature_list(batch)
+        for batch_data in data_loader:          
+            batch_data.cuda() # batch = data[i:i+128].cuda()
+            feat_list = self.gram_feature_list(batch_data)
             batch_deviations = []
             for L,feat_L in enumerate(feat_list):
                 dev = 0
@@ -151,12 +156,34 @@ class ResNet(nn.Module):
         return deviations
 
 
-
-def resnet():
+def resnet20_gram():
     return ResNet(BasicBlock, [3, 3, 3], num_classes=10)
 
+def G_p(ob, p):
+    temp = ob.detach()
+    
+    temp = temp**p
+    temp = temp.reshape(temp.shape[0],temp.shape[1],-1)
+    temp = ((torch.matmul(temp,temp.transpose(dim0=2,dim1=1)))).sum(dim=2) 
+    temp = (temp.sign()*torch.abs(temp)**(1/p)).reshape(temp.shape[0],-1)
+    
+    return temp
 
 
+def cpu(ob):
+    for i in range(len(ob)):
+        for j in range(len(ob[i])):
+            ob[i][j] = ob[i][j].cpu()
+    return ob
+
+def cuda(ob):
+    for i in range(len(ob)):
+        for j in range(len(ob[i])):
+            ob[i][j] = ob[i][j].cuda()
+    return ob
+
+
+"""
 def detect(all_test_deviations,all_ood_deviations, verbose=True, normalize=True):
     average_results = {}
     for i in range(1,11):
@@ -184,17 +211,7 @@ def detect(all_test_deviations,all_ood_deviations, verbose=True, normalize=True)
         callog.print_results(average_results)
     return average_results
 
-def cpu(ob):
-    for i in range(len(ob)):
-        for j in range(len(ob[i])):
-            ob[i][j] = ob[i][j].cpu()
-    return ob
 
-def cuda(ob):
-    for i in range(len(ob)):
-        for j in range(len(ob[i])):
-            ob[i][j] = ob[i][j].cuda()
-    return ob
 
 class Detector:
     def __init__(self):
@@ -278,35 +295,4 @@ class Detector:
         average_results = detect(self.all_test_deviations,all_ood_deviations)
         return average_results, self.all_test_deviations, all_ood_deviations
 
-
-def G_p(ob, p):
-    temp = ob.detach()
-    
-    temp = temp**p
-    temp = temp.reshape(temp.shape[0],temp.shape[1],-1)
-    temp = ((torch.matmul(temp,temp.transpose(dim0=2,dim1=1)))).sum(dim=2) 
-    temp = (temp.sign()*torch.abs(temp)**(1/p)).reshape(temp.shape[0],-1)
-    
-    return temp
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"""
