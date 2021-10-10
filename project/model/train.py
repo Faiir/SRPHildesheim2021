@@ -12,8 +12,6 @@ import gc
 import torch.backends.cudnn as cudnn
 
 
-
-
 def cosine_annealing(step, total_steps, lr_max, lr_min):
     return lr_min + (lr_max - lr_min) * 0.5 * (1 + np.cos(step / total_steps * np.pi))
 
@@ -96,7 +94,9 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
     if val_dataloader is not None:
         validation = True
         if kwargs.get("patience", None) is None:
-            print(f'INFO ------ Early Stopping Patience not specified using {int(epochs * 0.1)}')
+            print(
+                f"INFO ------ Early Stopping Patience not specified using {int(epochs * 0.1)}"
+            )
         patience = kwargs.get("patience", int(epochs * 0.1))
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
     else:
@@ -189,7 +189,7 @@ def test(model, criterion, test_dataloader, device, verbose=0):
     test_loss = 0
     model.eval()
     for (t_data, t_target) in test_dataloader:
-        
+
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         t_data, t_target = t_data.to(device).float(), t_target.to(device).long()
@@ -203,7 +203,6 @@ def test(model, criterion, test_dataloader, device, verbose=0):
     return test_loss.to("cpu").detach().numpy() / len(
         test_dataloader
     )  # return avg testloss
-
 
 
 def pertube_image(pool_loader, val_loader, trained_net):
@@ -224,21 +223,21 @@ def pertube_image(pool_loader, val_loader, trained_net):
             backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
             data, target = data.to(device).float(), target.to(device).long()
             data.requires_grad = True
-            output, g, h = trained_net(data,get_test_model=True, apply_softmax=True)
+            output, g, h = trained_net(data, get_test_model=True, apply_softmax=True)
             pred, _ = output.max(dim=-1, keepdim=True)
 
             pred.backward(backward_tensor)
             pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
             del data, output, target, g, h
             gc.collect()
-    
+
             yhat = trained_net(pert_imgage, apply_softmax=True)
             pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
             preds += torch.sum(pred)
             del pred, yhat, pert_imgage
             gc.collect()
         scores.append(preds.detach().cpu().numpy())
-    
+
     torch.cuda.empty_cache()
     trained_net.zero_grad(set_to_none=True)
     eps = epsi_list[np.argmax(scores)]
@@ -250,7 +249,7 @@ def pertube_image(pool_loader, val_loader, trained_net):
         backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
         data, target = data.to(device).float(), target.to(device).long()
         data.requires_grad = True
-        output, g, h = trained_net(data,get_test_model=True, apply_softmax=True)
+        output, g, h = trained_net(data, get_test_model=True, apply_softmax=True)
         pred, _ = output.max(dim=-1, keepdim=True)
 
         pred.backward(backward_tensor)
@@ -259,13 +258,15 @@ def pertube_image(pool_loader, val_loader, trained_net):
         del data, output, target, g, h
 
         with torch.no_grad():
-            pert_pred, g, h = trained_net(pert_imgage, get_test_model=True, apply_softmax=True)
+            pert_pred, g, h = trained_net(
+                pert_imgage, get_test_model=True, apply_softmax=True
+            )
             gs.append(g.detach().to("cpu").numpy().astype(np.float16))
             hs.append(h.detach().to("cpu").numpy().astype(np.float16))
             pert_preds.append(pert_pred.detach().to("cpu").numpy())
         del pert_pred, g, h
         gc.collect()
- 
+
     return pert_preds, gs, hs, targets
 
 
@@ -283,13 +284,16 @@ def get_density_vals(pool_loader, val_loader, trained_net, do_pertubed_images):
     Returns:
         [tupel(pert_preds, gs, hs, targets)]: [predictions for the pool data, coressponding g / h values, actual targets]
     """
+    device = "cuda"
     if do_pertubed_images:
         return pertube_image(pool_loader, val_loader, trained_net)
     else:
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(pool_loader):
                 data = data.to(device).float()
-                pert_pred, g, h = trained_net(data, get_test_model=True, apply_softmax=True)
+                pert_pred, g, h = trained_net(
+                    data, get_test_model=True, apply_softmax=True
+                )
                 gs.append(g.detach().to("cpu").numpy().astype(np.float16))
                 hs.append(h.detach().to("cpu").numpy().astype(np.float16))
                 pert_preds.append(pert_pred.detach().to("cpu").numpy())

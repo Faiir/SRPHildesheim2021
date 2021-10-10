@@ -31,7 +31,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
-
+from torch.nn.utils.parametrizations import spectral_norm
 from torch.autograd import Variable
 
 __all__ = [
@@ -69,14 +69,14 @@ class euc_dist_layer(nn.Module):
         else:
             self.device = "cpu"
 
-        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+        weight = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
 
-        self.weights = nn.Parameter(weights)
-        init.kaiming_normal_(self.weights)
+        self.weight = nn.Parameter(weight)
+        init.kaiming_normal_(self.weight)
 
     def forward(self, x):
         x = x.unsqueeze(dim=-1)
-        diff = x - self.weights
+        diff = x - self.weight
         diff_squared = torch.square(diff)
         diff_summed = torch.sum(diff_squared, dim=1)
         out = torch.sqrt(diff_summed)
@@ -91,14 +91,14 @@ class euc_dist_layer_corrected(nn.Module):
         else:
             self.device = "cpu"
 
-        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+        weight = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
 
-        self.weights = nn.Parameter(weights)
-        init.kaiming_normal_(self.weights)
+        self.weight = nn.Parameter(weight)
+        init.kaiming_normal_(self.weight)
 
     def forward(self, x):
         x = x.unsqueeze(dim=-1)
-        diff = x - self.weights
+        diff = x - self.weight
         diff_squared = torch.square(diff)
         diff_summed = torch.sum(diff_squared, dim=1)
         out = -torch.sqrt(diff_summed)
@@ -113,15 +113,15 @@ class cosine_layer(nn.Module):
         else:
             self.device = "cpu"
 
-        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+        weight = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
 
-        self.weights = nn.Parameter(weights)
-        init.kaiming_normal_(self.weights)
+        self.weight = nn.Parameter(weight)
+        init.kaiming_normal_(self.weight)
 
     def forward(self, x):
         x = x.unsqueeze(-1)
         cos = nn.CosineSimilarity(dim=1)
-        return cos(self.weights, x)
+        return cos(self.weight, x)
 
 
 class cosine_layer_holy(nn.Module):
@@ -132,15 +132,15 @@ class cosine_layer_holy(nn.Module):
         else:
             self.device = "cpu"
 
-        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+        weight = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
 
-        self.weights = nn.Parameter(weights)
-        init.kaiming_normal_(self.weights)
+        self.weight = nn.Parameter(weight)
+        init.kaiming_normal_(self.weight)
 
     def forward(self, x):
         x = x.unsqueeze(-1)
         cos = nn.CosineSimilarity(dim=1)
-        return -cos(self.weights, x)
+        return -cos(self.weight, x)
 
 
 class BasicBlock(nn.Module):
@@ -148,12 +148,14 @@ class BasicBlock(nn.Module):
 
     def __init__(self, in_planes, planes, stride=1, option="A"):
         super(BasicBlock, self).__init__()
-        self.conv1 = nn.Conv2d(
-            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
+        self.conv1 = spectral_norm(
+            nn.Conv2d(
+                in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
+            )
         )
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(
-            planes, planes, kernel_size=3, stride=1, padding=1, bias=False
+        self.conv2 = spectral_norm(
+            nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
         )
         self.bn2 = nn.BatchNorm2d(planes)
 
@@ -173,12 +175,14 @@ class BasicBlock(nn.Module):
                 )
             elif option == "B":
                 self.shortcut = nn.Sequential(
-                    nn.Conv2d(
-                        in_planes,
-                        self.expansion * planes,
-                        kernel_size=1,
-                        stride=stride,
-                        bias=False,
+                    spectral_norm(
+                        nn.Conv2d(
+                            in_planes,
+                            self.expansion * planes,
+                            kernel_size=1,
+                            stride=stride,
+                            bias=False,
+                        )
                     ),
                     nn.BatchNorm2d(self.expansion * planes),
                 )
@@ -197,7 +201,6 @@ class ResNet(nn.Module):
         self.in_planes = 16
         self.similarity = similarity
         self.softmax = nn.Softmax(dim=1)
-        
 
         if self.similarity is None:
             print("INFO ----- ResNet has been initialized without a similarity measure")
@@ -208,30 +211,32 @@ class ResNet(nn.Module):
             )
             self.has_weighing_factor = True
 
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = spectral_norm(
+            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
+        )
         self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
 
         if self.similarity is None:
-            self.linear = nn.Linear(64, num_classes)
+            self.linear = spectral_norm(nn.Linear(64, num_classes))
         else:
             self.g_activation = nn.Sigmoid()
-            self.g_func = nn.Linear(64, 1)
+            self.g_func = spectral_norm(nn.Linear(64, 1))
             self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
             if "I" in self.similarity:
-                self.h_func = nn.Linear(64, num_classes)
+                self.h_func = spectral_norm(nn.Linear(64, num_classes))
             elif "E" in self.similarity:
-                self.h_func = euc_dist_layer(64, num_classes)
+                self.h_func = spectral_norm(euc_dist_layer(64, num_classes))
             elif "C" in self.similarity:
-                self.h_func = cosine_layer(64, num_classes)
+                self.h_func = spectral_norm(cosine_layer(64, num_classes))
 
             if "E_U" in self.similarity:
-                self.h_func = euc_dist_layer_corrected(64, num_classes)
+                self.h_func = spectral_norm(euc_dist_layer_corrected(64, num_classes))
             elif "C_H" in self.similarity:
-                self.h_func = cosine_layer_holy(64, num_classes)
+                self.h_func = spectral_norm(cosine_layer_holy(64, num_classes))
 
             if "R" in self.similarity:
                 self.scaling_factor = nn.Parameter(torch.Tensor(1, 1))
