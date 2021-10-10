@@ -12,6 +12,7 @@ from tqdm import tqdm
 import json
 import pandas as pd
 import numpy as np
+import json
 
 
 # data imports
@@ -347,7 +348,7 @@ def start_experiment(config_path, log):
                 log_df = data_manager.get_logs()
 
                 current_time = datetime.now().strftime("%H-%M-%S")
-                log_file_name = "Experiment-from-" + str(current_time)+ "-" + str(exp["similarity"]) + ".csv"
+                log_file_name = "Experiment-from-" + str(current_time)+ "-" + str(exp["similarity"])
 
                 log_dir = os.path.join(".", "log_dir")
 
@@ -368,10 +369,10 @@ def start_experiment(config_path, log):
                         model_dir,
                         in_dist_data,
                         ood_data,
-                        desc_str="Experiment-from-" + str(current_time)+ "-" + str(exp["similarity"])
+                        desc_str=log_file_name+'.csv')
                     )
 
-                log_path = os.path.join(log_dir, log_file_name)
+                log_path = os.path.join(log_dir, log_file_name+'.csv')
 
                 with open(log_path, mode="w", encoding="utf-8") as logfile:
                     colums = log_df.columns
@@ -383,7 +384,10 @@ def start_experiment(config_path, log):
                             logfile.write(str(row[c].item()))
                             logfile.write(",")
                         logfile.write("\n")
-
+                
+                log_config_path = os.path.join(log_dir, log_file_name+'.json')
+                with open(log_config_path, 'w') as f:
+                    json.dump(exp, f)
             writer.close()
     print(
         """
