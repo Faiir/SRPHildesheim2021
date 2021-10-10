@@ -369,7 +369,7 @@ def start_experiment(config_path, log):
                         model_dir,
                         in_dist_data,
                         ood_data,
-                        desc_str=log_file_name+'.csv')
+                        desc_str=log_file_name+'.csv'
                     )
 
                 log_path = os.path.join(log_dir, log_file_name+'.csv')
