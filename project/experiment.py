@@ -66,7 +66,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     do_pertubed_images = param_dict["do_pertubed_images"]
     do_desity_plot = param_dict["do_desity_plot"]
     criterion = param_dict["criterion"]
-    model = param_dict['gram_resnet']
+    model_name = param_dict['model_name']
 
 
 
@@ -236,7 +236,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 )
 
 
-            if model_name=='model_name':
+            if model_name=='gram_resnet':
                 mins,maxs = trained_net.get_min_max(train_loader)
                 weighting_factors = trained_net.get_deviations(pool_loader,power=[10],mins=mins,maxs=maxs)
                 weighting_factors = np.exp(-weighting_factors)
