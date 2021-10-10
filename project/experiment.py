@@ -239,6 +239,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             if model_name=='gram_resnet':
                 mins,maxs = trained_net.get_min_max(train_loader,power=[10])
                 weighting_factors = trained_net.get_deviations(pool_loader,power=[10],mins=mins,maxs=maxs)
+                weighting_factors = weighting_factors.sum(axis=1)
                 weighting_factors = np.exp(-weighting_factors)
 
             if (weighting_factors is not None) and (len(weighting_factors)==0):

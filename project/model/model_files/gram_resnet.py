@@ -143,9 +143,14 @@ class ResNet(nn.Module):
     def get_min_max(self, data_loader, power):
         mins = []
         maxs = []
+
+        if torch.cuda.is_available():
+            device = "cuda"
+        else:
+            device = "cpu"
         
-        for batch_data in data_loader:
-            batch_data.cuda() #batch = data[i:i+128].cuda()
+        for batch_data,_ in data_loader:
+            batch_data.to(device) #batch = data[i:i+128].cuda()
             feat_list = self.gram_feature_list(batch_data)
             for L,feat_L in enumerate(feat_list):
                 if L==len(mins):
@@ -169,9 +174,14 @@ class ResNet(nn.Module):
     
     def get_deviations(self,data_loader,power,mins,maxs):
         deviations = []
+        if torch.cuda.is_available():
+            device = "cuda"
+        else:
+            device = "cpu"
+
+        for batch_data,_ in data_loader:
         
-        for batch_data in data_loader:          
-            batch_data.cuda() # batch = data[i:i+128].cuda()
+            batch_data.to(device) # batch = data[i:i+128].cuda()
             feat_list = self.gram_feature_list(batch_data)
             batch_deviations = []
             for L,feat_L in enumerate(feat_list):
