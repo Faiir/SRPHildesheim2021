@@ -12,6 +12,7 @@ from tqdm import tqdm
 import json
 import pandas as pd
 import numpy as np
+import json
 
 
 # data imports
@@ -65,6 +66,14 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     do_pertubed_images = param_dict["do_pertubed_images"]
     do_desity_plot = param_dict["do_desity_plot"]
     criterion = param_dict["criterion"]
+    if param_dict.get("bugged_and_working", None) is None:
+        bugged_and_working = param_dict.get("bugged_and_working", True)
+        print(
+            f"INFO ---- flag bugged_and_working is not set. Using default value of {bugged_and_working}"
+        )
+    else:
+        bugged_and_working = param_dict["bugged_and_working"]
+        print(f"INFO ---- flag bugged_and_working is set to {bugged_and_working}")
 
     OoD_extra_class = param_dict.get("OoD_extra_class", False)
     if OoD_extra_class:
@@ -202,7 +211,11 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         )
         if do_desity_plot:
             pert_preds, gs, hs, targets = get_density_vals(
-                pool_loader, val_loader, trained_net, do_pertubed_images
+                pool_loader,
+                val_loader,
+                trained_net,
+                do_pertubed_images,
+                bugged_and_working,
             )
 
             density_plot(pert_preds, gs, hs, targets, writer, i)
@@ -221,10 +234,20 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                     pool_labels_list,
                     weighting_factors,
                 ) = get_pool_predictions(
-                    trained_net, pool_loader, device=device, return_labels=True
+                    trained_net,
+                    pool_loader,
+                    device=device,
+                    return_labels=True,
+                    bugged_and_working=bugged_and_working,
                 )
 
             if (weighting_factors is not None) and (len(weighting_factors) == 0):
+                weighting_factors = None
+
+            if bugged_and_working:
+                print(
+                    f"Weighting factors are not used as bugged_and_working flag is {bugged_and_working}"
+                )
                 weighting_factors = None
 
             # samples from unlabelled pool predictions
@@ -367,7 +390,6 @@ def start_experiment(config_path, log):
                     + str(current_time)
                     + "-"
                     + str(exp["similarity"])
-                    + ".csv"
                 )
 
                 log_dir = os.path.join(".", "log_dir")
@@ -389,13 +411,10 @@ def start_experiment(config_path, log):
                         model_dir,
                         in_dist_data,
                         ood_data,
-                        desc_str="Experiment-from-"
-                        + str(current_time)
-                        + "-"
-                        + str(exp["similarity"]),
+                        desc_str=log_file_name + ".csv",
                     )
 
-                log_path = os.path.join(log_dir, log_file_name)
+                log_path = os.path.join(log_dir, log_file_name + ".csv")
 
                 with open(log_path + "exp_setup" + ".json", mode="w") as exp_json:
                     json.dump(exp, exp_json)
@@ -411,6 +430,9 @@ def start_experiment(config_path, log):
                             logfile.write(",")
                         logfile.write("\n")
 
+                log_config_path = os.path.join(log_dir, log_file_name + ".json")
+                with open(log_config_path, "w") as f:
+                    json.dump(exp, f)
             writer.close()
     print(
         """
