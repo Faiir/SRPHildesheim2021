@@ -269,7 +269,7 @@ def pertube_image(pool_loader, val_loader, trained_net):
     return pert_preds, gs, hs, targets
 
 
-def get_density_vals(pool_loader, val_loader, trained_net, do_pertubed_images):
+def get_density_vals(pool_loader, val_loader, trained_net, do_pertubed_images, bugged_and_working):
     """get_density_vals [Model to measure the density of the pool data to create distribution plots]
 
     [extended_summary]
@@ -289,7 +289,11 @@ def get_density_vals(pool_loader, val_loader, trained_net, do_pertubed_images):
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(pool_loader):
                 data = data.to(device).float()
-                pert_pred, g, h = trained_net(data, get_test_model=True, apply_softmax=True)
+                if bugged_and_working:
+                    pert_pred, g, h = trained_net(data, get_test_model=True, apply_softmax=False)
+                else:
+                    pert_pred, g, h = trained_net(data, get_test_model=True, apply_softmax=True)
+
                 gs.append(g.detach().to("cpu").numpy().astype(np.float16))
                 hs.append(h.detach().to("cpu").numpy().astype(np.float16))
                 pert_preds.append(pert_pred.detach().to("cpu").numpy())

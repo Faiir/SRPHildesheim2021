@@ -3,7 +3,7 @@ import torch
 
 
 @torch.no_grad()
-def get_pool_predictions(trained_net, pool_loader, device, return_labels=False):
+def get_pool_predictions(trained_net, pool_loader, device, return_labels=False,bugged_and_working=True):
     """get_pool_predictions [predictions for the unlabelled pool]
 
     [extended_summary]
@@ -27,13 +27,18 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False):
     
     for (data, labels) in pool_loader:
         if trained_net.has_weighing_factor:
-            tuple_data = trained_net(data.to(device).float(), get_test_model=True, apply_softmax=True)
+            if bugged_and_working:
+                tuple_data = trained_net(data.to(device).float(), get_test_model=True, apply_softmax=False)
+            else:
+                tuple_data = trained_net(data.to(device).float(), get_test_model=True, apply_softmax=True)
             pred = tuple_data[0]
             weighting_factor = tuple_data[1]
             weighting_factor_list.append(weighting_factor.to("cpu").detach().numpy())
         else:
-            pred = trained_net(data.to(device).float(), apply_softmax=True)
-        
+            if bugged_and_working:
+                pred = trained_net(data.to(device).float(), apply_softmax=False)
+            else:
+                pred = trained_net(data.to(device).float(), apply_softmax=True)
    
         yhat.append(pred.to("cpu").detach().numpy())
         labels_list.append(labels)
