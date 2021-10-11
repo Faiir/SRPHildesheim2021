@@ -154,7 +154,6 @@ def get_gram_resnet():
             else:
                 device = "cpu"
             
-            #data = 
 
             for i in range(0,len(data),128):
                 batch = torch.stack(data[i:i+128]).to(device)
@@ -187,12 +186,14 @@ def get_gram_resnet():
             else:
                 device = "cpu"
             print('get deviations')
+   
             for i in tqdm(range(0,len(data),128)):
                 batch = torch.stack(data[i:i+128]).to(device)
-                print(batch.shape)
+                print(batch.shape[0])
                 feat_list = self.gram_feature_list(batch)
                 batch_deviations = []
                 for L,feat_L in enumerate(feat_list):
+
                     dev = 0
                     for p,P in enumerate(power):
                         g_p = G_p(feat_L,P)
@@ -202,6 +203,7 @@ def get_gram_resnet():
                     batch_deviations.append(dev.cpu().detach().numpy())
                 batch_deviations = np.concatenate(batch_deviations,axis=1)
                 deviations.append(batch_deviations)
+
             deviations = np.concatenate(deviations,axis=0)
             
             return deviations
@@ -276,7 +278,7 @@ class Detector:
         train_confs = []
         train_logits = []
         data_train = train_loader.dataset
-        #print(data_train[0:15])
+
         if torch.cuda.is_available():
             device = "cuda"
         else:
@@ -285,12 +287,12 @@ class Detector:
         for idx in range(0,len(data_train),128):
             batch = torch.squeeze(data_train[idx:idx+128][0]).to(device)
             logits = torch_model(batch)
-            #confs = F.softmax(logits,dim=1).cpu().detach().numpy()
+
             preds = np.argmax(logits.cpu().detach().numpy(),axis=1)
 
             train_preds.extend(preds)
 
-        for PRED in tqdm(self.classes):
+        for PRED in self.classes:
             train_indices = np.where(np.array(train_preds)==PRED)[0]
             train_PRED = ([data_train[i][0] for i in train_indices])
             mins,maxs = torch_model.get_min_max(train_PRED,power=POWERS)
@@ -322,23 +324,35 @@ class Detector:
             test_preds.extend(preds)
 
 
-
         all_deviations = None
-        for PRED in tqdm(self.classes):
+        indices_list = None
+        for PRED in self.classes:
             test_indices = np.where(np.array(test_preds)==PRED)[0]
+            if len(test_indices)==0:
+                continue
+            else:
+                if indices_list is None:
+                    indices_list = indices_list
+                else:
+                    indices_list = np.concatenate([indices_list,test_indices],axis=0)
             test_PRED = [data[i][0] for i in test_indices]
             test_confs_PRED = np.array([test_confs[i] for i in test_indices])
             
-            
-            mins = cuda(self.mins[PRED])
-            maxs = cuda(self.maxs[PRED])
+            if device=='cuda':
+                mins = cuda(self.mins[PRED])
+                maxs = cuda(self.maxs[PRED])
+            else:
+                mins = self.mins[PRED]
+                maxs = self.maxs[PRED]
+                
             test_deviations = torch_model.get_deviations(test_PRED,power=POWERS,mins=mins,maxs=maxs)/test_confs_PRED[:,np.newaxis]
             cpu(mins)
             cpu(maxs)
-            if all_test_deviations is None:
-                all_test_deviations = test_deviations
+            if all_deviations is None:
+                all_deviations = test_deviations
             else:
-                all_test_deviations = np.concatenate([all_test_deviations,test_deviations],axis=0)
+                all_deviations = np.concatenate([all_deviations,test_deviations],axis=0)
             torch.cuda.empty_cache()
-
-        return all_test_deviations
+        
+        all_deviations = all_deviations[np.argsort(indices_list)]
+        return all_deviations
