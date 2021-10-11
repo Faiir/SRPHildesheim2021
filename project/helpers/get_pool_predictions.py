@@ -3,7 +3,9 @@ import torch
 
 
 @torch.no_grad()
-def get_pool_predictions(trained_net, pool_loader, device, return_labels=False,bugged_and_working=True):
+def get_pool_predictions(
+    trained_net, pool_loader, device, return_labels=False, bugged_and_working=True
+):
     """get_pool_predictions [predictions for the unlabelled pool]
 
     [extended_summary]
@@ -24,13 +26,17 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False,b
     labels_list = []
     if trained_net.has_weighing_factor:
         print("Getting weight factor as well")
-    
+
     for (data, labels) in pool_loader:
         if trained_net.has_weighing_factor:
             if bugged_and_working:
-                tuple_data = trained_net(data.to(device).float(), get_test_model=True, apply_softmax=False)
+                tuple_data = trained_net(
+                    data.to(device).float(), get_test_model=True, apply_softmax=False
+                )
             else:
-                tuple_data = trained_net(data.to(device).float(), get_test_model=True, apply_softmax=True)
+                tuple_data = trained_net(
+                    data.to(device).float(), get_test_model=True, apply_softmax=True
+                )
             pred = tuple_data[0]
             weighting_factor = tuple_data[1]
             weighting_factor_list.append(weighting_factor.to("cpu").detach().numpy())
@@ -39,12 +45,12 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False,b
                 pred = trained_net(data.to(device).float(), apply_softmax=False)
             else:
                 pred = trained_net(data.to(device).float(), apply_softmax=True)
-   
+
         yhat.append(pred.to("cpu").detach().numpy())
         labels_list.append(labels)
 
     predictions = np.concatenate(yhat)
-    if len(weighting_factor_list)>0:
+    if len(weighting_factor_list) > 0:
         weighting_factor_list = np.concatenate(weighting_factor_list)
     else:
         weighting_factor_list = None
@@ -55,4 +61,3 @@ def get_pool_predictions(trained_net, pool_loader, device, return_labels=False,b
         return predictions, labels_list, weighting_factor_list
     else:
         return predictions, weighting_factor_list
-

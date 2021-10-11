@@ -24,6 +24,7 @@ from .model.train import train, test, get_density_vals
 
 from .model.get_model import get_model, save_model
 from .model.model_files.Angular_Penalty_Softmax_Losses import AngularPenaltySMLoss
+from .model.model_files.LabelSmoothing import LabelSmoothing
 
 # helpers
 from .helpers.measures import accuracy, f1, auroc
@@ -153,6 +154,8 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             in_features = 10
             num_classes = 10
             criterion = AngularPenaltySMLoss(in_features, num_classes, criterion)
+        elif criterion == "label_smoothing":
+            criterion = LabelSmoothing(smoothing=0.1)
         else:
             criterion = nn.CrossEntropyLoss()
 
