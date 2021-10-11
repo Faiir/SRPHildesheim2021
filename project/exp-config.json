@@ -7,7 +7,7 @@
     "OOD_ratio": 0.3,
     "oracle_stepsize": 250,
     "oracle_steps": 10,
-    "epochs": 1,
+    "epochs": 100,
     "batch_size": 128,
     "oracles": ["highest entropy"],
     "weight_decay": 1e-4,
