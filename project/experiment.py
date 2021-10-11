@@ -237,9 +237,17 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
 
 
             if model_name=='gram_resnet':
-                mins,maxs = trained_net.get_min_max(train_loader,power=[10])
-                weighting_factors = trained_net.get_deviations(pool_loader,power=[10],mins=mins,maxs=maxs)
-                weighting_factors = weighting_factors.sum(axis=1)
+                from .model.model_files.gram_resnet import Detector
+
+                dector = Detector()
+                POWERS = range(1,11)
+                dector.compute_minmaxs(trained_net,train_loader,POWERS=POWERS)
+                pool_deviations = dector.compute_deviations(trained_net,val_loader,POWERS=POWERS)
+                if validation_source is not None:
+                    validation = dector.compute_deviations(trained_net,val_loader,POWERS=POWERS)
+                    t95 = validation.mean(axis=0)+10**-7
+                    weighting_factors = (pool_deviations/t95[np.newaxis,:]).sum(axis=1)
+        
                 weighting_factors = np.exp(-weighting_factors)
 
             if (weighting_factors is not None) and (len(weighting_factors)==0):
