@@ -186,10 +186,10 @@ def get_gram_resnet():
                 device = "cuda"
             else:
                 device = "cpu"
-
-            for i in range(0,len(data),128):
-                batch = data[i:i+128][0].to(device)
-
+            print('get deviations')
+            for i in tqdm(range(0,len(data),128)):
+                batch = torch.stack(data[i:i+128]).to(device)
+                print(batch.shape)
                 feat_list = self.gram_feature_list(batch)
                 batch_deviations = []
                 for L,feat_L in enumerate(feat_list):
