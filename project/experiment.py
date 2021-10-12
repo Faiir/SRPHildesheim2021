@@ -362,7 +362,7 @@ def start_experiment(config_path, log):
 
     # print(config_path)
     # print(log)
-    log_dir = log
+
     config = ""
 
     config_path = os.path.join(config_path)
@@ -377,6 +377,7 @@ def start_experiment(config_path, log):
     for dataset in in_dist_data:
 
         for exp in config["experiment-list"]:
+
             if exp["verbose"] > 1:
                 print("Experiment Config :")
                 for variable in exp:
@@ -424,7 +425,7 @@ def start_experiment(config_path, log):
                     net=net,
                 )
 
-                log_df = data_manager.get_logs()
+                # log_df = data_manager.get_logs()
 
                 current_time = datetime.now().strftime("%H-%M-%S")
                 log_file_name = (
@@ -466,8 +467,8 @@ def start_experiment(config_path, log):
                 #             logfile.write(str(row[c].item()))
                 #             logfile.write(",")
                 #         logfile.write("\n")
-
-                log_config_path = os.path.join(log_dir, log_file_name + ".json")
+                log_dir = create_log_path(exp)
+                log_config_path = os.path.join(log_dir + ".json")
                 with open(log_config_path, "w") as f:
                     json.dump(exp, f)
             writer.close()
