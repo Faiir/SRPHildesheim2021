@@ -75,7 +75,7 @@ class Data_manager:
         base_labels_test,
         OOD_data,
         OOD_labels,
-        OoD_extra_class
+        OoD_extra_class,
     ):
         self.base_data = base_data.copy()
         self.base_data_test = base_data_test.copy()
@@ -227,13 +227,16 @@ class Data_manager:
         )
 
         if self.OoD_extra_class:
-            self.status_manager['original_targets'] = self.status_manager['target'].values
-            OoD_class_label = max(train_labels)+1
-            self.status_manager['target'] = np.where(self.status_manager['source'].values==1,
-                                                     self.status_manager['original_targets'].values,
-                                                     OoD_class_label)  
-            print(f'Setting OoD Targets as {OoD_class_label} class')
-            
+            self.status_manager["original_targets"] = self.status_manager[
+                "target"
+            ].values
+            OoD_class_label = max(train_labels) + 1
+            self.status_manager["target"] = np.where(
+                self.status_manager["source"].values == 1,
+                self.status_manager["original_targets"].values,
+                OoD_class_label,
+            )
+            print(f"Setting OoD Targets as {OoD_class_label} class")
 
         self.iter = 0
         if debug:
@@ -299,10 +302,12 @@ class Data_manager:
         ), "Dataset not initialized. Call create_merged_data()"
 
         if self.OoD_extra_class:
-            labelled_mask = self.status_manager[self.status_manager["status"]!=0].index
+            labelled_mask = self.status_manager[
+                self.status_manager["status"] != 0
+            ].index
         else:
             labelled_mask = self.status_manager[self.status_manager["status"] > 0].index
-        
+
         train_data = self.pool_data[labelled_mask]
         train_labels = self.status_manager.iloc[labelled_mask]["target"].values
 
@@ -342,7 +347,7 @@ class Data_manager:
             self.status_manager.iloc[unlabelled_mask]["target"].values,
         )
 
-    def add_log(self, writer, oracle, dataset, metric, log_dict=None):
+    def add_log(self, writer, oracle, dataset, metric, param_dict, log_dict=None):
         self.iter += 1
         #
         current_iter_log = {
@@ -364,6 +369,10 @@ class Data_manager:
         current_iter_log["Remaining_pool_samples"] = len(
             self.status_manager[self.status_manager["status"] == 0]
         )
+
+        ood_ratio = str(param_dict["OOD_ratio"])
+        similarity = str(param_dict["similarity"]) + "_" + str(param_dict["model_name"])
+
         if log_dict is not None:
             if metric == "accuracy":
                 acc_dict = {}
@@ -374,9 +383,13 @@ class Data_manager:
                 loss_dict = {}
                 loss_dict["train_loss"] = log_dict["train_loss"]
                 loss_dict["test_loss"] = log_dict["test_loss"]
-                writer.add_scalars(f"{metric}/{oracle}/loss", loss_dict, self.iter)
+                writer.add_scalars(
+                    f"{similarity}/{oracle}/ood_ratio-{ood_ratio}", loss_dict, self.iter
+                )
             else:
-                writer.add_scalars(f"{metric}/{oracle}/loss", log_dict, self.iter)
+                writer.add_scalars(
+                    f"{similarity}/{oracle}/ood_ratio-{ood_ratio}", log_dict, self.iter
+                )
             current_iter_log.update(log_dict)
 
         self.log[self.iter] = current_iter_log
@@ -396,8 +409,8 @@ class Data_manager:
 def get_datamanager(
     indistribution=["Cifar10"],
     ood=["MNIST", "Fashion_MNIST", "SVHN"],
-    OoD_extra_class = False
-    ):
+    OoD_extra_class=False,
+):
     """get_datamanager [Creates a datamanager instance with the In-/Out-of-Distribution Data]
 
     [List based processing of Datasets. Images are resized / croped on 32x32]
@@ -815,9 +828,9 @@ def get_datamanager(
         base_labels_test=base_labels_test,
         OOD_data=OOD_data,
         OOD_labels=OOD_labels,
-        OoD_extra_class = OoD_extra_class
+        OoD_extra_class=OoD_extra_class,
     )
-    #del (base_data, base_labels, OOD_data, OOD_labels)
+    # del (base_data, base_labels, OOD_data, OOD_labels)
 
     gc.collect()
     if debug:

@@ -37,6 +37,43 @@ from .helpers.get_density_plot import density_plot
 do_tsne = False
 
 
+def create_log_path(exp):
+    current_time = datetime.now().strftime("%H-%M-%S")
+    log_file_name = "Experiment-from-" + str(current_time) + ".csv"
+    current_time = datetime.now().strftime("%H-%M-%S")
+    log_file_name = (
+        "Experiment-from-"
+        + str(current_time)
+        + "-"
+        + str(exp["similarity"])
+        + "-"
+        + str(exp["OOD_ratio"])
+    )
+
+    log_dir = os.path.join(".", "log_dir")
+
+    if os.path.exists(log_dir) == False:
+        os.mkdir(os.path.join(".", "log_dir"))
+
+    log_path = os.path.join(log_dir, log_file_name)
+
+    return log_path
+
+
+def save_logs(data_manager, log_path):
+    log_df = data_manager.get_logs()
+    with open(log_path, mode="w", encoding="utf-8") as logfile:
+        colums = log_df.columns
+        for colum in colums:
+            logfile.write(colum + ",")
+        logfile.write("\n")
+        for _, row in log_df.iterrows():
+            for c in colums:
+                logfile.write(str(row[c].item()))
+                logfile.write(",")
+            logfile.write("\n")
+
+
 def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     """experiment [Experiment function which performs the entire acitve learning process based on the predefined config]
 
@@ -118,6 +155,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
 
         sampler = extra_class_sampler(extra_class_thresholding)
 
+    log_path = create_log_path(param_dict)
     # net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
     # net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
     if torch.cuda.is_available():
@@ -295,6 +333,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             dataset=dataset,
             metric=metric,
             log_dict=dict_to_add,
+            param_dict=param_dict,
         )
 
         # data_manager.add_log(log_dict=dict_to_add)
@@ -307,7 +346,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         #         number_samples=oracle_stepsize,
         #         predictions=predictions,
         #     )
-
+        save_logs(data_manager, log_path)
     return net, optimizer
 
 
@@ -395,12 +434,7 @@ def start_experiment(config_path, log):
                     + str(exp["similarity"])
                 )
 
-                log_dir = os.path.join(".", "log_dir")
-
                 model_dir = os.path.join(".", "saved_models")
-
-                if os.path.exists(log_dir) == False:
-                    os.mkdir(os.path.join(".", "log_dir"))
 
                 if os.path.exists(model_dir) == False:
                     os.mkdir(os.path.join(".", "saved_models"))
@@ -417,21 +451,21 @@ def start_experiment(config_path, log):
                         desc_str=log_file_name + ".csv",
                     )
 
-                log_path = os.path.join(log_dir, log_file_name + ".csv")
+                # log_path = os.path.join(log_dir, log_file_name + ".csv")
 
-                with open(log_path + "exp_setup" + ".json", mode="w") as exp_json:
-                    json.dump(exp, exp_json)
+                # with open(log_path + "exp_setup" + ".json", mode="w") as exp_json:
+                #     json.dump(exp, exp_json)
 
-                with open(log_path, mode="w", encoding="utf-8") as logfile:
-                    colums = log_df.columns
-                    for colum in colums:
-                        logfile.write(colum + ",")
-                    logfile.write("\n")
-                    for _, row in log_df.iterrows():
-                        for c in colums:
-                            logfile.write(str(row[c].item()))
-                            logfile.write(",")
-                        logfile.write("\n")
+                # with open(log_path, mode="w", encoding="utf-8") as logfile:
+                #     colums = log_df.columns
+                #     for colum in colums:
+                #         logfile.write(colum + ",")
+                #     logfile.write("\n")
+                #     for _, row in log_df.iterrows():
+                #         for c in colums:
+                #             logfile.write(str(row[c].item()))
+                #             logfile.write(",")
+                #         logfile.write("\n")
 
                 log_config_path = os.path.join(log_dir, log_file_name + ".json")
                 with open(log_config_path, "w") as f:

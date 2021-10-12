@@ -76,17 +76,13 @@ def get_model(
     elif model_name == "small_resnet_with_spec":
         return resnet20SpecGenOdin(
             similarity=similarity,
-            selfsupervision=kwargs.get("selfsupervision", False),
             num_classes=num_classes,
-            do_not_genOdin=kwargs.get("do_not_genOdin", False),
         )
 
     elif model_name == "base_small_resnet":
-        if num_classes!=10:
-            print(f'INFO ---- Number of classes is {num_classes}')
-        return resnet20_original(
-            num_classes=num_classes, similarity=similarity
-        )
+        if num_classes != 10:
+            print(f"INFO ---- Number of classes is {num_classes}")
+        return resnet20_original(num_classes=num_classes, similarity=similarity)
 
     else:
         raise ValueError(f"Model {model_name} not found")
