@@ -79,7 +79,8 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     
     OoD_extra_class = param_dict.get("OoD_extra_class", False)
     if OoD_extra_class:
-        extra_class_thresholding = param_dict.get("extra_class_thresholding",'soft')
+        extra_class_thresholding = param_dict.get("extra_class_thresholding","Not specified")
+        assert extra_class_thresholding in ["hard","soft"], f"Improper extra_class_thresholding flag provided : {extra_class_thresholding}"
         print(f'INFO --- Training OoD as extra class with {extra_class_thresholding} Thresholding')
         assert param_dict.get('similarity',None) is None, f"similarity must be None, found {param_dict.get('similarity',None)}"
         assert oracle=="extra_class_entropy", f"Only extra_class_entropy oracle is supported found {oracle}"
