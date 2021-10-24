@@ -1,11 +1,6 @@
 {
   "experiment-list": [
-    {"test_size": 6000,
-    "pool_size": 20000, 
-    "labelled_size": 500, 
-    "OOD_ratio": 0.15, 
-    "oracle_stepsize": 50, 
-    "oracle_steps": 20,
+    {"test_size": 10000, "pool_size": 20000, "labelled_size": 1000, "OOD_ratio": 0.5, "oracle_stepsize": 100, "oracle_steps": 20,
     "epochs": 100, 
     "batch_size": 128, 
     "oracles": ["highest entropy"], 
