@@ -10,7 +10,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 
 # import shutil
-from project.experiment import start_experiment
+from .experiment import start_experiment
 
 
 def main():
