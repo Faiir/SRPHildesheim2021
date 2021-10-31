@@ -30,10 +30,10 @@ from .helpers.sampler import DDU_sampler
 # ddu stuff
 
 # Importing GMM utilities
-from .DDU.utils.gmm_utils import get_embeddings, gmm_evaluate, gmm_fit
+# from .DDU.utils.gmm_utils import get_embeddings, gmm_evaluate, gmm_fit
 
 # Import network architectures
-from .DDU.net.resnet import resnet18
+# from .DDU.net.resnet import resnet18
 
 
 def create_log_path():
@@ -332,3 +332,51 @@ def start_experiment(config_path, log):
     **********************************************
     """
     )
+
+
+import torch
+from torch import nn
+from tqdm import tqdm
+
+
+DOUBLE_INFO = torch.finfo(torch.double)
+JITTERS = [0, DOUBLE_INFO.tiny] + [10 ** exp for exp in range(-308, 0, 1)]
+
+
+def centered_cov_torch(x):
+    n = x.shape[0]
+    res = 1 / (n - 1) * x.t().mm(x)
+    return res
+
+
+def get_embeddings(
+    net,
+    loader: torch.utils.data.DataLoader,
+    num_dim: int,
+    dtype,
+    device,
+    storage_device,
+):
+    num_samples = len(loader.dataset)
+    embeddings = torch.empty((num_samples, num_dim), dtype=dtype, device=storage_device)
+    labels = torch.empty(num_samples, dtype=torch.int, device=storage_device)
+
+    with torch.no_grad():
+        start = 0
+        for data, label in tqdm(loader):
+            data = data.to(device)
+            label = label.to(device)
+
+            if isinstance(net, nn.DataParallel):
+                out = net.module(data)
+                out = net.module.feature
+            else:
+                out = net(data)
+                out = net.feature
+
+            end = start + len(data)
+            embeddings[start:end].copy_(out, non_blocking=True)
+            labels[start:end].copy_(label, non_blocking=True)
+            start = end
+
+    return embeddings, labels
