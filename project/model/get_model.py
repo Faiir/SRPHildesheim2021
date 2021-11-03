@@ -7,6 +7,7 @@ from .model_files.small_resnet_only_specnorm import (
     resnet20 as resnet20_original_spec_norm,
 )
 from .model_files.small_resnet import resnet20
+from .model_files.gram_resnet import get_gram_resnet
 
 
 from datetime import datetime
@@ -80,9 +81,14 @@ def get_model(
         )
 
     elif model_name == "base_small_resnet":
-        if num_classes != 10:
-            print(f"INFO ---- Number of classes is {num_classes}")
-        return resnet20_original(num_classes=num_classes, similarity=similarity)
+        if num_classes!=10:
+            print(f'INFO ---- Number of classes is {num_classes}')
+        return resnet20_original(
+            num_classes=num_classes, similarity=similarity
+        )
+    elif model_name == "gram_resnet":
+        return get_gram_resnet()
+
 
     else:
         raise ValueError(f"Model {model_name} not found")
