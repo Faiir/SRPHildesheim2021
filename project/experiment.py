@@ -24,6 +24,7 @@ from .model.train import train, test, get_density_vals
 
 from .model.get_model import get_model, save_model
 from .model.model_files.Angular_Penalty_Softmax_Losses import AngularPenaltySMLoss
+from .model.model_files.LabelSmoothing import LabelSmoothing
 
 # helpers
 from .helpers.measures import accuracy, f1, auroc
@@ -34,6 +35,43 @@ from .helpers.get_density_plot import density_plot
 
 
 do_tsne = False
+
+
+def create_log_path(exp):
+    current_time = datetime.now().strftime("%H-%M-%S")
+    log_file_name = "Experiment-from-" + str(current_time) + ".csv"
+    current_time = datetime.now().strftime("%H-%M-%S")
+    log_file_name = (
+        "Experiment-from-"
+        + str(current_time)
+        + "-"
+        + str(exp["similarity"])
+        + "-"
+        + str(exp["OOD_ratio"])
+    )
+
+    log_dir = os.path.join(".", "log_dir")
+
+    if os.path.exists(log_dir) == False:
+        os.mkdir(os.path.join(".", "log_dir"))
+
+    log_path = os.path.join(log_dir, log_file_name)
+
+    return log_path
+
+
+def save_logs(data_manager, log_path):
+    log_df = data_manager.get_logs()
+    with open(log_path, mode="w", encoding="utf-8") as logfile:
+        colums = log_df.columns
+        for colum in colums:
+            logfile.write(colum + ",")
+        logfile.write("\n")
+        for _, row in log_df.iterrows():
+            for c in colums:
+                logfile.write(str(row[c].item()))
+                logfile.write(",")
+            logfile.write("\n")
 
 
 def experiment(param_dict, oracle, data_manager, writer, dataset, net):
@@ -76,7 +114,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     else:  
         bugged_and_working = param_dict["bugged_and_working"]
         print(f"INFO ---- flag bugged_and_working is set to {bugged_and_working}")
-    
+
     OoD_extra_class = param_dict.get("OoD_extra_class", False)
     if OoD_extra_class:
         extra_class_thresholding = param_dict.get("extra_class_thresholding","Not specified")
@@ -84,9 +122,10 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         print(f'INFO --- Training OoD as extra class with {extra_class_thresholding} Thresholding')
         assert param_dict.get('similarity',None) is None, f"similarity must be None, found {param_dict.get('similarity',None)}"
         assert oracle=="extra_class_entropy", f"Only extra_class_entropy oracle is supported found {oracle}"
+
     else:
         extra_class_thresholding = None
-    
+
     if oracle == "random":
         from .helpers.sampler import random_sample
 
@@ -109,11 +148,12 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
 
         raise NotImplementedError
         # sampler = gen0din_sampler
-    elif oracle == 'extra_class_entropy':
+    elif oracle == "extra_class_entropy":
         from .helpers.sampler import extra_class_sampler
 
         sampler = extra_class_sampler(extra_class_thresholding)
 
+    log_path = create_log_path(param_dict)
     # net = torch.hub.load('pytorch/vision:v0.9.0', 'resnet18', pretrained=False)
     # net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
     if torch.cuda.is_available():
@@ -150,6 +190,8 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             in_features = 10
             num_classes = 10
             criterion = AngularPenaltySMLoss(in_features, num_classes, criterion)
+        elif criterion == "label_smoothing":
+            criterion = LabelSmoothing(smoothing=0.1)
         else:
             criterion = nn.CrossEntropyLoss()
 
@@ -190,6 +232,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 nesterov=nesterov,
             )
 
+
         # optimizer = optim.SGD(
         #     net.parameters(),
         #     weight_decay=weight_decay,
@@ -220,22 +263,35 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 print('\n\n\WARNING ---------------------------------------------------------------------------',\
                         f'Doing density plots while using model {model_name} is not supported\n\n')
             pert_preds, gs, hs, targets = get_density_vals(
-                pool_loader, val_loader, trained_net, do_pertubed_images, bugged_and_working
+                pool_loader,
+                val_loader,
+                trained_net,
+                do_pertubed_images,
+                bugged_and_working,
             )
 
             density_plot(pert_preds, gs, hs, targets, writer, i)
-            
+
         if len(pool_loader) > 0:
             if do_desity_plot:
-                pool_predictions, pool_labels_list, weighting_factors = (np.concatenate(pert_preds,axis=0),
-                                                                        np.concatenate(targets,axis=0), 
-                                                                        np.concatenate(gs,axis=0))
+                pool_predictions, pool_labels_list, weighting_factors = (
+                    np.concatenate(pert_preds, axis=0),
+                    np.concatenate(targets, axis=0),
+                    np.concatenate(gs, axis=0),
+                )
             else:
                 # unlabelled pool predictions
-                pool_predictions, pool_labels_list, weighting_factors = get_pool_predictions(
-                trained_net, pool_loader, device=device, return_labels=True, bugged_and_working=bugged_and_working
+                (
+                    pool_predictions,
+                    pool_labels_list,
+                    weighting_factors,
+                ) = get_pool_predictions(
+                    trained_net,
+                    pool_loader,
+                    device=device,
+                    return_labels=True,
+                    bugged_and_working=bugged_and_working,
                 )
-
 
             if model_name=='gram_resnet':
                 from .model.model_files.gram_resnet import Detector
@@ -252,12 +308,14 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 weighting_factors = np.exp(-weighting_factors)
 
             if (weighting_factors is not None) and (len(weighting_factors)==0):
-                weighting_factors = None
-            
-            if bugged_and_working:
-                print(f'Weighting factors are not used as bugged_and_working flag is {bugged_and_working}')
+
                 weighting_factors = None
 
+            if bugged_and_working:
+                print(
+                    f"Weighting factors are not used as bugged_and_working flag is {bugged_and_working}"
+                )
+                weighting_factors = None
 
             # samples from unlabelled pool predictions
             sampler(
@@ -265,13 +323,13 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 number_samples=oracle_stepsize,
                 net=trained_net,
                 predictions=pool_predictions,
-                weights = weighting_factors
+                weights=weighting_factors,
             )
 
         test_predictions, test_labels, _ = get_pool_predictions(
             trained_net, test_loader, device=device, return_labels=True
         )
-        train_predictions, train_labels, _  = get_pool_predictions(
+        train_predictions, train_labels, _ = get_pool_predictions(
             trained_net, train_loader, device=device, return_labels=True
         )
 
@@ -301,6 +359,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             dataset=dataset,
             metric=metric,
             log_dict=dict_to_add,
+            param_dict=param_dict,
         )
 
         # data_manager.add_log(log_dict=dict_to_add)
@@ -313,7 +372,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         #         number_samples=oracle_stepsize,
         #         predictions=predictions,
         #     )
-
+        save_logs(data_manager, log_path)
     return net, optimizer
 
 
@@ -329,7 +388,7 @@ def start_experiment(config_path, log):
 
     # print(config_path)
     # print(log)
-    log_dir = log
+
     config = ""
 
     config_path = os.path.join(config_path)
@@ -344,6 +403,7 @@ def start_experiment(config_path, log):
     for dataset in in_dist_data:
 
         for exp in config["experiment-list"]:
+
             if exp["verbose"] > 1:
                 print("Experiment Config :")
                 for variable in exp:
@@ -352,17 +412,20 @@ def start_experiment(config_path, log):
 
             OoD_extra_class = exp.get("OoD_extra_class", False)
 
-            data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data,
-                                             OoD_extra_class=OoD_extra_class)
+            data_manager = get_datamanager(
+                indistribution=in_dist_data,
+                ood=ood_data,
+                OoD_extra_class=OoD_extra_class,
+            )
 
             metric = exp["metric"]
 
             for oracle in exp["oracles"]:
-            
+
                 if OoD_extra_class:
-                    num_classes=11
+                    num_classes = 11
                 else:
-                    num_classes=10
+                    num_classes = 10
 
                 net = get_model(
                     exp["model_name"],
@@ -388,17 +451,17 @@ def start_experiment(config_path, log):
                     net=net,
                 )
 
-                log_df = data_manager.get_logs()
+                # log_df = data_manager.get_logs()
 
                 current_time = datetime.now().strftime("%H-%M-%S")
-                log_file_name = "Experiment-from-" + str(current_time)+ "-" + str(exp["similarity"])
-
-                log_dir = os.path.join(".", "log_dir")
+                log_file_name = (
+                    "Experiment-from-"
+                    + str(current_time)
+                    + "-"
+                    + str(exp["similarity"])
+                )
 
                 model_dir = os.path.join(".", "saved_models")
-
-                if os.path.exists(log_dir) == False:
-                    os.mkdir(os.path.join(".", "log_dir"))
 
                 if os.path.exists(model_dir) == False:
                     os.mkdir(os.path.join(".", "saved_models"))
@@ -412,24 +475,27 @@ def start_experiment(config_path, log):
                         model_dir,
                         in_dist_data,
                         ood_data,
-                        desc_str=log_file_name+'.csv'
+                        desc_str=log_file_name + ".csv",
                     )
 
-                log_path = os.path.join(log_dir, log_file_name+'.csv')
+                # log_path = os.path.join(log_dir, log_file_name + ".csv")
 
-                with open(log_path, mode="w", encoding="utf-8") as logfile:
-                    colums = log_df.columns
-                    for colum in colums:
-                        logfile.write(colum + ",")
-                    logfile.write("\n")
-                    for _, row in log_df.iterrows():
-                        for c in colums:
-                            logfile.write(str(row[c].item()))
-                            logfile.write(",")
-                        logfile.write("\n")
-                
-                log_config_path = os.path.join(log_dir, log_file_name+'.json')
-                with open(log_config_path, 'w') as f:
+                # with open(log_path + "exp_setup" + ".json", mode="w") as exp_json:
+                #     json.dump(exp, exp_json)
+
+                # with open(log_path, mode="w", encoding="utf-8") as logfile:
+                #     colums = log_df.columns
+                #     for colum in colums:
+                #         logfile.write(colum + ",")
+                #     logfile.write("\n")
+                #     for _, row in log_df.iterrows():
+                #         for c in colums:
+                #             logfile.write(str(row[c].item()))
+                #             logfile.write(",")
+                #         logfile.write("\n")
+                log_dir = create_log_path(exp)
+                log_config_path = os.path.join(log_dir + ".json")
+                with open(log_config_path, "w") as f:
                     json.dump(exp, f)
             writer.close()
     print(

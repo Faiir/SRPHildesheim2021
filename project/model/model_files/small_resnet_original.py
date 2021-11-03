@@ -69,14 +69,14 @@ class euc_dist_layer(nn.Module):
         else:
             self.device = "cpu"
 
-        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+        weight = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
 
-        self.weights = nn.Parameter(weights)
-        init.kaiming_normal_(self.weights)
+        self.weight = nn.Parameter(weight)
+        init.kaiming_normal_(self.weight)
 
     def forward(self, x):
         x = x.unsqueeze(dim=-1)
-        diff = x - self.weights
+        diff = x - self.weight
         diff_squared = torch.square(diff)
         diff_summed = torch.sum(diff_squared, dim=1)
         out = torch.sqrt(diff_summed)
@@ -91,14 +91,14 @@ class euc_dist_layer_corrected(nn.Module):
         else:
             self.device = "cpu"
 
-        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+        weight = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
 
-        self.weights = nn.Parameter(weights)
-        init.kaiming_normal_(self.weights)
+        self.weight = nn.Parameter(weight)
+        init.kaiming_normal_(self.weight)
 
     def forward(self, x):
         x = x.unsqueeze(dim=-1)
-        diff = x - self.weights
+        diff = x - self.weight
         diff_squared = torch.square(diff)
         diff_summed = torch.sum(diff_squared, dim=1)
         out = -torch.sqrt(diff_summed)
@@ -113,15 +113,15 @@ class cosine_layer(nn.Module):
         else:
             self.device = "cpu"
 
-        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+        weight = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
 
-        self.weights = nn.Parameter(weights)
-        init.kaiming_normal_(self.weights)
+        self.weight = nn.Parameter(weight)
+        init.kaiming_normal_(self.weight)
 
     def forward(self, x):
         x = x.unsqueeze(-1)
         cos = nn.CosineSimilarity(dim=1)
-        return cos(self.weights, x)
+        return cos(self.weight, x)
 
 
 class cosine_layer_holy(nn.Module):
@@ -132,15 +132,15 @@ class cosine_layer_holy(nn.Module):
         else:
             self.device = "cpu"
 
-        weights = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
+        weight = torch.empty((1, in_dimensions, out_dimensions), dtype=torch.float32)
 
-        self.weights = nn.Parameter(weights)
-        init.kaiming_normal_(self.weights)
+        self.weight = nn.Parameter(weight)
+        init.kaiming_normal_(self.weight)
 
     def forward(self, x):
         x = x.unsqueeze(-1)
         cos = nn.CosineSimilarity(dim=1)
-        return -cos(self.weights, x)
+        return -cos(self.weight, x)
 
 
 class BasicBlock(nn.Module):
@@ -151,6 +151,7 @@ class BasicBlock(nn.Module):
         self.conv1 = nn.Conv2d(
             in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
         )
+
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = nn.Conv2d(
             planes, planes, kernel_size=3, stride=1, padding=1, bias=False
@@ -197,7 +198,6 @@ class ResNet(nn.Module):
         self.in_planes = 16
         self.similarity = similarity
         self.softmax = nn.Softmax(dim=1)
-        
 
         if self.similarity is None:
             print("INFO ----- ResNet has been initialized without a similarity measure")
@@ -209,6 +209,7 @@ class ResNet(nn.Module):
             self.has_weighing_factor = True
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
+
         self.bn1 = nn.BatchNorm2d(16)
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
