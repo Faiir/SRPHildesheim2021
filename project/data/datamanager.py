@@ -400,9 +400,9 @@ def data_loader(datasets_list: list) -> dict:
                                                 root=r"/dataset/CHIFAR10/",
                                                 train=True,
                                                 download=True,
-                                                transform=[transforms.ToTensor(),
+                                                transform=transforms.Compose([transforms.ToTensor(),
                                                            transforms.RandomHorizontalFlip(),
-                                                           transforms.RandomCrop(32, 4)])
+                                                           transforms.RandomCrop(32, 4)]))
         datasets_dict['CIFAR10_test'] = CIFAR10(
                                                 root=r"/dataset/CHIFAR10/",
                                                 train=False,
@@ -415,9 +415,9 @@ def data_loader(datasets_list: list) -> dict:
     
     if "MNIST" in datasets_list:
         mnist_transforms = transforms.Compose([transforms.Pad(2),
-                                                    transforms.ToTensor(),
-                                                    transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                                                    transforms.RandomCrop(32, 4)])
+                                              transforms.ToTensor(),
+                                              transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                                              transforms.RandomCrop(32, 4)])
         datasets_dict['MNIST_train'] = MNIST(root=r"/dataset/MNIST",
                                             train=True,
                                             download=True,
@@ -453,9 +453,9 @@ def data_loader(datasets_list: list) -> dict:
         datasets_list.remove("FashionMNIST")
 
     if "SVHN" in datasets_list:
-        SVHN_transforms = [transforms.ToTensor(),
+        SVHN_transforms = transforms.Compose([transforms.ToTensor(),
                             transforms.Resize(32),
-                            transforms.RandomCrop(32, 4)]
+                            transforms.RandomCrop(32, 4)])
 
         datasets_dict["SVHN_train"] = SVHN(
                                         root=r"/dataset/SVHN",
@@ -479,9 +479,9 @@ def data_loader(datasets_list: list) -> dict:
         datasets_dict["CIFAR100_train"] = CIFAR100(root=r"/dataset/CIFAR100",
                                                    train = True,
                                                    download = True,
-                                                   transform=[transforms.ToTensor(),
+                                                   transform=transforms.Compose([transforms.ToTensor(),
                                                               transforms.RandomHorizontalFlip(),
-                                                              transforms.RandomCrop(32, 4)])
+                                                              transforms.RandomCrop(32, 4)]))
         
         
         datasets_dict["CIFAR100_test"] = CIFAR100(root=r"/dataset/CIFAR100",
