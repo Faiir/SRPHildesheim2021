@@ -410,7 +410,7 @@ def start_experiment(config_path, log):
                                 labelled_size=labelled_size,
                                 unlabelled_size=pool_size,
                                 OoD_ratio=OOD_ratio)
-
+    data_manager.create_merged_data()
 
     for exp in config["experiment-list"]:
         if exp["verbose"] > 1:
@@ -425,7 +425,6 @@ def start_experiment(config_path, log):
 
         for oracle in exp["oracles"]:
 
-            data_manager.create_merged_data()
             data_manager.reset_pool()
 
             if OoD_extra_class:

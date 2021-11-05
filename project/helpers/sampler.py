@@ -24,7 +24,8 @@ def random_sample(dataset_manager, number_samples, net, predictions=None, weight
         size=number_samples,
     )
     iteration = 1 + status_manager["status"].max()
-    status_manager.iloc[inds, -1] = iteration * status_manager.iloc[inds, -2]
+    
+    status_manager['status'].iloc[inds] = iteration * status_manager['source'].iloc[inds]
 
     return None
 
@@ -57,7 +58,8 @@ def uncertainity_sampling_least_confident(
     inds = np.argsort(np.max(predictions, axis=1))[:number_samples]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()
-    status_manager.iloc[inds, -1] = iteration * status_manager.iloc[inds, -2]
+    
+    status_manager['status'].iloc[inds] = iteration * status_manager['source'].iloc[inds]
 
     return None
 
@@ -90,7 +92,8 @@ def uncertainity_sampling_highest_entropy(
     inds = np.argsort(entropy)[:number_samples]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()
-    status_manager.iloc[inds, -1] = iteration * status_manager.iloc[inds, -2]
+
+    status_manager['status'].iloc[inds] = iteration * status_manager['source'].iloc[inds]
 
     return None
 

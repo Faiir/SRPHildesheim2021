@@ -1,9 +1,9 @@
 {
   "experiment-list": [
-    {"oracle_stepsize": 100,
-    "oracle_steps": 3,
-    "epochs": 10, 
-    "batch_size": 32, 
+    {"oracle_stepsize": 32,
+    "oracle_steps": 2,
+    "epochs": 1, 
+    "batch_size": 64, 
     "oracles": ["highest entropy"], 
     "weight_decay": 0.0001, 
     "metric": "accuracy", 
@@ -16,17 +16,17 @@
     "bugged_and_working": false, 
     "momentum": 0.9, 
     "validation_source": "test", 
-    "validation_split": 0.5, 
+    "validation_split": 0.01, 
     "lr_sheduler": true, 
     "do_desity_plot": false, 
     "do_pertubed_images": false, 
     "criterion": "crossentropy", 
     "verbose": 2
     },
-    {"oracle_stepsize": 100,
-    "oracle_steps": 3,
-    "epochs": 10, 
-    "batch_size": 32,
+    {"oracle_stepsize": 32,
+    "oracle_steps": 2,
+    "epochs": 1, 
+    "batch_size": 64,
     "oracles": ["extra_class_entropy"],
     "weight_decay": 0.0001,
     "metric": "accuracy",
@@ -48,8 +48,8 @@
     "verbose": 2
     }
   ],
-  "pool_size": 2000,
-  "labelled_size": 500,
+  "pool_size": 256,
+  "labelled_size": 128,
   "OOD_ratio": 0.5,
   "in_dist_data": ["CIFAR10"],
   "ood_data": ["FashionMNIST", "MNIST"]

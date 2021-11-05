@@ -14,10 +14,32 @@ import torch.nn.init as init
 from torch.autograd import Variable, grad
 from torchvision import datasets, transforms
 from torch.nn.parameter import Parameter
+from torch.utils.data import Dataset
 
 import warnings
 warnings.filterwarnings('ignore')
 
+class DataHandler_For_Arrays(Dataset):
+    """DataHandler_For_Arrays [Base pytorch dataset for all experiments]"""
+
+    def __init__(self, X, Y, transform=None, num_classes=10):
+        self.X = X  # X[np.newaxis,...] # x[:, np.newaxis]:
+        self.Y = Y
+        # self.Y = torch.as_tensor(self.Y)
+        # self.Y = torch.nn.functional.one_hot(self.Y, num_classes=10)
+        self.transform = transform
+        self.num_classes = num_classes
+
+    def __getitem__(self, index):
+        x, y = self.X[index], self.Y[index]
+
+        if self.transform:
+            x = self.transform(x)
+
+        return x, y
+
+    def __len__(self):
+        return len(self.X)
 
 def get_gram_resnet():
     def conv3x3(in_planes, out_planes, stride=1):
@@ -185,11 +207,9 @@ def get_gram_resnet():
                 device = "cuda"
             else:
                 device = "cpu"
-            print('get deviations')
    
             for i in tqdm(range(0,len(data),128)):
                 batch = torch.stack(data[i:i+128]).to(device)
-                print(batch.shape[0])
                 feat_list = self.gram_feature_list(batch)
                 batch_deviations = []
                 for L,feat_L in enumerate(feat_list):
@@ -277,7 +297,8 @@ class Detector:
         train_preds = []
         train_confs = []
         train_logits = []
-        data_train = train_loader.dataset
+        data_train = DataHandler_For_Arrays(X=torch.tensor([ii[0].numpy() for ii in train_loader.dataset]),
+                                Y=torch.tensor([ii[1] for ii in train_loader.dataset]))
 
         if torch.cuda.is_available():
             device = "cuda"
@@ -311,7 +332,8 @@ class Detector:
         else:
             device = "cpu"
 
-        data = data_loader.dataset
+        data = DataHandler_For_Arrays(X=torch.tensor([ii[0].numpy() for ii in data_loader.dataset]),
+                                Y=torch.tensor([ii[1] for ii in data_loader.dataset]))
         for idx in range(0,len(data),128):
             batch =  torch.squeeze(data[idx:idx+128][0]).to(device)
             

@@ -96,6 +96,7 @@ def create_dataloader(
         batch_size=batch_size,
         num_workers=2,
         pin_memory=pin_memory,
+        drop_last=False
     )
 
     test_loader = DataLoader(
@@ -104,6 +105,7 @@ def create_dataloader(
         batch_size=batch_size,
         num_workers=2,
         pin_memory=pin_memory,
+        drop_last=False
     )
 
     pool_loader = DataLoader(
@@ -111,7 +113,8 @@ def create_dataloader(
         sampler=SequentialSampler(pool_dataset), 
         batch_size=batch_size, 
         num_workers=2, 
-        pin_memory=pin_memory
+        pin_memory=pin_memory,
+        drop_last=False
     )
 
     if validation_source is not None:
@@ -121,6 +124,7 @@ def create_dataloader(
             batch_size=batch_size,
             num_workers=2,
             pin_memory=pin_memory,
+            drop_last=False
             )
 
 
