@@ -17,7 +17,7 @@ import json
 
 # data imports
 from .data.datahandler_for_array import create_dataloader
-from .data.datamanager import get_datamanager
+from .data.datamanager import Data_manager
 
 # train functions
 from .model.train import train, test, get_density_vals
@@ -400,104 +400,105 @@ def start_experiment(config_path, log):
 
     in_dist_data = config["in_dist_data"]
     ood_data = config["ood_data"]
-    for dataset in in_dist_data:
 
-        for exp in config["experiment-list"]:
+    pool_size = config["pool_size"]
+    labelled_size = config["labelled_size"]
+    OOD_ratio = config["OOD_ratio"]
 
-            if exp["verbose"] > 1:
-                print("Experiment Config :")
-                for variable in exp:
-                    if exp[variable] is not None:
-                        print(f"{variable} : ", exp[variable])
+    data_manager = Data_manager(iD_datasets=in_dist_data,
+                                OoD_datasets=ood_data,
+                                labelled_size=labelled_size,
+                                unlabelled_size=pool_size,
+                                OoD_ratio=OOD_ratio)
 
-            OoD_extra_class = exp.get("OoD_extra_class", False)
 
-            data_manager = get_datamanager(
-                indistribution=in_dist_data,
-                ood=ood_data,
-                OoD_extra_class=OoD_extra_class,
+    for exp in config["experiment-list"]:
+        if exp["verbose"] > 1:
+            print("Experiment Config :")
+            for variable in exp:
+                if exp[variable] is not None:
+                    print(f"{variable} : ", exp[variable])
+
+        OoD_extra_class = exp.get("OoD_extra_class", False)
+        metric = exp["metric"]
+        exp['OOD_ratio'] = OOD_ratio
+
+        for oracle in exp["oracles"]:
+
+            data_manager.create_merged_data()
+            data_manager.reset_pool()
+
+            if OoD_extra_class:
+                num_classes = 11
+                data_manager.OoD_extra_class = True
+            else:
+                num_classes = 10
+
+            net = get_model(
+                exp["model_name"],
+                similarity=exp["similarity"],
+                num_classes=num_classes,
+                include_bn=False,
+                channel_input=3,
             )
 
-            metric = exp["metric"]
 
-            for oracle in exp["oracles"]:
+            trained_net, optimizer = experiment(
+                param_dict=exp,
+                oracle=oracle,
+                data_manager=data_manager,
+                writer=writer,
+                dataset=in_dist_data[0],
+                net=net,
+            )
 
-                if OoD_extra_class:
-                    num_classes = 11
-                else:
-                    num_classes = 10
+            # log_df = data_manager.get_logs()
 
-                net = get_model(
-                    exp["model_name"],
-                    similarity=exp["similarity"],
-                    num_classes=num_classes,
-                    include_bn=False,
-                    channel_input=3,
+            current_time = datetime.now().strftime("%H-%M-%S")
+            log_file_name = (
+                "Experiment-from-"
+                + str(current_time)
+                + "-"
+                + str(exp["similarity"])
+            )
+
+            model_dir = os.path.join(".", "saved_models")
+
+            if os.path.exists(model_dir) == False:
+                os.mkdir(os.path.join(".", "saved_models"))
+
+            if exp.get("do_save_model", False):
+                save_model(
+                    trained_net,
+                    optimizer,
+                    exp,
+                    data_manager,
+                    model_dir,
+                    in_dist_data,
+                    ood_data,
+                    desc_str=log_file_name + ".csv",
                 )
 
-                data_manager.create_merged_data(
-                    test_size=exp["test_size"],
-                    pool_size=exp["pool_size"],
-                    labelled_size=exp["labelled_size"],
-                    OOD_ratio=exp["OOD_ratio"],
-                )
+            # log_path = os.path.join(log_dir, log_file_name + ".csv")
 
-                trained_net, optimizer = experiment(
-                    param_dict=exp,
-                    oracle=oracle,
-                    data_manager=data_manager,
-                    writer=writer,
-                    dataset=dataset,
-                    net=net,
-                )
+            # with open(log_path + "exp_setup" + ".json", mode="w") as exp_json:
+            #     json.dump(exp, exp_json)
 
-                # log_df = data_manager.get_logs()
-
-                current_time = datetime.now().strftime("%H-%M-%S")
-                log_file_name = (
-                    "Experiment-from-"
-                    + str(current_time)
-                    + "-"
-                    + str(exp["similarity"])
-                )
-
-                model_dir = os.path.join(".", "saved_models")
-
-                if os.path.exists(model_dir) == False:
-                    os.mkdir(os.path.join(".", "saved_models"))
-
-                if exp.get("do_save_model", False):
-                    save_model(
-                        trained_net,
-                        optimizer,
-                        exp,
-                        data_manager,
-                        model_dir,
-                        in_dist_data,
-                        ood_data,
-                        desc_str=log_file_name + ".csv",
-                    )
-
-                # log_path = os.path.join(log_dir, log_file_name + ".csv")
-
-                # with open(log_path + "exp_setup" + ".json", mode="w") as exp_json:
-                #     json.dump(exp, exp_json)
-
-                # with open(log_path, mode="w", encoding="utf-8") as logfile:
-                #     colums = log_df.columns
-                #     for colum in colums:
-                #         logfile.write(colum + ",")
-                #     logfile.write("\n")
-                #     for _, row in log_df.iterrows():
-                #         for c in colums:
-                #             logfile.write(str(row[c].item()))
-                #             logfile.write(",")
-                #         logfile.write("\n")
-                log_dir = create_log_path(exp)
-                log_config_path = os.path.join(log_dir + ".json")
-                with open(log_config_path, "w") as f:
-                    json.dump(exp, f)
-            writer.close()
+            # with open(log_path, mode="w", encoding="utf-8") as logfile:
+            #     colums = log_df.columns
+            #     for colum in colums:
+            #         logfile.write(colum + ",")
+            #     logfile.write("\n")
+            #     for _, row in log_df.iterrows():
+            #         for c in colums:
+            #             logfile.write(str(row[c].item()))
+            #             logfile.write(",")
+            #         logfile.write("\n")
+            log_dir = create_log_path(exp)
+            log_config_path = os.path.join(log_dir + ".json")
+            with open(log_config_path, "w") as f:
+                json.dump(exp, f)
+        writer.close()
     print(
         """
     **********************************************

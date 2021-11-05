@@ -48,37 +48,9 @@ def create_dataloader(
     Returns:
         PyTorch's train, test and pool loader. (Validation loader is also returned if source is not None)
     """
-    train_X, train_y = data_manager.get_train_data()
-    test_X, test_y = data_manager.get_test_data()
-    pool_X, pool_y = data_manager.get_unlabelled_pool_data()
-
-    train_X, train_y = train_X.astype(np.float32), train_y.astype(np.float32)
-    test_X, test_y = test_X.astype(np.float32), test_y.astype(np.float32)
-    pool_X, pool_y = pool_X.astype(np.float32), pool_y.astype(np.float32)
-
-    train_X, train_y = torch.from_numpy(train_X), torch.from_numpy(train_y)
-    test_X, test_y = torch.from_numpy(test_X), torch.from_numpy(test_y)
-    pool_X, pool_y = torch.from_numpy(pool_X), torch.from_numpy(pool_y)
-
-    transform_train = transform = transforms.Compose(
-        [
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomCrop(32, 4),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
-    )
-
-    transform_test = transforms.Compose(
-        [
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
-    )
-
-    pool_dataset = DataHandler_For_Arrays(pool_X, pool_y)
-
-    train_dataset = DataHandler_For_Arrays(train_X, train_y, transform=transform_train)
-
-    test_dataset = DataHandler_For_Arrays(test_X, test_y, transform=transform_test)
+    pool_dataset = data_manager.get_unlabelled_pool_dataset()
+    train_dataset = data_manager.get_train_dataset()
+    test_dataset = data_manager.get_test_dataset()
 
     if validation_source is None:
         print(
@@ -135,8 +107,8 @@ def create_dataloader(
     )
 
     pool_loader = DataLoader(
-
-        pool_dataset, 
+        pool_dataset,
+        sampler=SequentialSampler(pool_dataset), 
         batch_size=batch_size, 
         num_workers=2, 
         pin_memory=pin_memory
