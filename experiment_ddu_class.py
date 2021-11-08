@@ -24,7 +24,7 @@ from .model.model_files.small_resmodel_original import resmodel20
 from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot
 from .helpers.sampler import DDU_sampler
-
+from .data.datamanager import Data_manager
 
 def verbosity(message, verbose, epoch):
     if verbose == 1:
@@ -246,9 +246,14 @@ class experiment_ddu(experiment_base):
 
     # overrides construct_datamanager
     def construct_datamanager(self) -> None:
+        self.datamanager = Data_manager(
+            self.iD
+        )
+        
         pass
 
     def get_embeddings(
+        self,
         model,
         loader: torch.utils.data.DataLoader,
         num_dim: int,
