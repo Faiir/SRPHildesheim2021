@@ -228,7 +228,6 @@ def pertube_image(pool_loader, val_loader, trained_net):
 
             pred.backward(backward_tensor)
             with torch.no_grad():
-                grad = data.grad
                 del output, target, g, h, backward_tensor
                 pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad)
                 #trained_net.zero_grad(set_to_none=True)
