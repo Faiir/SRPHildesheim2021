@@ -158,7 +158,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     # net = get_model("base")  # torchvision.models.resnet18(pretrained=False)
     if torch.cuda.is_available():
         net.cuda()
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     data_manager.reset_pool()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -232,14 +232,6 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 nesterov=nesterov,
             )
 
-
-        # optimizer = optim.SGD(
-        #     net.parameters(),
-        #     weight_decay=weight_decay,
-        #     momentum=momentum,
-        #     lr=lr,
-        #     nesterov=nesterov,
-        # )
 
         trained_net, avg_train_loss = train(
             net,
