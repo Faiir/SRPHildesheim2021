@@ -23,7 +23,8 @@ from .experiment_base import experiment_base
 from .model.model_files.small_resnet_original import resnet20
 from .helpers.early_stopping import EarlyStopping
 from .helpers.get_tsne_plot import get_tsne_plot
-
+from .data.datamanager import Data_manager
+from .data.datahandler_for_array import create_dataloader
 
 def verbosity(message, verbose, epoch):
     if verbose == 1:
@@ -69,14 +70,14 @@ class experiment_active_learning(experiment_base):
 
     # overrides train
     def train(
-        self, train_dataloader, val_dataloader, optimizer, criterion, device, **kwargs
+        self, train_loader, val_loader, optimizer, criterion, device, **kwargs
     ):
         """train [main training function of the project]
 
         [extended_summary]
 
         Args:
-            train_dataloader ([torch.Dataloader]): [dataloader with the training data]
+            train_loader ([torch.Dataloader]): [dataloader with the training data]
             optimizer ([torch.optim]): [optimizer for the network]
             criterion ([Loss function]): [Pytorch loss function]
             device ([str]): [device to train on cpu/cuda]
@@ -89,9 +90,9 @@ class experiment_active_learning(experiment_base):
 
         if self.verbose > 0:
             print("\nTraining with device :", device)
-            print("Number of Training Samples : ", len(train_dataloader.dataset))
-            if val_dataloader is not None:
-                print("Number of Validation Samples : ", len(val_dataloader.dataset))
+            print("Number of Training Samples : ", len(train_loader.dataset))
+            if val_loader is not None:
+                print("Number of Validation Samples : ", len(val_loader.dataset))
             print("Number of Epochs : ", self.epochs)
 
             if self.verbose > 1:
@@ -120,7 +121,7 @@ class experiment_active_learning(experiment_base):
 
             train_loss = 0
             train_acc = 0
-            for batch_idx, (data, target) in enumerate(train_dataloader):
+            for batch_idx, (data, target) in enumerate(train_loader):
                 if len(data) > 1:
                     self.model.train()
                     data, target = data.to(device).float(), target.to(device).long()
@@ -136,8 +137,8 @@ class experiment_active_learning(experiment_base):
                 else:
                     pass
 
-            avg_train_loss = train_loss / len(train_dataloader)
-            avg_train_acc = train_acc / len(train_dataloader.dataset)
+            avg_train_loss = train_loss / len(train_loader)
+            avg_train_acc = train_acc / len(train_loader.dataset)
 
             if epoch % 1 == 0:
                 if validation:
@@ -145,7 +146,7 @@ class experiment_active_learning(experiment_base):
                     val_acc = 0
                     self.model.eval()  # prep self.model for evaluation
                     with torch.no_grad():
-                        for vdata, vtarget in val_dataloader:
+                        for vdata, vtarget in val_loader:
                             vdata, vtarget = (
                                 vdata.to(device).float(),
                                 vtarget.to(device).long(),
@@ -157,8 +158,8 @@ class experiment_active_learning(experiment_base):
                                 torch.argmax(voutput, dim=1) == vtarget
                             ).item()
 
-                    avg_val_loss = val_loss / len(self.val_dataloader)
-                    avg_val_acc = val_acc / len(self.val_dataloader.dataset)
+                    avg_val_loss = val_loss / len(self.val_loader)
+                    avg_val_acc = val_acc / len(self.val_loader.dataset)
 
                     early_stopping(avg_val_loss, self.model)
                     if kwargs.get("lr_sheduler", True):
@@ -199,7 +200,7 @@ class experiment_active_learning(experiment_base):
         """
         test_loss = 0
         self.model.eval()
-        for (t_data, t_target) in self.test_dataloader:
+        for (t_data, t_target) in self.test_loader:
             t_data, t_target = (
                 t_data.to(self.device).float(),
                 t_target.to(self.device).long(),
@@ -211,7 +212,7 @@ class experiment_active_learning(experiment_base):
             test_loss += t_loss
 
         self.avg_test_loss = test_loss.to("cpu").detach().numpy() / len(
-            self.test_dataloader
+            self.test_loader
         )  # return avg testloss
 
     # overrides save_settings
@@ -235,7 +236,15 @@ class experiment_active_learning(experiment_base):
 
     # overrides construct_datamanager
     def construct_datamanager(self) -> None:
-        pass
+        self.datamanager = Data_manager(
+                iD_datasets= [self.iD],
+                OoD_datasets= self.OoD,
+                labelled_size= self.labelled_size,
+                pool_size = self.pool_size,
+                OoD_ratio = self.OOD_ratio,
+                test_iD_size = None
+        )
+        print( "initialised datamanager")
 
     # overrides set_sampler
     def set_sampler(self, sampler) -> None:
@@ -298,7 +307,17 @@ class experiment_active_learning(experiment_base):
     #!TODO
     @torch.no_grad()
     def create_dataloader(self) -> None:
-        pass
+        result_tup = create_dataloader(
+            self.datamanager,
+            self.batch_size,
+            0.1,
+            validation_source="train"
+        )
+        self.train_loader = result_tup[0]
+        self.test_loader = result_tup[1]
+        self.pool_loader = result_tup[2]
+        self.val_loader = result_tup[3]
+
 
     def create_optimizer(self) -> None:
         self.optimizer = optim.SGD(
@@ -319,6 +338,8 @@ class experiment_active_learning(experiment_base):
         self.oracle_steps = self.current_experiment.get("oracle_steps", 10)
         self.iD = self.current_experiment.get("iD", "Cifar10")
         self.OoD = self.current_experiment.get("OoD", ["Fashion_MNIST"])
+        self.labelled_size = self.current_experiment.get("labelled_size", 3000)
+        self.pool_size = self.current_experiment.get("pool_size", 20000)
         self.OOD_ratio = self.current_experiment.get("OOD_ratio", 0.0)
         # extra class
         self.extra_class_thresholding = self.current_experiment.get(
@@ -343,6 +364,8 @@ class experiment_active_learning(experiment_base):
 
         _create_log_path_al(self.OOD_ratio)
 
+        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
+
         self.set_model(self.current_experiment.get("model", "base_small_resnet"))
         self.set_writer(self.log_path)
         self.set_sampler(self.current_experiment.get("oracles", "highest-entropy"))
@@ -363,21 +386,22 @@ class experiment_active_learning(experiment_base):
 
     # overrides perform_experiment
     def perform_experiment(self):
-        self.datamanager = None
-
+        self.construct_datamanager()
         for experiment in self.experiment_settings:
             self.current_experiment = experiment
             self.train_loss_hist = []
             self.load_settings()
-            self.construct_datamanager()
+            self.datamanager.reset_pool()
+            self.datamanager.create_merged_data()
             self.current_oracle_step = 0
+            
             for oracle_s in self.oracle_steps:
 
                 self.create_dataloader()
                 self.create_optimizer()
 
-                self.train(self.dataloader, self.optimizer, self.criterion, self.device)
-                self.test()
+                self.train(self.train_loader, self.optimizer, self.criterion, self.device)
+                self.test(self.test_loader,)
 
                 self.current_oracle_step += 1
                 if len(self.pool_loader) > 0:
@@ -416,13 +440,13 @@ class experiment_active_learning(experiment_base):
                         dict_to_add = {"auroc": auroc_score}
 
                     # TODO wait for final version
-                    # self.data_manager.add_log(
-                    #     writer=self.writer,
-                    #     oracle=self.oracle,
-                    #     dataset=self.iD,
-                    #     metric=self.metric,
-                    #     log_dict=dict_to_add,
-                    #     param_dict=param_dict,
-                    # )
+                    self.data_manager.add_log(
+                        writer=self.writer,
+                        oracle=self.oracle,
+                        dataset=self.iD,
+                        metric=self.metric,
+                        log_dict=dict_to_add,
+                        ood_ratio=self.OOD_ratio,
+                    )
 
-                    # self.save_logs(data_manager, log_path)
+                    self.save_logs(self.data_manager, self.log_path)
