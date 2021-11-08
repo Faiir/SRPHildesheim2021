@@ -69,14 +69,17 @@ class experiment_active_learning(experiment_base):
         writer: SummaryWriter,
     ) -> None:
         super().__init__(basic_settings, log_path)
-        self.basic_settings = basic_settings
-        self.exp_settings = exp_settings
         self.log_path = log_path
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+        self.current_experiment = basic_settings | exp_settings
+        self.load_settings()
+
         if self.device == "cuda":
             torch.backends.cudnn.benchmark = True
+
+        self.construct_datamanager()
 
     # overrides train
     def train(self, train_loader, val_loader, optimizer, criterion, device, **kwargs):
@@ -273,10 +276,6 @@ class experiment_active_learning(experiment_base):
 
             self.sampler = extra_class_sampler(self.extra_class_thresholding)
 
-    # overrides set_writer
-    def set_writer(self, log_path) -> None:
-        pass
-
     # overrides set_model
     def set_model(self, model_name) -> None:
         if model_name == "base_small_resnet":
@@ -364,96 +363,81 @@ class experiment_active_learning(experiment_base):
         _create_log_path_al(self.OOD_ratio)
 
         # extra class
-        self.extra_class_thresholding = self.current_experiment.get(
-            "extra_class_thresholding", 0.1
-        )
-        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
+        if self.current_experiment["exp_type"] == "extra_class":
+            self.extra_class_thresholding = self.current_experiment.get(
+                "extra_class_thresholding", 0.1
+            )
+            self.exp_name = self.current_experiment.get("exp_name", "standard_name")
+            self.set_model(
+                self.current_experiment.get("model", "base_small_resnet"),
+            )
+            sekf
 
-        self.set_model(self.current_experiment.get("model", "base_small_resnet"))
-        self.set_writer(self.log_path)
         self.set_sampler(self.current_experiment.get("oracle", "highest-entropy"))
-        # self.do_pertubed_images = self.current_experiment.get("do_pertubed_images", 10)["do_pertubed_images"]
-        # self.do_desity_plot = self.current_experiment.get("do_desity_plot", 10)["do_desity_plot"]
-        # self.bugged_and_working = self.current_experiment.get(
-        #     "bugged_and_working", None
-        # )
-        # print("loaded settings")
-        # if self.current_experiment.get("bugged_and_working", None) is None:
-        #     bugged_and_working = self.current_experiment.get("bugged_and_working", True)
-        #     print(
-        #         f"INFO ---- flag bugged_and_working is not set. Using default value of {bugged_and_working}"
-        #     )
-        # else:
-        #     bugged_and_working = self.current_experiment["bugged_and_working"]
-        #     print(f"INFO ---- flag bugged_and_working is set to {bugged_and_working}")
 
     # overrides perform_experiment
     def perform_experiment(self):
-        self.construct_datamanager()
-        for experiment in self.experiment_settings:
-            self.current_experiment = experiment
-            self.train_loss_hist = []
-            self.load_settings()
-            self.datamanager.reset_pool()
-            self.datamanager.create_merged_data()
-            self.current_oracle_step = 0
 
-            for oracle_s in self.oracle_steps:
+        self.train_loss_hist = []
 
-                self.create_dataloader()
-                self.create_optimizer()
+        self.datamanager.reset_pool()
+        self.datamanager.create_merged_data()
+        self.current_oracle_step = 0
 
-                self.train(
-                    self.train_loader, self.optimizer, self.criterion, self.device
+        for oracle_s in self.oracle_steps:
+
+            self.create_dataloader()
+            self.create_optimizer()
+
+            self.train(self.train_loader, self.optimizer, self.criterion, self.device)
+            self.test(
+                self.test_loader,
+            )
+
+            self.current_oracle_step += 1
+            if len(self.pool_loader) > 0:
+                (
+                    pool_predictions,
+                    pool_labels_list,
+                ) = self.get_pool_predictions(self.pool_loader)
+
+                self.sampler(self.datamanager, number_samples=self.oracle_stepsize)
+
+                test_predictions, test_labels, _ = self.get_pool_predictions(
+                    self.test_loader
                 )
-                self.test(
-                    self.test_loader,
+                train_predictions, train_labels, _ = self.get_pool_predictions(
+                    self.train_loader
                 )
 
-                self.current_oracle_step += 1
-                if len(self.pool_loader) > 0:
-                    (
-                        pool_predictions,
-                        pool_labels_list,
-                    ) = self.get_pool_predictions(self.pool_loader)
+                if self.metric.lower() == "accuracy":
+                    test_accuracy = accuracy(test_labels, test_predictions)
+                    train_accuracy = accuracy(train_labels, train_predictions)
 
-                    self.sampler(self.datamanager, number_samples=self.oracle_stepsize)
+                    dict_to_add = {
+                        "test_loss": self.avg_test_loss,
+                        "train_loss": self.avg_train_loss,
+                        "test_accuracy": test_accuracy,
+                        "train_accuracy": train_accuracy,
+                    }
+                    print(dict_to_add)
 
-                    test_predictions, test_labels, _ = self.get_pool_predictions(
-                        self.test_loader
-                    )
-                    train_predictions, train_labels, _ = self.get_pool_predictions(
-                        self.train_loader
-                    )
+                elif self.metric.lower() == "f1":
+                    f1_score = f1(test_labels, test_predictions)
+                    dict_to_add = {"f1": f1_score}
+                elif self.metric.lower() == "auroc":
+                    auroc_score = auroc(self.data_manager, oracle_s)
 
-                    if self.metric.lower() == "accuracy":
-                        test_accuracy = accuracy(test_labels, test_predictions)
-                        train_accuracy = accuracy(train_labels, train_predictions)
+                    dict_to_add = {"auroc": auroc_score}
 
-                        dict_to_add = {
-                            "test_loss": self.avg_test_loss,
-                            "train_loss": self.avg_train_loss,
-                            "test_accuracy": test_accuracy,
-                            "train_accuracy": train_accuracy,
-                        }
-                        print(dict_to_add)
+                self.data_manager.add_log(
+                    writer=self.writer,
+                    oracle=self.oracle,
+                    dataset=self.iD,
+                    metric=self.metric,
+                    log_dict=dict_to_add,
+                    ood_ratio=self.OOD_ratio,
+                    exp_name=self.exp_name,
+                )
 
-                    elif self.metric.lower() == "f1":
-                        f1_score = f1(test_labels, test_predictions)
-                        dict_to_add = {"f1": f1_score}
-                    elif self.metric.lower() == "auroc":
-                        auroc_score = auroc(self.data_manager, oracle_s)
-
-                        dict_to_add = {"auroc": auroc_score}
-
-                    # TODO wait for final version
-                    self.data_manager.add_log(
-                        writer=self.writer,
-                        oracle=self.oracle,
-                        dataset=self.iD,
-                        metric=self.metric,
-                        log_dict=dict_to_add,
-                        ood_ratio=self.OOD_ratio,
-                    )
-
-                    self.save_logs(self.data_manager, self.log_path)
+                self.save_logs(self.data_manager, self.log_path)

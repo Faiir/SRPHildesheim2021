@@ -17,14 +17,15 @@ import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
 
-from .helpers.measures import accuracy, auroc, f1
-
 
 # project
 from .experiment_base import experiment_base
 from .model.model_files.small_resnet_original import resnet20
 from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot, density_plot
+from .data.datahandler_for_array import create_dataloader
+from .data.datamanager import Data_manager
+from .helpers.measures import accuracy, auroc, f1
 
 
 def verbosity(message, verbose, epoch):
@@ -79,14 +80,11 @@ class experiment_gen_odin(experiment_base):
         writer: SummaryWriter,
     ) -> None:
         super().__init__(basic_settings, log_path)
-        self.basic_settings = basic_settings
-        self.exp_settings = exp_settings
         self.log_path = log_path
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        if self.device == "cuda":
-            torch.backends.cudnn.benchmark = True
+        self.current_experiment = basic_settings | exp_settings
 
     # overrides train
     def train(
@@ -256,7 +254,15 @@ class experiment_gen_odin(experiment_base):
 
     # overrides construct_datamanager
     def construct_datamanager(self) -> None:
-        pass
+        self.datamanager = Data_manager(
+            iD_datasets=[self.iD],
+            OoD_datasets=self.OoD,
+            labelled_size=self.labelled_size,
+            pool_size=self.pool_size,
+            OoD_ratio=self.OOD_ratio,
+            test_iD_size=None,
+        )
+        print("initialised datamanager")
 
     # overrides set_sampler
     def set_sampler(self, sampler) -> None:
@@ -274,10 +280,6 @@ class experiment_gen_odin(experiment_base):
             self.sampler = uncertainity_sampling_least_confident
         else:
             raise NotImplementedError
-
-    # overrides set_writer
-    def set_writer(self, log_path) -> None:
-        pass
 
     # overrides set_model
     def set_model(self, model_name) -> None:
@@ -339,9 +341,14 @@ class experiment_gen_odin(experiment_base):
         weighting_factor_list = np.concatenate(weighting_factor_list)
         return predictions, labels_list, weighting_factor_list
 
-    #!TODO
     def create_dataloader(self) -> None:
-        pass
+        result_tup = create_dataloader(
+            self.datamanager, self.batch_size, 0.1, validation_source="train"
+        )
+        self.train_loader = result_tup[0]
+        self.test_loader = result_tup[1]
+        self.pool_loader = result_tup[2]
+        self.val_loader = result_tup[3]
 
     def create_optimizer(self) -> None:
         base_params = []

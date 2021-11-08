@@ -21,11 +21,14 @@ from .helpers.measures import accuracy, auroc, f1
 
 # project
 from .experiment_base import experiment_base
-from .model.model_files.small_resmodel_original import resmodel20
+
+# from .model.model_files.small_resnet.model_original import resmodel20 #TODO
 from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot
 from .helpers.sampler import DDU_sampler
 from .data.datamanager import Data_manager
+from .data.datahandler_for_array import create_dataloader
+from .helpers.measures import accuracy, auroc, f1
 
 
 def verbosity(message, verbose, epoch):
@@ -79,14 +82,11 @@ class experiment_ddu(experiment_base):
         writer: SummaryWriter,
     ) -> None:
         super().__init__(basic_settings, log_path)
-        self.basic_settings = basic_settings
-        self.exp_settings = exp_settings
         self.log_path = log_path
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        if self.device == "cuda":
-            torch.backends.cudnn.benchmark = True
+        self.current_experiment = basic_settings | exp_settings
 
     # overrides train
     def train(
@@ -256,9 +256,15 @@ class experiment_ddu(experiment_base):
 
     # overrides construct_datamanager
     def construct_datamanager(self) -> None:
-        self.datamanager = Data_manager(self.iD)
-
-        pass
+        self.datamanager = Data_manager(
+            iD_datasets=[self.iD],
+            OoD_datasets=self.OoD,
+            labelled_size=self.labelled_size,
+            pool_size=self.pool_size,
+            OoD_ratio=self.OOD_ratio,
+            test_iD_size=None,
+        )
+        print("initialised datamanager")
 
     def get_embeddings(
         self,
@@ -326,7 +332,7 @@ class experiment_ddu(experiment_base):
                 data = data.to(device)
                 label = label.to(device)
 
-                logit_B_C = gmm_forward(model, gaussians_model, data)
+                logit_B_C = self.gmm_forward(model, gaussians_model, data)
 
                 end = start + len(data)
                 logits_N_C[start:end].copy_(logit_B_C, non_blocking=True)
@@ -421,10 +427,14 @@ class experiment_ddu(experiment_base):
         labels_list = np.concatenate(labels_list)
         return predictions, labels_list
 
-    #!TODO
-    @torch.no_grad()
     def create_dataloader(self) -> None:
-        pass
+        result_tup = create_dataloader(
+            self.datamanager, self.batch_size, 0.1, validation_source="train"
+        )
+        self.train_loader = result_tup[0]
+        self.test_loader = result_tup[1]
+        self.pool_loader = result_tup[2]
+        self.val_loader = result_tup[3]
 
     def create_optimizer(self) -> None:
         self.optimizer = optim.SGD(
