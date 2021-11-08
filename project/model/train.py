@@ -227,16 +227,20 @@ def pertube_image(pool_loader, val_loader, trained_net):
             pred, _ = output.max(dim=-1, keepdim=True)
 
             pred.backward(backward_tensor)
-            pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
-            del data, output, target, g, h
-            gc.collect()
+            with torch.no_grad():
+                grad = data.grad
+                del output, target, g, h, backward_tensor
+                pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad)
+                #trained_net.zero_grad(set_to_none=True)
+                del data
+                gc.collect()
 
-            yhat = trained_net(pert_imgage, apply_softmax=True)
-            pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
-            preds += torch.sum(pred)
-            del pred, yhat, pert_imgage
-            gc.collect()
-        scores.append(preds.detach().cpu().numpy())
+                yhat = trained_net(pert_imgage, apply_softmax=True)
+                pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
+                preds += torch.sum(pred).detach().cpu().numpy()
+                del pred, yhat, pert_imgage
+                gc.collect()
+        scores.append(preds)
 
     torch.cuda.empty_cache()
     trained_net.zero_grad(set_to_none=True)
@@ -290,6 +294,10 @@ def get_density_vals(
     if do_pertubed_images:
         return pertube_image(pool_loader, val_loader, trained_net)
     else:
+        gs = []
+        hs = []
+        pert_preds = []
+        targets = []
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(pool_loader):
                 data = data.to(device).float()
