@@ -8,6 +8,7 @@ import json
 import numpy as np
 from numpy.random import sample
 from scipy.sparse import construct
+from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm import tqdm
 
 # torch
@@ -16,7 +17,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
 
-from SRPHildesheim2021.project.helpers.measures import accuracy, auroc, f1
+from .helpers.measures import accuracy, auroc, f1
 
 
 # project
@@ -70,10 +71,18 @@ def fgsm_attack(image, epsilon, data_grad):
 
 
 class experiment_gen_odin(experiment_base):
-    def __init__(self, experiment_settings: List[Dict], log_path: str) -> None:
-        super().__init__(experiment_settings, log_path)
-        self.experiment_settings = experiment_settings
+    def __init__(
+        self,
+        basic_settings: Dict,
+        exp_settings: Dict,
+        log_path: str,
+        writer: SummaryWriter,
+    ) -> None:
+        super().__init__(basic_settings, log_path)
+        self.basic_settings = basic_settings
+        self.exp_settings = exp_settings
         self.log_path = log_path
+        self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         if self.device == "cuda":
@@ -435,10 +444,7 @@ class experiment_gen_odin(experiment_base):
         self.iD = self.current_experiment.get("iD", "Cifar10")
         self.OoD = self.current_experiment.get("OoD", ["Fashion_MNIST"])
         self.OOD_ratio = self.current_experiment.get("OOD_ratio", 0.0)
-        # extra class
-        self.extra_class_thresholding = self.current_experiment.get(
-            "extra_class_thresholding", 0.1
-        )
+
         # training settings
         self.epochs = self.current_experiment.get("epochs", 100)
         self.batch_size = self.current_experiment.get("batch_size", 128)

@@ -7,6 +7,7 @@ import json
 import numpy as np
 from numpy.random import sample
 from scipy.sparse import construct
+from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm import tqdm
 
 # torch
@@ -25,6 +26,7 @@ from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot
 from .helpers.sampler import DDU_sampler
 from .data.datamanager import Data_manager
+
 
 def verbosity(message, verbose, epoch):
     if verbose == 1:
@@ -69,10 +71,18 @@ def _create_log_path_al(log_dir: str = ".", OOD_ratio: float = 0.0) -> None:
 
 
 class experiment_ddu(experiment_base):
-    def __init__(self, experiment_settings: List[Dict], log_path: str) -> None:
-        super().__init__(experiment_settings, log_path)
-        self.experiment_settings = experiment_settings
+    def __init__(
+        self,
+        basic_settings: Dict,
+        exp_settings: Dict,
+        log_path: str,
+        writer: SummaryWriter,
+    ) -> None:
+        super().__init__(basic_settings, log_path)
+        self.basic_settings = basic_settings
+        self.exp_settings = exp_settings
         self.log_path = log_path
+        self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         if self.device == "cuda":
@@ -246,10 +256,8 @@ class experiment_ddu(experiment_base):
 
     # overrides construct_datamanager
     def construct_datamanager(self) -> None:
-        self.datamanager = Data_manager(
-            self.iD
-        )
-        
+        self.datamanager = Data_manager(self.iD)
+
         pass
 
     def get_embeddings(
@@ -438,10 +446,7 @@ class experiment_ddu(experiment_base):
         self.iD = self.current_experiment.get("iD", "Cifar10")
         self.OoD = self.current_experiment.get("OoD", ["Fashion_MNIST"])
         self.OOD_ratio = self.current_experiment.get("OOD_ratio", 0.0)
-        # extra class
-        self.extra_class_thresholding = self.current_experiment.get(
-            "extra_class_thresholding", 0.1
-        )
+
         # training settings
         self.epochs = self.current_experiment.get("epochs", 100)
         self.batch_size = self.current_experiment.get("batch_size", 128)

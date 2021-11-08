@@ -7,6 +7,7 @@ import json
 import numpy as np
 from numpy.random import sample
 from scipy.sparse import construct
+from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm import tqdm
 
 # torch
@@ -15,16 +16,17 @@ import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
 
-from SRPHildesheim2021.project.helpers.measures import accuracy, auroc, f1
+from .helpers.measures import accuracy, auroc, f1
 
 
 # project
 from .experiment_base import experiment_base
 from .model.model_files.small_resnet_original import resnet20
 from .helpers.early_stopping import EarlyStopping
-from .helpers.get_tsne_plot import get_tsne_plot
+from .helpers.plots import get_tsne_plot
 from .data.datamanager import Data_manager
 from .data.datahandler_for_array import create_dataloader
+
 
 def verbosity(message, verbose, epoch):
     if verbose == 1:
@@ -59,19 +61,25 @@ def _create_log_path_al(log_dir: str = ".", OOD_ratio: float = 0.0) -> None:
 
 
 class experiment_active_learning(experiment_base):
-    def __init__(self, experiment_settings: List[Dict], log_path: str) -> None:
-        super().__init__(experiment_settings, log_path)
-        self.experiment_settings = experiment_settings
+    def __init__(
+        self,
+        basic_settings: Dict,
+        exp_settings: Dict,
+        log_path: str,
+        writer: SummaryWriter,
+    ) -> None:
+        super().__init__(basic_settings, log_path)
+        self.basic_settings = basic_settings
+        self.exp_settings = exp_settings
         self.log_path = log_path
+        self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         if self.device == "cuda":
             torch.backends.cudnn.benchmark = True
 
     # overrides train
-    def train(
-        self, train_loader, val_loader, optimizer, criterion, device, **kwargs
-    ):
+    def train(self, train_loader, val_loader, optimizer, criterion, device, **kwargs):
         """train [main training function of the project]
 
         [extended_summary]
@@ -237,14 +245,14 @@ class experiment_active_learning(experiment_base):
     # overrides construct_datamanager
     def construct_datamanager(self) -> None:
         self.datamanager = Data_manager(
-                iD_datasets= [self.iD],
-                OoD_datasets= self.OoD,
-                labelled_size= self.labelled_size,
-                pool_size = self.pool_size,
-                OoD_ratio = self.OOD_ratio,
-                test_iD_size = None
+            iD_datasets=[self.iD],
+            OoD_datasets=self.OoD,
+            labelled_size=self.labelled_size,
+            pool_size=self.pool_size,
+            OoD_ratio=self.OOD_ratio,
+            test_iD_size=None,
         )
-        print( "initialised datamanager")
+        print("initialised datamanager")
 
     # overrides set_sampler
     def set_sampler(self, sampler) -> None:
@@ -252,11 +260,11 @@ class experiment_active_learning(experiment_base):
             from .helpers.sampler import random_sample
 
             self.sampler = random_sample
-        elif sampler == "highest entropy":
+        elif sampler == "highest-entropy":
             from .helpers.sampler import uncertainity_sampling_highest_entropy
 
             self.sampler = uncertainity_sampling_highest_entropy
-        elif sampler == "least confidence":
+        elif sampler == "least-confidence":
             from .helpers.sampler import uncertainity_sampling_least_confident
 
             self.sampler = uncertainity_sampling_least_confident
@@ -304,20 +312,14 @@ class experiment_active_learning(experiment_base):
         labels_list = np.concatenate(labels_list)
         return predictions, labels_list
 
-    #!TODO
-    @torch.no_grad()
     def create_dataloader(self) -> None:
         result_tup = create_dataloader(
-            self.datamanager,
-            self.batch_size,
-            0.1,
-            validation_source="train"
+            self.datamanager, self.batch_size, 0.1, validation_source="train"
         )
         self.train_loader = result_tup[0]
         self.test_loader = result_tup[1]
         self.pool_loader = result_tup[2]
         self.val_loader = result_tup[3]
-
 
     def create_optimizer(self) -> None:
         self.optimizer = optim.SGD(
@@ -341,10 +343,7 @@ class experiment_active_learning(experiment_base):
         self.labelled_size = self.current_experiment.get("labelled_size", 3000)
         self.pool_size = self.current_experiment.get("pool_size", 20000)
         self.OOD_ratio = self.current_experiment.get("OOD_ratio", 0.0)
-        # extra class
-        self.extra_class_thresholding = self.current_experiment.get(
-            "extra_class_thresholding", 0.1
-        )
+
         # training settings
         self.epochs = self.current_experiment.get("epochs", 100)
         self.batch_size = self.current_experiment.get("batch_size", 128)
@@ -364,11 +363,15 @@ class experiment_active_learning(experiment_base):
 
         _create_log_path_al(self.OOD_ratio)
 
+        # extra class
+        self.extra_class_thresholding = self.current_experiment.get(
+            "extra_class_thresholding", 0.1
+        )
         self.exp_name = self.current_experiment.get("exp_name", "standard_name")
 
         self.set_model(self.current_experiment.get("model", "base_small_resnet"))
         self.set_writer(self.log_path)
-        self.set_sampler(self.current_experiment.get("oracles", "highest-entropy"))
+        self.set_sampler(self.current_experiment.get("oracle", "highest-entropy"))
         # self.do_pertubed_images = self.current_experiment.get("do_pertubed_images", 10)["do_pertubed_images"]
         # self.do_desity_plot = self.current_experiment.get("do_desity_plot", 10)["do_desity_plot"]
         # self.bugged_and_working = self.current_experiment.get(
@@ -394,14 +397,18 @@ class experiment_active_learning(experiment_base):
             self.datamanager.reset_pool()
             self.datamanager.create_merged_data()
             self.current_oracle_step = 0
-            
+
             for oracle_s in self.oracle_steps:
 
                 self.create_dataloader()
                 self.create_optimizer()
 
-                self.train(self.train_loader, self.optimizer, self.criterion, self.device)
-                self.test(self.test_loader,)
+                self.train(
+                    self.train_loader, self.optimizer, self.criterion, self.device
+                )
+                self.test(
+                    self.test_loader,
+                )
 
                 self.current_oracle_step += 1
                 if len(self.pool_loader) > 0:

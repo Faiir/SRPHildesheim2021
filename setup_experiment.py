@@ -1,6 +1,9 @@
 import argparse
+import gc
 import sys
 import os
+
+import torch
 
 PACKAGE_PARENT = ".."
 SCRIPT_DIR = os.path.dirname(
@@ -8,9 +11,64 @@ SCRIPT_DIR = os.path.dirname(
 )
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
+import json
+from torch.utils.tensorboard import SummaryWriter
+import torch.backends.cudnn as cudnn
+
+from .experiment_active_learning import experiment_active_learning
+from .experiment_ddu_class import experiment_ddu
+from .experiment_genOdin import experiment_gen_odin
 
 # import shutil
-from .experiment import start_experiment
+
+
+def start_experiment(config, log_path):
+    writer = SummaryWriter(os.path.join(log_path))
+
+    if torch.cuda.is_available():
+        cudnn.benchmark = True
+
+    with open(config, mode="r", encoding="utf-8") as config_f:
+        config = json.load(config_f)
+
+    for experiment in config["experiments"]:
+        basic_settings = experiment["basic_settings"]
+
+        for exp_setting in experiment["exp_settings"]:
+            exp_type = exp_setting["exp_type"]
+
+            if exp_type == "baseline":
+                current_exp = experiment_active_learning(
+                    basic_settings, exp_setting, log_path, writer
+                )
+
+            elif exp_type == "baseline-ood":
+                current_exp = experiment_active_learning(
+                    basic_settings, exp_setting, log_path, writer
+                )
+            elif exp_type == "extra_class":
+                current_exp = experiment_active_learning(
+                    basic_settings, exp_setting, log_path, writer
+                )
+            elif exp_type == "gramm":
+                raise NotImplementedError
+
+            elif exp_type == "looc":
+                current_exp = experiment_gen_odin(
+                    basic_settings, exp_setting, log_path, writer
+                )
+            elif exp_type == "genodin":
+                current_exp = experiment_gen_odin(
+                    basic_settings, exp_setting, log_path, writer
+                )
+            elif exp_type == "ddu":
+                current_exp = experiment_ddu(
+                    basic_settings, exp_setting, log_path, writer
+                )
+
+            current_exp.perform_experiment()
+            del current_exp
+            gc.collect
 
 
 def main():

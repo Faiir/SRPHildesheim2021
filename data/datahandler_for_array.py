@@ -12,6 +12,7 @@ import torch
 ##setting pin_memory to False to see if the errors go away
 pin_memory = False
 
+
 class DataHandler_For_Arrays(Dataset):
     """DataHandler_For_Arrays [Base pytorch dataset for all experiments]"""
 
@@ -96,7 +97,7 @@ def create_dataloader(
         batch_size=batch_size,
         num_workers=2,
         pin_memory=pin_memory,
-        drop_last=False
+        drop_last=False,
     )
 
     test_loader = DataLoader(
@@ -105,16 +106,16 @@ def create_dataloader(
         batch_size=batch_size,
         num_workers=2,
         pin_memory=pin_memory,
-        drop_last=False
+        drop_last=False,
     )
 
     pool_loader = DataLoader(
         pool_dataset,
-        sampler=SequentialSampler(pool_dataset), 
-        batch_size=batch_size, 
-        num_workers=2, 
+        sampler=SequentialSampler(pool_dataset),
+        batch_size=batch_size,
+        num_workers=2,
         pin_memory=pin_memory,
-        drop_last=False
+        drop_last=False,
     )
 
     if validation_source is not None:
@@ -124,15 +125,13 @@ def create_dataloader(
             batch_size=batch_size,
             num_workers=2,
             pin_memory=pin_memory,
-            drop_last=False
-            )
-
+            drop_last=False,
+        )
 
         return (train_loader, test_loader, pool_loader, val_loader)
 
     else:
         return (train_loader, test_loader, pool_loader)
-
 
 
 def get_ood_dataloader(data_manager, batch_size: int = 16):
@@ -187,6 +186,7 @@ def get_ood_dataloader(data_manager, batch_size: int = 16):
         pin_memory=pin_memory,
     )
     return train_loader, outlier_loader
+
 
 # ## Datahandlers
 # from PIL import Image
@@ -326,9 +326,9 @@ def get_ood_dataloader(data_manager, batch_size: int = 16):
 
 #     pool_loader = DataLoader(
 
-#         pool_dataset, 
-#         batch_size=batch_size, 
-#         num_workers=2, 
+#         pool_dataset,
+#         batch_size=batch_size,
+#         num_workers=2,
 #         pin_memory=pin_memory
 #     )
 
@@ -346,7 +346,6 @@ def get_ood_dataloader(data_manager, batch_size: int = 16):
 
 #     else:
 #         return (train_loader, test_loader, pool_loader)
-
 
 
 # def get_ood_dataloader(data_manager, batch_size: int = 16):

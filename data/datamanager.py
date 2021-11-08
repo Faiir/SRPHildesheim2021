@@ -76,7 +76,7 @@ class Data_manager:
         labelled_size,
         pool_size,
         OoD_ratio,
-        test_iD_size = None
+        test_iD_size=None,
     ):
 
         self.iD_datasets = iD_datasets
@@ -86,24 +86,24 @@ class Data_manager:
         self.labelled_size = labelled_size
         self.unlabelled_size = pool_size
 
+        assert (
+            len(self.iD_datasets) == 1
+        ), f"Only one dataset can be in-Dist, found {self.iD_datasets}"
 
-
-        assert len(self.iD_datasets)==1, f"Only one dataset can be in-Dist, found {self.iD_datasets}"
-
-        list_of_datasets = self.iD_datasets+self.OoD_datasets
+        list_of_datasets = self.iD_datasets + self.OoD_datasets
         self.datasets_dict = data_loader(list_of_datasets)
-        
+
         self.iD_samples_size = 0
         for ii in self.iD_datasets:
-            self.iD_samples_size += len(self.datasets_dict[ii+"_train"].targets)
+            self.iD_samples_size += len(self.datasets_dict[ii + "_train"].targets)
 
         self.OoD_samples_size = 0
         for ii in self.OoD_datasets:
-            self.OoD_samples_size += len(self.datasets_dict[ii+"_train"].targets)
+            self.OoD_samples_size += len(self.datasets_dict[ii + "_train"].targets)
 
         test_dataset_iD_size = 0
         for ii in self.iD_datasets:
-            test_dataset_iD_size += len(self.datasets_dict[ii+"_test"].targets)
+            test_dataset_iD_size += len(self.datasets_dict[ii + "_test"].targets)
 
         if test_iD_size is None:
             self.test_iD_size = test_dataset_iD_size
@@ -111,37 +111,38 @@ class Data_manager:
             assert test_dataset_iD_size >= test_iD_size
             self.test_iD_size = test_iD_size
 
-
-        print(f'INFO ----- Total iD samples for training  {self.iD_samples_size}')
-        print(f'INFO ----- Total iD samples for testing  {self.test_iD_size}')
-        print(f'INFO ----- Total OoD samples for training {self.OoD_samples_size}')
-        
+        print(f"INFO ----- Total iD samples for training  {self.iD_samples_size}")
+        print(f"INFO ----- Total iD samples for testing  {self.test_iD_size}")
+        print(f"INFO ----- Total OoD samples for training {self.OoD_samples_size}")
 
     def create_merged_data(self):
         print("Creating New Dataset")
 
         assert 0 <= self.OoD_ratio < 1, "Invalid OOD_ratio : {self.OoD_ratio}"
-        
 
-        iD_pool_size = int(self.unlabelled_size*self.OoD_ratio)
+        iD_pool_size = int(self.unlabelled_size * self.OoD_ratio)
         OoD_pool_size = self.unlabelled_size - iD_pool_size
 
         assert (
             self.labelled_size + iD_pool_size <= self.iD_samples_size
         ), f"Insufficient Samples in Base Dataset: labelled_size + iD_pool_size > iD_samples_size : {self.labelled_size} + {iD_pool_size} > {self.iD_samples_size}"
 
-
-
-
-        iD_dataset_name = self.iD_datasets[0]+"_train"
+        iD_dataset_name = self.iD_datasets[0] + "_train"
         iD_labels = self.datasets_dict[iD_dataset_name].targets
 
         if iD_pool_size > 0:
-            labelled_inds, pool_iD_inds, labelled_labels, pool_iD_labels  = train_test_split(np.arange(self.iD_samples_size),
-                                                                                             iD_labels,
-                                                                                             train_size=self.labelled_size,
-                                                                                             test_size=iD_pool_size,
-                                                                                             stratify=iD_labels)
+            (
+                labelled_inds,
+                pool_iD_inds,
+                labelled_labels,
+                pool_iD_labels,
+            ) = train_test_split(
+                np.arange(self.iD_samples_size),
+                iD_labels,
+                train_size=self.labelled_size,
+                test_size=iD_pool_size,
+                stratify=iD_labels,
+            )
 
             index_list = [labelled_inds, pool_iD_inds]
             targets_list = [labelled_labels, pool_iD_labels]
@@ -153,48 +154,55 @@ class Data_manager:
                 np.ones_like(labelled_labels),
                 np.ones_like(pool_iD_labels),
             ]
-            
+
             dataset_list = [
-                np.repeat(iD_dataset_name,len(labelled_inds)),
-                np.repeat(iD_dataset_name,len(pool_iD_inds)),
+                np.repeat(iD_dataset_name, len(labelled_inds)),
+                np.repeat(iD_dataset_name, len(pool_iD_inds)),
             ]
 
         else:
             print("Running Experiment without Pool")
 
-            labelled_inds, pool_iD_inds, labelled_labels, pool_iD_labels  = train_test_split(np.arange(self.iD_samples_size),
-                                                                                             iD_labels,
-                                                                                             train_size=self.labelled_size,
-                                                                                             test_size=len(np.unique(iD_labels)),
-                                                                                             stratify=iD_labels)
-
+            (
+                labelled_inds,
+                pool_iD_inds,
+                labelled_labels,
+                pool_iD_labels,
+            ) = train_test_split(
+                np.arange(self.iD_samples_size),
+                iD_labels,
+                train_size=self.labelled_size,
+                test_size=len(np.unique(iD_labels)),
+                stratify=iD_labels,
+            )
 
             index_list = [labelled_inds]
             targets_list = [labelled_labels]
             status_list = [np.ones_like(labelled_labels)]
             source_list = [np.ones_like(labelled_labels)]
-            dataset_list = [np.repeat(iD_dataset_name,len(labelled_inds))]
-
+            dataset_list = [np.repeat(iD_dataset_name, len(labelled_inds))]
 
         if OoD_pool_size > 0:
             OoD_source_list = []
             OoD_inds_list = []
             OoD_label_list = []
             for ii in self.OoD_datasets:
-                targets = self.datasets_dict[ii+'_train'].targets
+                targets = self.datasets_dict[ii + "_train"].targets
                 length = len(targets)
-                OoD_source_list.append(np.repeat(ii+'_train',length))
+                OoD_source_list.append(np.repeat(ii + "_train", length))
                 OoD_inds_list.append(np.arange(length))
                 OoD_label_list.append(targets)
 
-            OoD_inds_list = np.concatenate(OoD_inds_list,axis=0)
-            OoD_source_list = np.concatenate(OoD_source_list,axis=0)
-            OoD_label_list = np.concatenate(OoD_label_list,axis=0)      
+            OoD_inds_list = np.concatenate(OoD_inds_list, axis=0)
+            OoD_source_list = np.concatenate(OoD_source_list, axis=0)
+            OoD_label_list = np.concatenate(OoD_label_list, axis=0)
 
-            OoD_inds, _, OoD_source, _ = train_test_split(OoD_inds_list,
-                                                          OoD_source_list,
-                                                          train_size=OoD_pool_size,
-                                                          stratify=OoD_label_list)
+            OoD_inds, _, OoD_source, _ = train_test_split(
+                OoD_inds_list,
+                OoD_source_list,
+                train_size=OoD_pool_size,
+                stratify=OoD_label_list,
+            )
             index_list.append(OoD_inds)
             targets_list.append(-np.ones_like(OoD_inds))
             status_list.append(np.zeros_like(OoD_inds))
@@ -209,32 +217,35 @@ class Data_manager:
         pool_source = np.concatenate(source_list)
         pool_dataset = np.concatenate(dataset_list)
 
-        
         self.status_manager = pd.DataFrame(
             np.concatenate(
                 [
-                    pool_inds[...,np.newaxis],
+                    pool_inds[..., np.newaxis],
                     pool_targets[..., np.newaxis],
                     pool_source[..., np.newaxis],
                     pool_status[..., np.newaxis],
-                    pool_dataset[..., np.newaxis]
+                    pool_dataset[..., np.newaxis],
                 ],
                 axis=1,
             ),
-            columns=['inds',"target", "source", "status","dataset_name"],
-        )        
+            columns=["inds", "target", "source", "status", "dataset_name"],
+        )
 
-        for ii in ['inds',"target", "source", "status"]:
+        for ii in ["inds", "target", "source", "status"]:
             self.status_manager[ii] = self.status_manager[ii].astype(int)
 
-        train_labels = self.status_manager.loc[(self.status_manager["source"].values == 1),"target"]
+        train_labels = self.status_manager.loc[
+            (self.status_manager["source"].values == 1), "target"
+        ]
         OoD_class_label = max(train_labels) + 1
-        self.status_manager["target"] = np.where(self.status_manager["source"].values == 1,
-                                                 self.status_manager["target"].values,
-                                                 OoD_class_label)
+        self.status_manager["target"] = np.where(
+            self.status_manager["source"].values == 1,
+            self.status_manager["target"].values,
+            OoD_class_label,
+        )
 
         self.iter = 0
-        
+
         self.config = {
             "Total_overall_examples": len(self.status_manager),
             "Total_base_examples": len(
@@ -250,7 +261,7 @@ class Data_manager:
 
         self.log = {}
 
-        #self.save_experiment_start(csv=save_csv)
+        # self.save_experiment_start(csv=save_csv)
         print("Status_manager intialised")
 
         return None
@@ -293,9 +304,14 @@ class Data_manager:
         else:
             labelled_mask = self.status_manager[self.status_manager["status"] > 0].index
 
-        inds_dict = self.status_manager.iloc[labelled_mask].groupby('dataset_name')['inds'].agg(list).to_dict()
+        inds_dict = (
+            self.status_manager.iloc[labelled_mask]
+            .groupby("dataset_name")["inds"]
+            .agg(list)
+            .to_dict()
+        )
 
-        return dataset_creator(inds_dict,self.datasets_dict)
+        return dataset_creator(inds_dict, self.datasets_dict)
 
     def get_ood_dataset(self):
         """get_ood_data [returns the current state of the out-of-distribution data in the unlabelled pool]"""
@@ -304,10 +320,15 @@ class Data_manager:
         ), "Dataset not initialized. Call create_merged_data()"
 
         labelled_ood_mask = self.status_manager[self.status_manager["status"] < 0].index
-        
-        inds_dict = self.status_manager.iloc[labelled_ood_mask].groupby('dataset_name')['inds'].agg(list).to_dict()
 
-        return dataset_creator(inds_dict,self.datasets_dict)
+        inds_dict = (
+            self.status_manager.iloc[labelled_ood_mask]
+            .groupby("dataset_name")["inds"]
+            .agg(list)
+            .to_dict()
+        )
+
+        return dataset_creator(inds_dict, self.datasets_dict)
 
     def get_test_dataset(self):
         """get_test_data [returns the testset]"""
@@ -316,7 +337,7 @@ class Data_manager:
             self.iter is not None
         ), "Dataset not initialized. Call create_merged_data()"
 
-        return self.datasets_dict[self.iD_datasets[0]+'_test']
+        return self.datasets_dict[self.iD_datasets[0] + "_test"]
 
     def get_unlabelled_pool_dataset(self):
         """get_unlabelled_pool_data [returns the state of the unlabelled pool]"""
@@ -326,11 +347,18 @@ class Data_manager:
 
         unlabelled_mask = self.status_manager[self.status_manager["status"] == 0].index
 
-        inds_dict = self.status_manager.iloc[unlabelled_mask].groupby('dataset_name')['inds'].agg(list).to_dict()
+        inds_dict = (
+            self.status_manager.iloc[unlabelled_mask]
+            .groupby("dataset_name")["inds"]
+            .agg(list)
+            .to_dict()
+        )
 
-        return dataset_creator(inds_dict,self.datasets_dict)
+        return dataset_creator(inds_dict, self.datasets_dict)
 
-    def add_log(self, writer, oracle, dataset, metric, ood_ratio, exp_name,log_dict=None):
+    def add_log(
+        self, writer, oracle, dataset, metric, ood_ratio, exp_name, log_dict=None
+    ):
         self.iter += 1
         #
         current_iter_log = {
@@ -354,7 +382,7 @@ class Data_manager:
         )
 
         ood_ratio = str(ood_ratio)
-        #similarity = str(param_dict["similarity"]) + "_" + str(param_dict["model_name"])
+        # similarity = str(param_dict["similarity"]) + "_" + str(param_dict["model_name"])
 
         if log_dict is not None:
             if metric == "accuracy":
@@ -397,105 +425,132 @@ def data_loader(datasets_list: list) -> dict:
     print(f"INFO ------ List of datasets being loaded are {datasets_list}")
     datasets_dict = {}
     if "CIFAR10" in datasets_list:
-        datasets_dict['CIFAR10_train'] = CIFAR10(
-                                                root=r"/dataset/CHIFAR10/",
-                                                train=True,
-                                                download=True,
-                                                transform=transforms.Compose([transforms.ToTensor(),
-                                                           transforms.RandomHorizontalFlip(),
-                                                           transforms.RandomCrop(32, 4)]))
-        datasets_dict['CIFAR10_test'] = CIFAR10(
-                                                root=r"/dataset/CHIFAR10/",
-                                                train=False,
-                                                download=True,
-                                                transform=transforms.ToTensor(),
-                                                )
-        
+        datasets_dict["CIFAR10_train"] = CIFAR10(
+            root=r"/dataset/CHIFAR10/",
+            train=True,
+            download=True,
+            transform=transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.RandomCrop(32, 4),
+                ]
+            ),
+        )
+        datasets_dict["CIFAR10_test"] = CIFAR10(
+            root=r"/dataset/CHIFAR10/",
+            train=False,
+            download=True,
+            transform=transforms.ToTensor(),
+        )
+
         print("INFO ----- Dataset Loaded : CIFAR10")
         datasets_list.remove("CIFAR10")
-    
-    if "MNIST" in datasets_list:
-        mnist_transforms = transforms.Compose([transforms.Pad(2),
-                                              transforms.ToTensor(),
-                                              transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                                              transforms.RandomCrop(32, 4)])
-        datasets_dict['MNIST_train'] = MNIST(root=r"/dataset/MNIST",
-                                            train=True,
-                                            download=True,
-                                            transform=mnist_transforms)
-        
 
-        datasets_dict['MNIST_test'] = MNIST(root=r"/dataset/MNIST",
-                                            train=False,
-                                            download=True,
-                                            transform=mnist_transforms)
-        
+    if "MNIST" in datasets_list:
+        mnist_transforms = transforms.Compose(
+            [
+                transforms.Pad(2),
+                transforms.ToTensor(),
+                transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                transforms.RandomCrop(32, 4),
+            ]
+        )
+        datasets_dict["MNIST_train"] = MNIST(
+            root=r"/dataset/MNIST",
+            train=True,
+            download=True,
+            transform=mnist_transforms,
+        )
+
+        datasets_dict["MNIST_test"] = MNIST(
+            root=r"/dataset/MNIST",
+            train=False,
+            download=True,
+            transform=mnist_transforms,
+        )
+
         print("INFO ----- Dataset Loaded : MNIST")
         datasets_list.remove("MNIST")
-    
-    if "FashionMNIST" in datasets_list:
-        fmnist_transforms = transforms.Compose([transforms.Pad(2),
-                                                    transforms.ToTensor(),
-                                                    transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                                                    transforms.RandomHorizontalFlip(),
-                                                    transforms.RandomCrop(32, 4)])
 
-        datasets_dict["FashionMNIST_train"] = FashionMNIST(root="/dataset/FashionMNIST",
-                                            train=True,
-                                            download=True,
-                                            transform=fmnist_transforms)
-        
-        datasets_dict["FashionMNIST_test"] = FashionMNIST(root="/dataset/FashionMNIST",
-                                            train=False,
-                                            download=True,
-                                            transform=fmnist_transforms)
-        
+    if "FashionMNIST" in datasets_list:
+        fmnist_transforms = transforms.Compose(
+            [
+                transforms.Pad(2),
+                transforms.ToTensor(),
+                transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(32, 4),
+            ]
+        )
+
+        datasets_dict["FashionMNIST_train"] = FashionMNIST(
+            root="/dataset/FashionMNIST",
+            train=True,
+            download=True,
+            transform=fmnist_transforms,
+        )
+
+        datasets_dict["FashionMNIST_test"] = FashionMNIST(
+            root="/dataset/FashionMNIST",
+            train=False,
+            download=True,
+            transform=fmnist_transforms,
+        )
+
         print("INFO ----- Dataset Loaded : FashionMNIST")
         datasets_list.remove("FashionMNIST")
 
     if "SVHN" in datasets_list:
-        SVHN_transforms = transforms.Compose([transforms.ToTensor(),
-                            transforms.Resize(32),
-                            transforms.RandomCrop(32, 4)])
+        SVHN_transforms = transforms.Compose(
+            [transforms.ToTensor(), transforms.Resize(32), transforms.RandomCrop(32, 4)]
+        )
 
         datasets_dict["SVHN_train"] = SVHN(
-                                        root=r"/dataset/SVHN",
-                                        split="train",
-                                        download=True,
-                                        transform=SVHN_transforms,
-                                    )
+            root=r"/dataset/SVHN",
+            split="train",
+            download=True,
+            transform=SVHN_transforms,
+        )
         datasets_dict["SVHN_train"].targets = datasets_dict["SVHN_train"].labels
-        datasets_dict["SVHN_test"] = SVHN(root=r"/dataset/SVHN",
-                                        split="test",
-                                        download=True,
-                                        transform=SVHN_transforms)
-        
-        
+        datasets_dict["SVHN_test"] = SVHN(
+            root=r"/dataset/SVHN",
+            split="test",
+            download=True,
+            transform=SVHN_transforms,
+        )
+
         datasets_dict["SVHN_test"].targets = datasets_dict["SVHN_test"].labels
         print("INFO ----- Dataset Loaded : SVHN")
         datasets_list.remove("SVHN")
 
-
     if "CIFAR100" in datasets_list:
-        datasets_dict["CIFAR100_train"] = CIFAR100(root=r"/dataset/CIFAR100",
-                                                   train = True,
-                                                   download = True,
-                                                   transform=transforms.Compose([transforms.ToTensor(),
-                                                              transforms.RandomHorizontalFlip(),
-                                                              transforms.RandomCrop(32, 4)]))
-        
-        
-        datasets_dict["CIFAR100_test"] = CIFAR100(root=r"/dataset/CIFAR100",
-                                                   train = False,
-                                                   download = True,
-                                                   transform=transforms.ToTensor(),)
-        
+        datasets_dict["CIFAR100_train"] = CIFAR100(
+            root=r"/dataset/CIFAR100",
+            train=True,
+            download=True,
+            transform=transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.RandomCrop(32, 4),
+                ]
+            ),
+        )
+
+        datasets_dict["CIFAR100_test"] = CIFAR100(
+            root=r"/dataset/CIFAR100",
+            train=False,
+            download=True,
+            transform=transforms.ToTensor(),
+        )
 
         print("INFO ----- Dataset Loaded : CIFAR100")
         datasets_list.remove("CIFAR100")
 
-    assert len(datasets_list)==0, f'Not all datasets have been loaded, datasets left : {datasets_list}'
-    
+    assert (
+        len(datasets_list) == 0
+    ), f"Not all datasets have been loaded, datasets left : {datasets_list}"
 
     return datasets_dict
 
@@ -503,11 +558,14 @@ def data_loader(datasets_list: list) -> dict:
 def dataset_creator(indices_dict, datasets_dict):
     dataset_list = []
     for dataset_name in indices_dict:
-        dataset_list.append(Subset(datasets_dict[dataset_name], indices_dict[dataset_name]))
+        dataset_list.append(
+            Subset(datasets_dict[dataset_name], indices_dict[dataset_name])
+        )
 
     chained_dataset = ConcatDataset(dataset_list)
 
-    return chained_dataset 
+    return chained_dataset
+
 
 # import pandas as pd
 # import numpy as np
