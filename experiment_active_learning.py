@@ -237,8 +237,9 @@ class experiment_active_learning(experiment_base):
             json.dump(self.current_experiment, f)
 
     def save_al_logs(self) -> None:
-        log_df = self.statusmanager.get_logs()
-        with open(self.log_path, mode="w", encoding="utf-8") as logfile:
+        log_df = self.datamanager.get_logs()
+        al_logs = os.path.join(self.log_path, "log_dir", f"logs-{self.exp_name}.csv")
+        with open(al_logs, mode="w", encoding="utf-8") as logfile:
             colums = log_df.columns
             for colum in colums:
                 logfile.write(colum + ",")
@@ -306,9 +307,7 @@ class experiment_active_learning(experiment_base):
         yhat = []
         labels_list = []
         for (data, labels) in pool_loader:
-            pred = self.model(
-                data.to(self.device).float(), get_test_model=True, apply_softmax=True
-            )
+            pred = self.model(data.to(self.device).float(), apply_softmax=True)
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
         predictions = np.concatenate(yhat)
@@ -372,15 +371,14 @@ class experiment_active_learning(experiment_base):
             self.extra_class_thresholding = self.current_experiment.get(
                 "extra_class_thresholding", 0.1
             )
-            self.exp_name = self.current_experiment.get("exp_name", "standard_name")
+
             self.num_classes += 1
-            self.set_model(
-                self.current_experiment.get("model", "base"), self.num_classes
-            )
-        self.set_model(
-            self.current_experiment.get("model", "base"),
-        )
-        self.set_sampler(self.current_experiment.get("oracle", "highest-entropy"))
+            # self.set_model(
+            #     self.current_experiment.get("model", "base"), self.num_classes
+            # )
+        self.oracle = self.current_experiment.get("oracle", "highest-entropy")
+        self.set_sampler(self.oracle)
+        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
 
     # overrides perform_experiment
     def perform_experiment(self):
@@ -394,14 +392,18 @@ class experiment_active_learning(experiment_base):
             print("loaded statusmanager from file")
         else:
             # self.datamanager.reset_pool()
-            self.datamanager.create_merged_data()
+            save_path = os.path.join(self.log_path, "status_manager_dir")
+            self.datamanager.create_merged_data(path=save_path)
             self.current_oracle_step = 0
             print("created new statusmanager")
 
         for oracle_s in range(self.oracle_steps):
-
+            self.set_model(
+                self.current_experiment.get("model", "base"),
+            )
             self.create_dataloader()
             self.create_optimizer()
+
             # , train_loader, val_loader, optimizer, criterion, device
             self.train(
                 self.train_loader,
@@ -422,12 +424,11 @@ class experiment_active_learning(experiment_base):
                 self.sampler(
                     self.datamanager,
                     number_samples=self.oracle_stepsize,
+                    net=self.model,
                     predictions=pool_predictions,
                 )
 
-                test_predictions, test_labels, _ = self.pool_predictions(
-                    self.test_loader
-                )
+                test_predictions, test_labels = self.pool_predictions(self.test_loader)
 
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)
@@ -446,7 +447,7 @@ class experiment_active_learning(experiment_base):
 
                 #     dict_to_add = {"auroc": auroc_score}
 
-                self.data_manager.add_log(
+                self.datamanager.add_log(
                     writer=self.writer,
                     oracle=self.oracle,
                     dataset=self.iD,
@@ -455,5 +456,5 @@ class experiment_active_learning(experiment_base):
                     ood_ratio=self.OOD_ratio,
                     exp_name=self.exp_name,
                 )
-
-                self.save_logs(self.data_manager, self.log_path)
+                self.save_al_logs()
+                # self.save_logs(self.data_manager, self.log_path)

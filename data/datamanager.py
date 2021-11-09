@@ -405,10 +405,10 @@ class Data_manager:
                 writer.add_scalars(
                     f"{exp_name}/{oracle}/ood_ratio-{ood_ratio}", loss_dict, self.iter
                 )
-                f1_dict = {}
-                f1_dict["f1_score"] = log_dict["f1"]
+
+                f1_scalar = np.array(log_dict["f1"])
                 writer.add_scalar(
-                    f"{exp_name}/{oracle}/ood_ratio-{ood_ratio}", f1_dict, self.iter
+                    f"{exp_name}/{oracle}/ood_ratio-{ood_ratio}", f1_scalar, self.iter
                 )
             else:
                 writer.add_scalars(
@@ -429,6 +429,10 @@ class Data_manager:
         self.iter = 0
         self.OoD_extra_class = False
         self.status_manager.loc[self.status_manager["status"] != 1, "status"] = 0
+
+
+def tmp_func(x):
+    return x.repeat(3, 1, 1)
 
 
 def data_loader(datasets_list: list) -> dict:
@@ -465,7 +469,7 @@ def data_loader(datasets_list: list) -> dict:
             [
                 transforms.Pad(2),
                 transforms.ToTensor(),
-                transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                transforms.Lambda(tmp_func),
                 transforms.RandomCrop(32, 4),
             ]
         )
@@ -491,7 +495,7 @@ def data_loader(datasets_list: list) -> dict:
             [
                 transforms.Pad(2),
                 transforms.ToTensor(),
-                transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                transforms.Lambda(tmp_func),
                 transforms.RandomHorizontalFlip(),
                 transforms.RandomCrop(32, 4),
             ]
