@@ -401,15 +401,17 @@ class experiment_gen_odin(experiment_base):
                 pred, _ = output.max(dim=-1, keepdim=True)
 
                 pred.backward(backward_tensor)
-                pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
-                del data, output, target, g, h
-                gc.collect()
+                with torch.no_grad():
+                    del output, target, g,h,backward_tensor   
+                    pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad)
+                    del data
+                    gc.collect()
 
-                yhat = self.model(pert_imgage, apply_softmax=True)
-                pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
-                preds += torch.sum(pred)
-                del pred, yhat, pert_imgage
-                gc.collect()
+                    yhat = self.model(pert_imgage, apply_softmax=True)
+                    pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
+                    preds += torch.sum(pred)
+                    del pred, yhat, pert_imgage
+                    gc.collect()
             scores.append(preds.detach().cpu().numpy())
 
         torch.cuda.empty_cache()
