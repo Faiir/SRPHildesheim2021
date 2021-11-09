@@ -22,7 +22,8 @@ from .helpers.measures import accuracy, auroc, f1
 # project
 from .experiment_base import experiment_base
 
-# from .model.model_files.small_resnet.model_original import resmodel20 #TODO
+# from .model.model_files.small_resnet.model_original import resmodel20 #
+
 from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot
 from .helpers.sampler import DDU_sampler
@@ -476,7 +477,7 @@ class experiment_ddu(experiment_base):
 
         _create_log_path_al(self.OOD_ratio)
 
-        self.set_model(self.current_experiment.get("model", "base_small_resmodel"))
+        self.set_model(self.current_experiment.get("model", "DDU"))
         self.set_writer(self.log_path)
         self.set_sampler(self.current_experiment.get("oracles", "highest-entropy"))
 

@@ -8,7 +8,7 @@
 # )
 from .model_files.small_resnet_original import resnet20
 from .model_files.resnet_ddu import resnet18 as resnet_ddu
-from .model_files.gram_resnet import resnet as get_gram_resnet
+from .model_files.gram_resnet import get_gram_resnet
 
 from datetime import datetime
 import torch

@@ -22,7 +22,7 @@ from .helpers.measures import accuracy, auroc, f1
 
 # project
 from .experiment_base import experiment_base
-from .model.model_files.small_resnet_original import resnet20
+from .model.get_model import get_model
 from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot
 from .data.datamanager import Data_manager
@@ -69,7 +69,7 @@ class experiment_active_learning(experiment_base):
         log_path: str,
         writer: SummaryWriter,
     ) -> None:
-        super().__init__(basic_settings, log_path)
+        super().__init__(basic_settings, exp_settings, log_path, writer)
         self.log_path = log_path
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -283,7 +283,9 @@ class experiment_active_learning(experiment_base):
     # overrides set_model
     def set_model(self, model_name) -> None:
         if model_name == "base":
-            self.model = resnet20(num_classes=self.num_classes)  # needs rewrite maybe
+            self.model = get_model(
+                model_name, num_classes=self.num_classes
+            )  # needs rewrite maybe
         else:
             raise NotImplementedError
         self.model.to(self.device)
@@ -324,7 +326,7 @@ class experiment_active_learning(experiment_base):
 
     def create_optimizer(self) -> None:
         self.optimizer = optim.SGD(
-            self.model.parameters,
+            self.model.parameters(),
             weight_decay=self.weight_decay,
             lr=self.lr,
             momentum=self.momentum,
@@ -357,12 +359,13 @@ class experiment_active_learning(experiment_base):
         self.num_classes = self.current_experiment.get("num_classes", 10)
         self.validation_split = self.current_experiment.get("validation_split", "train")
         self.validation_source = self.current_experiment.get("validation_source", 0.3)
-        self.criterion = self.current_experiment.get("criterion", "crossentropy")
+        # self.criterion = self.current_experiment.get("criterion", "crossentropy")
+        self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")
         # logging
         self.verbose = self.current_experiment.get("verbose", 1)
 
-        _create_log_path_al(self.OOD_ratio)
+        # _create_log_path_al(self.OOD_ratio)
 
         # extra class
         if self.current_experiment["exp_type"] == "extra_class":
@@ -370,11 +373,13 @@ class experiment_active_learning(experiment_base):
                 "extra_class_thresholding", 0.1
             )
             self.exp_name = self.current_experiment.get("exp_name", "standard_name")
-            self.set_model(
-                self.current_experiment.get("model", "base"),
-            )
             self.num_classes += 1
-
+            self.set_model(
+                self.current_experiment.get("model", "base"), self.num_classes
+            )
+        self.set_model(
+            self.current_experiment.get("model", "base"),
+        )
         self.set_sampler(self.current_experiment.get("oracle", "highest-entropy"))
 
     # overrides perform_experiment
@@ -388,27 +393,31 @@ class experiment_active_learning(experiment_base):
             self.datamanager.status_manager = pd.read_csv(check_path, index_col=0)
             print("loaded statusmanager from file")
         else:
-            self.datamanager.reset_pool()
+            # self.datamanager.reset_pool()
             self.datamanager.create_merged_data()
             self.current_oracle_step = 0
             print("created new statusmanager")
 
-        for oracle_s in self.oracle_steps:
+        for oracle_s in range(self.oracle_steps):
 
             self.create_dataloader()
             self.create_optimizer()
-
-            self.train(self.train_loader, self.optimizer, self.criterion, self.device)
-            self.test(
-                self.test_loader,
+            # , train_loader, val_loader, optimizer, criterion, device
+            self.train(
+                self.train_loader,
+                self.val_loader,
+                self.optimizer,
+                self.criterion,
+                self.device,
             )
+            self.test()
 
             self.current_oracle_step += 1
             if len(self.pool_loader) > 0:
                 (
                     pool_predictions,
                     pool_labels_list,
-                ) = self.get_pool_predictions(self.pool_loader)
+                ) = self.pool_predictions(self.pool_loader)
 
                 self.sampler(
                     self.datamanager,
@@ -416,7 +425,7 @@ class experiment_active_learning(experiment_base):
                     predictions=pool_predictions,
                 )
 
-                test_predictions, test_labels, _ = self.get_pool_predictions(
+                test_predictions, test_labels, _ = self.pool_predictions(
                     self.test_loader
                 )
 
@@ -424,10 +433,10 @@ class experiment_active_learning(experiment_base):
                 f1_score = f1(test_labels, test_predictions)
 
                 dict_to_add = {
-                    "test_loss": self.avg_test_loss[-1],
-                    "train_loss": self.avg_train_loss[-1],
+                    "test_loss": self.avg_test_loss,
+                    "train_loss": self.avg_train_loss_hist,
                     "test_accuracy": test_accuracy,
-                    "train_accuracy": self.avg_train_acc_hist[-1],
+                    "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
                 }
 

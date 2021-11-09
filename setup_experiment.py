@@ -15,9 +15,9 @@ import json
 from torch.utils.tensorboard import SummaryWriter
 import torch.backends.cudnn as cudnn
 
-from .experiment_active_learning import experiment_active_learning
-from .experiment_ddu_class import experiment_ddu
-from .experiment_genOdin import experiment_gen_odin
+from robust_active_learning.experiment_active_learning import experiment_active_learning
+from robust_active_learning.experiment_ddu_class import experiment_ddu
+from robust_active_learning.experiment_genOdin import experiment_gen_odin
 
 # import shutil
 import time
@@ -25,7 +25,7 @@ import time
 
 def create_log_dirs(log_path):
     if os.path.exists(log_path) == False:
-        os.mkdirs(log_path)
+        os.makedirs(log_path)
 
     status_manager_path = os.path.join(log_path, "status_manager_dir")
     writer_path = os.path.join(log_path, "writer_dir")
