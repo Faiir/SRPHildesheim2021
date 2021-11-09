@@ -14,9 +14,13 @@ def accuracy(true_labels, predictions):
     return 100 * np.mean(predicted_labels == (true_labels.flatten()))
 
 
-def auroc(data_manager, curr_iter):
-    print(
-        data_manager.status_manager[data_manager.status_manager["status"] == curr_iter]
-    )
-    # datamanager.status_manager seems to only save indist?
+def auroc(data_manager, curr_iter, predictions):
+    raise NotImplementedError
+    pos_ex = data_manager.status_manager[
+        data_manager.status_manager["status"] == curr_iter
+    ]
+    neg_ex = data_manager.status_manager[
+        data_manager.status_manager["status"] == -curr_iter
+    ]
+    roc_score = ()
     return 3

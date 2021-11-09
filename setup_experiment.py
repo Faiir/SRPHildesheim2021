@@ -20,10 +20,32 @@ from .experiment_ddu_class import experiment_ddu
 from .experiment_genOdin import experiment_gen_odin
 
 # import shutil
+import time
+
+
+def create_log_dirs(log_path):
+    if os.path.exists(log_path) == False:
+        os.mkdirs(log_path)
+
+    status_manager_path = os.path.join(log_path, "status_manager_dir")
+    writer_path = os.path.join(log_path, "writer_dir")
+    log_dir_path = os.path.join(log_path, "log_dir")
+
+    if os.path.exists(status_manager_path) == False:
+        os.mkdir(status_manager_path)
+    if os.path.exists(writer_path) == False:
+        os.mkdir(writer_path)
+    if os.path.exists(log_dir_path) == False:
+        os.mkdir(log_dir_path)
+
+    print("Directories created")
 
 
 def start_experiment(config, log_path):
-    writer = SummaryWriter(os.path.join(log_path))
+    log_path = os.path.join(log_path, time.strftime("%m-%d-%H-%M", time.localtime()))
+    create_log_dirs(log_path)
+
+    writer = SummaryWriter(os.path.join(log_path, "writer_dir"))
 
     if torch.cuda.is_available():
         cudnn.benchmark = True

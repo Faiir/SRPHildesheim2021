@@ -1,13 +1,14 @@
-from .model_files.mnist_model import Net
-from .model_files.genOdinModel import genOdinModel
-from .model_files.big_resnet import resnet18
-from .model_files.small_resnet__wPTSpec import resnet20 as resnet20SpecGenOdin
-from .model_files.small_resnet_original import resnet20 as resnet20_original
-from .model_files.small_resnet_only_specnorm import (
-    resnet20 as resnet20_original_spec_norm,
-)
-from .model_files.small_resnet import resnet20
-
+# from .model_files.mnist_model import Net
+# from .model_files.genOdinModel import genOdinModel
+# from .model_files.big_resnet import resnet18
+# from .model_files.small_resnet__wPTSpec import resnet20 as resnet20SpecGenOdin
+#  as resnet20_original
+# from .model_files.small_resnet_only_specnorm import (
+#     resnet20 as resnet20_original_spec_norm,
+# )
+from .model_files.small_resnet_original import resnet20
+from .model_files.resnet_ddu import resnet18 as resnet_ddu
+from .model_files.gram_resnet import resnet as get_gram_resnet
 
 from datetime import datetime
 import torch
@@ -25,10 +26,6 @@ def add_rot_heads(net, pernumile_layer_size=128):
 
 def get_model(
     model_name,
-    similarity=None,
-    num_classes=10,
-    include_bn=False,
-    channel_input=3,
     **kwargs,
 ):
     """get_model [[function which returns instance of the experiments model]]
@@ -51,41 +48,66 @@ def get_model(
         [nn.Module]: [parametrized Neural Network]
     """
     if model_name == "base":
-        net = Net()
-        return net
-    elif model_name == "gen_odin_conv":
-        genOdin = genOdinModel(
-            similarity=similarity,
-            out_classes=num_classes,
-            include_bn=include_bn,
-            channel_input=channel_input,
-        )
-        return genOdin
-    elif model_name == "gen_odin_res":
-        return resnet18(
-            similarity=similarity, do_not_genOdin=kwargs.get("do_not_genOdin", False)
-        )
-    elif model_name == "small_gen_odin_res":
         return resnet20(
-            similarity=similarity,
-            selfsupervision=kwargs.get("selfsupervision", False),
-            num_classes=num_classes,
-            do_not_genOdin=kwargs.get("do_not_genOdin", False),
+            num_classes=kwargs.get("num_classes", 10),
+            similarity=kwargs.get("similarity", None),
         )
-
-    elif model_name == "small_resnet_with_spec":
-        return resnet20SpecGenOdin(
-            similarity=similarity,
-            num_classes=num_classes,
+    elif model_name == "GenOdin":
+        return resnet20(
+            num_classes=kwargs.get("num_classes", 10),
+            similarity=kwargs.get("similarity", "CR"),
         )
-
-    elif model_name == "base_small_resnet":
-        if num_classes != 10:
-            print(f"INFO ---- Number of classes is {num_classes}")
-        return resnet20_original(num_classes=num_classes, similarity=similarity)
-
+    elif model_name == "LOOC":
+        return resnet20(
+            num_classes=kwargs.get("num_classes", 10),
+            similarity=kwargs.get("similarity", "ER"),
+        )
+    elif model_name == "DDU":
+        return resnet_ddu(
+            num_classes=kwargs.get("num_classes", 10),
+            spectral_normalization=kwargs.get("spectral_normalization", True),
+            temp=kwargs.get("temp", 1.0),
+        )
+    elif model_name == "gram_resnet":
+        return get_gram_resnet()
     else:
         raise ValueError(f"Model {model_name} not found")
+    # if model_name == "base":
+    #     net = Net()
+    #     return net
+    # elif model_name == "gen_odin_conv":
+    #     genOdin = genOdinModel(
+    #         similarity=similarity,
+    #         out_classes=num_classes,
+    #         include_bn=include_bn,
+    #         channel_input=channel_input,
+    #     )
+    #     return genOdin
+    # elif model_name == "gen_odin_res":
+    #     return resnet18(
+    #         similarity=similarity, do_not_genOdin=kwargs.get("do_not_genOdin", False)
+    #     )
+    # elif model_name == "small_gen_odin_res":
+    #     return resnet20(
+    #         similarity=similarity,
+    #         selfsupervision=kwargs.get("selfsupervision", False),
+    #         num_classes=num_classes,
+    #         do_not_genOdin=kwargs.get("do_not_genOdin", False),
+    #     )
+
+    # elif model_name == "small_resnet_with_spec":
+    #     return resnet20SpecGenOdin(
+    #         similarity=similarity,
+    #         num_classes=num_classes,
+    #     )
+
+    # elif model_name == "base_small_resnet":
+    #     if num_classes != 10:
+    #         print(f"INFO ---- Number of classes is {num_classes}")
+    #     return resnet20_original(num_classes=num_classes, similarity=similarity)
+
+    # else:
+    #     raise ValueError(f"Model {model_name} not found")
 
 
 def save_model(

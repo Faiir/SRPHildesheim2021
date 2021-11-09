@@ -482,7 +482,7 @@ class experiment_ddu(experiment_base):
 
     # overrides perform_experiment
     def perform_experiment(self):
-        self.datamanager = None
+        self.construct_datamanager()
 
         for experiment in self.experiment_settings:
             self.current_experiment = experiment

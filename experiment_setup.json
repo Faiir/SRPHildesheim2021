@@ -1,0 +1,37 @@
+{
+  "experiments": [
+    {
+      "basic_settings": {
+        "oracle_stepsize": 50,
+        "oracle_steps": 20,
+        "iD": "Cifar10",
+        "OoD": ["Fashion_MNIST", "MNIST"],
+        "labelled_size": 100,
+        "pool_size": 5000,
+        "OOD_ratio": 0.15,
+        "epochs": 10,
+        "batch_size": 64,
+        "weight_decay": 1e-4,
+        "metric": "accuracy",
+        "lr": 0.1,
+        "nesterov": false,
+        "momentum": 0.9,
+        "lr_sheduler": true,
+        "num_classes": 10,
+        "validation_split": 0.1,
+        "validation_source": "test",
+        "criterion": "crossentropy",
+        "verbose": 1,
+        "model": "base"
+      },
+      "exp_settings": [
+        {
+          "exp_type": "baseline",
+          "exp_name": "Test_exp",
+          "plots": false,
+          "oracle": "highest-entropy"
+        }
+      ]
+    }
+  ]
+}

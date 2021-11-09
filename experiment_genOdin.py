@@ -402,7 +402,7 @@ class experiment_gen_odin(experiment_base):
 
                 pred.backward(backward_tensor)
                 with torch.no_grad():
-                    del output, target, g,h,backward_tensor   
+                    del output, target, g, h, backward_tensor
                     pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad)
                     del data
                     gc.collect()
@@ -480,7 +480,7 @@ class experiment_gen_odin(experiment_base):
         self.set_model(
             self.current_experiment.get("model", "base_small_resnet"), self.similarity
         )
-        self.set_writer(self.log_path)
+
         self.set_sampler(self.current_experiment.get("oracles", "highest-entropy"))
         self.do_pertubed_images = self.current_experiment.get(
             "do_pertubed_images", False

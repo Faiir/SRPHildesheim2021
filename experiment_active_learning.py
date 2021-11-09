@@ -6,6 +6,7 @@ import os
 import json
 import numpy as np
 from numpy.random import sample
+import pandas as pd
 from scipy.sparse import construct
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm import tqdm
@@ -210,6 +211,7 @@ class experiment_active_learning(experiment_base):
             [type]: [description]
         """
         test_loss = 0
+        test_acc = 0
         self.model.eval()
         for (t_data, t_target) in self.test_loader:
             t_data, t_target = (
@@ -217,11 +219,13 @@ class experiment_active_learning(experiment_base):
                 t_target.to(self.device).long(),
             )
 
-            yhat = self.model(t_data)
-            yhat.to(self.device).long()
-            t_loss = self.criterion(yhat, t_target)
+            t_output = self.model(t_data)
+            t_output.to(self.device).long()
+            t_loss = self.criterion(t_output, t_target)
             test_loss += t_loss
+            test_acc += torch.sum(torch.argmax(t_output, dim=1) == t_target).item()
 
+        self.avg_test_acc = test_acc / len(self.test_loader.dataset)
         self.avg_test_loss = test_loss.to("cpu").detach().numpy() / len(
             self.test_loader
         )  # return avg testloss
@@ -278,10 +282,8 @@ class experiment_active_learning(experiment_base):
 
     # overrides set_model
     def set_model(self, model_name) -> None:
-        if model_name == "base_small_resnet":
-            self.model = resnet20(
-                num_classes=self.num_classes, similarity=self.similarity
-            )  # needs rewrite maybe
+        if model_name == "base":
+            self.model = resnet20(num_classes=self.num_classes)  # needs rewrite maybe
         else:
             raise NotImplementedError
         self.model.to(self.device)
@@ -369,9 +371,9 @@ class experiment_active_learning(experiment_base):
             )
             self.exp_name = self.current_experiment.get("exp_name", "standard_name")
             self.set_model(
-                self.current_experiment.get("model", "base_small_resnet"),
+                self.current_experiment.get("model", "base"),
             )
-            sekf
+            self.num_classes += 1
 
         self.set_sampler(self.current_experiment.get("oracle", "highest-entropy"))
 
@@ -379,10 +381,17 @@ class experiment_active_learning(experiment_base):
     def perform_experiment(self):
 
         self.train_loss_hist = []
-
-        self.datamanager.reset_pool()
-        self.datamanager.create_merged_data()
-        self.current_oracle_step = 0
+        check_path = os.path.join(
+            self.log_path, "status_manager_dir", "intial_statusmanager.csv"
+        )
+        if os.path.exists(check_path):
+            self.datamanager.status_manager = pd.read_csv(check_path, index_col=0)
+            print("loaded statusmanager from file")
+        else:
+            self.datamanager.reset_pool()
+            self.datamanager.create_merged_data()
+            self.current_oracle_step = 0
+            print("created new statusmanager")
 
         for oracle_s in self.oracle_steps:
 
@@ -401,34 +410,32 @@ class experiment_active_learning(experiment_base):
                     pool_labels_list,
                 ) = self.get_pool_predictions(self.pool_loader)
 
-                self.sampler(self.datamanager, number_samples=self.oracle_stepsize)
+                self.sampler(
+                    self.datamanager,
+                    number_samples=self.oracle_stepsize,
+                    predictions=pool_predictions,
+                )
 
                 test_predictions, test_labels, _ = self.get_pool_predictions(
                     self.test_loader
                 )
-                train_predictions, train_labels, _ = self.get_pool_predictions(
-                    self.train_loader
-                )
 
-                if self.metric.lower() == "accuracy":
-                    test_accuracy = accuracy(test_labels, test_predictions)
-                    train_accuracy = accuracy(train_labels, train_predictions)
+                test_accuracy = accuracy(test_labels, test_predictions)
+                f1_score = f1(test_labels, test_predictions)
 
-                    dict_to_add = {
-                        "test_loss": self.avg_test_loss,
-                        "train_loss": self.avg_train_loss,
-                        "test_accuracy": test_accuracy,
-                        "train_accuracy": train_accuracy,
-                    }
-                    print(dict_to_add)
+                dict_to_add = {
+                    "test_loss": self.avg_test_loss[-1],
+                    "train_loss": self.avg_train_loss[-1],
+                    "test_accuracy": test_accuracy,
+                    "train_accuracy": self.avg_train_acc_hist[-1],
+                    "f1": f1_score,
+                }
 
-                elif self.metric.lower() == "f1":
-                    f1_score = f1(test_labels, test_predictions)
-                    dict_to_add = {"f1": f1_score}
-                elif self.metric.lower() == "auroc":
-                    auroc_score = auroc(self.data_manager, oracle_s)
+                print(dict_to_add)
+                # if self.metric.lower() == "auroc":
+                #     auroc_score = auroc(self.data_manager, oracle_s)
 
-                    dict_to_add = {"auroc": auroc_score}
+                #     dict_to_add = {"auroc": auroc_score}
 
                 self.data_manager.add_log(
                     writer=self.writer,

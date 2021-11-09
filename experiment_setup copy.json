@@ -1,0 +1,80 @@
+{
+  "experiments": [
+    {
+      "basic_settings": {
+        "oracle_stepsize": 50,
+        "oracle_steps": 20,
+        "iD": "Cifar10",
+        "OoD": ["Fashion_MNIST", "MNIST"],
+        "labelled_size": 1000,
+        "pool_size": 30000,
+        "OOD_ratio": 0.15,
+        "epochs": 100,
+        "batch_size": 128,
+        "weight_decay": 1e-4,
+        "metric": "accuracy",
+        "lr": 0.1,
+        "nesterov": false,
+        "momentum": 0.9,
+        "lr_sheduler": true,
+        "num_classes": 10,
+        "validation_split": 0.1,
+        "validation_source": "test",
+        "criterion": "crossentropy",
+        "verbose": 1,
+        "model": "base-resnet"
+      },
+      "exp_settings": [
+        {
+          "exp_type": "baseline",
+          "exp_name": "funny_name_here",
+          "plots": false,
+          "oracle": "highest-entropy"
+        },
+        {
+          "exp_type": "baseline-ood",
+          "exp_name": "funny_name_here2",
+          "oracle": "highest-entropy",
+          "plots": false
+        },
+        {
+          "exp_type": "extra_class",
+          "exp_name": "funny_name_here",
+          "extra_class-type": "hard / soft",
+          "extra_class_thresholding": 0.1,
+          "oracle": "highest-entropy",
+          "plots": false
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "funny_name_here",
+          "oracle": "highest-entropy",
+          "plots": false
+        },
+        {
+          "exp_type": "looc",
+          "exp_name": "funny_name_here",
+          "scaling_factor": "G / R",
+          "oracle": "highest-entropy",
+          "bugged_and_working": true,
+          "do_pertubed_images": true,
+          "plots": false,
+          "plotsettings": {
+            "density_plot": true,
+            "layer_plot": true
+          }
+        },
+        {
+          "exp_type": "genodin",
+          "exp_name": "funny_name_here",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "scaling_factor": "G / R",
+          "bugged_and_working": false,
+          "do_pertubed_images": true,
+          "plots": false
+        }
+      ]
+    }
+  ]
+}

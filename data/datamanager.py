@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from torchvision.datasets.cifar import CIFAR100
 
 import torchvision.transforms as transforms
 
@@ -115,7 +116,7 @@ class Data_manager:
         print(f"INFO ----- Total iD samples for testing  {self.test_iD_size}")
         print(f"INFO ----- Total OoD samples for training {self.OoD_samples_size}")
 
-    def create_merged_data(self):
+    def create_merged_data(self, path=None):
         print("Creating New Dataset")
 
         assert 0 <= self.OoD_ratio < 1, "Invalid OOD_ratio : {self.OoD_ratio}"
@@ -230,6 +231,11 @@ class Data_manager:
             ),
             columns=["inds", "target", "source", "status", "dataset_name"],
         )
+        # inds -> Dataset indices for chained dataset
+        # target -> num classes (iD), num classes+1 (OoD)
+        # source -> Oracle Step iteration -> negative == OoD sampled
+        # status -> 0 = pool , 1 = starting dataset,
+        # dataset -> chained dataset source
 
         for ii in ["inds", "target", "source", "status"]:
             self.status_manager[ii] = self.status_manager[ii].astype(int)
@@ -261,6 +267,8 @@ class Data_manager:
 
         self.log = {}
 
+        if path is not None:
+            self.status_manager.to_csv(os.path.join(path, "intial_statusmanager.csv"))
         # self.save_experiment_start(csv=save_csv)
         print("Status_manager intialised")
 
@@ -276,7 +284,7 @@ class Data_manager:
         print("Experiment_Setup saved")
 
         if csv != False:
-            self.experiment_config.to_csv(f"Expermimentsetup_{time.today()}")
+            self.experiment_setup.to_csv(f"Expermimentsetup_{time.today()}")
 
     def restore_experiment_start(self):
         toe = self.config["Total_overall_examples"]
@@ -396,6 +404,11 @@ class Data_manager:
                 loss_dict["test_loss"] = log_dict["test_loss"]
                 writer.add_scalars(
                     f"{exp_name}/{oracle}/ood_ratio-{ood_ratio}", loss_dict, self.iter
+                )
+                f1_dict = {}
+                f1_dict["f1_score"] = log_dict["f1"]
+                writer.add_scalar(
+                    f"{exp_name}/{oracle}/ood_ratio-{ood_ratio}", f1_dict, self.iter
                 )
             else:
                 writer.add_scalars(
