@@ -19,38 +19,113 @@ python -m setup_experiment -c "path\to\config\.json"
 
 # Experiment settings
 
-- test_size: test_set
-- pool_size: unlabeled pool size
-- labelled_size: initial dataset size
-- OOD_ratio: % of OOD in unlabeled Pool
-- oracle_stepsize: Num. of added images to trainset (sampled OOD gets discarded)
-- oracle_steps: num: active learning cycles
-- epochs
-- batch_size
-- oracles (list): types of sampling meachnisms (currently: random, least confidence, highest entropy)
-- weight_deacy
-- metric: main eval_metric (f1,acc,auroc)
-- model_name: model type (base, gen_odin_conv/resnet, DDU )
-- similarity: genodin measure (C,E,I)
-- include_bn: batchnorm
-- datasets
+We construct the manager for the active learning experiment. It will use the same starting data for every experiment in the chain
+
+```json
+
+
+  "experiments": [
+    {
+        // settings will be shared accroos the experiment
+    "basic_settings": {
+    "oracle_stepsize": 50, // no. of samples per AL iteration
+    "oracle_steps": 20, // how many AL iterations
+    "iD": "CIFAR10", // in-distribution dataset
+    "OoD": ["FashionMNIST", "MNIST"], // SVHN CIFAR100, Soon: GrayScale Cifar, Subclass Cifar
+    "labelled_size": 100, // starting training pool
+    "pool_size": 5000, // unlabeled pool data
+    "OOD_ratio": 0.15, // no. of OoD data in the unlabelled pool
+    // training settings
+    "epochs": 10,
+    "batch_size": 64,
+    "weight_decay": 1e-4,
+    "metric": "accuracy",
+    "lr": 0.1,
+    "nesterov": false,
+    "momentum": 0.9,
+    "lr_sheduler": true,
+    "num_classes": 10,
+    "validation_split": 0.1,
+    "validation_source": "test",
+    "criterion": "crossentropy",
+    "verbose": 1
+    },
+    // specific settings to the different methods 
+    "exp_settings": [
+        {
+          "exp_type": "baseline",
+          "exp_name": "funny_name_here",
+          "plots": false,
+          "model": "base",
+          "oracle": "highest-entropy"
+        },
+        {
+          "exp_type": "baseline-ood",
+          "exp_name": "funny_name_here2",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "plots": false
+        },
+        {
+          "exp_type": "extra_class",
+          "exp_name": "funny_name_here",
+          "extra_class-type": "hard / soft",
+          "extra_class_thresholding": 0.1,
+          "oracle": "highest-entropy",
+          "model": "base",
+          "plots": false
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "funny_name_here",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false
+        },
+        {
+          "exp_type": "looc",
+          "exp_name": "funny_name_here",
+          "scaling_factor": "G / R",
+          "oracle": "highest-entropy",
+          "bugged_and_working": true,
+          "do_pertubed_images": true,
+          "model": "LOOC",
+          "plots": false,
+          "plotsettings": {
+            "density_plot": true,
+            "layer_plot": true
+          }
+        },
+        {
+          "exp_type": "genodin",
+          "exp_name": "funny_name_here",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "scaling_factor": "G / R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "do_pertubed_images": true,
+          "plots": false
+        }
+        {
+          "exp_type": "DDU",
+          "exp_name": "funny_name_here",
+          "plots": false,
+          "model": "DDU",
+          "oracle": "ddu-sampler" // doesn't matter 
+        }
+      ]
+    }
+  ]
+
+
+
+```
 
 # TODO
 
-- Test more datasets !low (Whoever feels like doing it) --
-- Include spectral norm -res / jacobian penalty -conv - !medium (Abdur Niklas) --
-- Merge Branches !High (Niklas) ---
-- include DDU Experiment Setup !medium (Era & Sam) --
-- Include density plots !medium (Markus) --
-- stratified sampling datamager !high ---
-- dataset selection modular !medium (Niklas) --
-- 11 Class integration in different exp setup !low (Niklas)
-
-
-- sampler class !high (Abdur) 
-- G Softmax (Abdur & Niklas)
-- Functioning Selfsupervision (Niklas)
-- Smaller Resnet -- (Niklas)
-- Additional Oracle (Abdur)
-- Layer Changes GenOdin (Abdur)
-- Outlier Exposure (Niklas)
+- layer analysis
+- other datasets 
+- Gram-Class 
+- experiments
+- add larger model option for cifar100
