@@ -454,4 +454,10 @@ class experiment_active_learning(experiment_base):
                     exp_name=self.exp_name,
                 )
                 self.save_al_logs()
-                # self.save_logs(self.data_manager, self.log_path)
+        self.datamanager.status_manager.to_csv(
+            os.path.join(
+                self.log_path,
+                "status_manager_dir",
+                f"{self.exp_name}-result-statusmanager.csv",
+            )
+        )

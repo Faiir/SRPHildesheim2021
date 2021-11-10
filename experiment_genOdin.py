@@ -7,6 +7,7 @@ import os
 import json
 import numpy as np
 from numpy.random import sample
+import pandas as pd
 from scipy.sparse import construct
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm import tqdm
@@ -452,6 +453,7 @@ class experiment_gen_odin(experiment_base):
     # overrides load_settings
     def load_settings(self) -> None:
         # active Learning settings
+        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
         self.oracle_stepsize = self.current_experiment.get("oracle_stepsize", 100)
         self.oracle_steps = self.current_experiment.get("oracle_steps", 10)
         self.iD = self.current_experiment.get("iD", "Cifar10")
@@ -586,3 +588,11 @@ class experiment_gen_odin(experiment_base):
                     exp_name=self.exp_name,
                 )
                 self.save_al_logs()
+
+        self.datamanager.status_manager.to_csv(
+            os.path.join(
+                self.log_path,
+                "status_manager_dir",
+                f"{self.exp_name}-result-statusmanager.csv",
+            )
+        )

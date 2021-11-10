@@ -455,7 +455,7 @@ class experiment_ddu(experiment_base):
 
     # overrides load_settings
     def load_settings(self) -> None:
-
+        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
         self.oracle_stepsize = self.current_experiment.get("oracle_stepsize", 100)
         self.oracle_steps = self.current_experiment.get("oracle_steps", 10)
         self.iD = self.current_experiment.get("iD", "Cifar10")
@@ -465,6 +465,7 @@ class experiment_ddu(experiment_base):
         self.OOD_ratio = self.current_experiment.get("OOD_ratio", 0.0)
 
         # training settings
+        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
         self.epochs = self.current_experiment.get("epochs", 100)
         self.batch_size = self.current_experiment.get("batch_size", 128)
         self.weight_decay = self.current_experiment.get("weight_decay", 1e-4)
@@ -595,4 +596,11 @@ class experiment_ddu(experiment_base):
                 )
                 self.save_al_logs()
                 # self.save_logs(self.data_manager, self.log_path)
-            self.current_oracle_step += 1
+        self.current_oracle_step += 1
+        self.datamanager.status_manager.to_csv(
+            os.path.join(
+                self.log_path,
+                "status_manager_dir",
+                f"{self.exp_name}-result-statusmanager.csv",
+            )
+        )

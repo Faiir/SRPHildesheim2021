@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.backends.cudnn as cudnn
 
 from robust_active_learning.experiment_active_learning import experiment_active_learning
-from robust_active_learning.experiment_ddu_class import experiment_ddu
+from robust_active_learning.experiment_ddu import experiment_ddu
 from robust_active_learning.experiment_genOdin import experiment_gen_odin
 
 # import shutil
