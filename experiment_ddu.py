@@ -504,7 +504,7 @@ class experiment_ddu(experiment_base):
             self.current_oracle_step = 0
             print("created new statusmanager")
 
-        for oracle_s in self.oracle_steps:
+        for oracle_s in range(self.oracle_steps):
             self.set_model("DDU")  # hardcoded till we add larger models
             self.create_dataloader()
             self.create_optimizer()

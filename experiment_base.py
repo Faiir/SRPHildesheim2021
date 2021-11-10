@@ -54,10 +54,6 @@ class experiment_base(ABC):
         pass
 
     @abstractmethod
-    def save_logs(self) -> NoReturn:
-        pass
-
-    @abstractmethod
     def perform_experiment(self):
         self.datamanager = None
         pass

@@ -18,6 +18,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
 
+from robust_active_learning.model.get_model import get_model
+
 
 # project
 from .experiment_base import experiment_base
@@ -292,10 +294,12 @@ class experiment_gen_odin(experiment_base):
 
     # overrides set_model
     def set_model(self, model_name) -> None:
-        if model_name == "base_small_resnet":
-            self.model = resnet20(
-                num_classes=self.num_classes, similarity=self.similarity
-            )  # needs rewrite maybe
+        if model_name == "GenOdin" or model_name == "LOOC":
+            self.model = get_model(
+                model_name,
+                num_classes=self.num_classes,
+                similarity=self.similarity,
+            )
         else:
             raise NotImplementedError
         self.model.to(self.device)
@@ -474,6 +478,7 @@ class experiment_gen_odin(experiment_base):
         self.num_classes = self.current_experiment.get("num_classes", 10)
         self.validation_split = self.current_experiment.get("validation_split", "train")
         self.validation_source = self.current_experiment.get("validation_source", 0.3)
+        self.oracle = self.current_experiment.get("oracle", "highest-entropy")
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")
@@ -483,7 +488,11 @@ class experiment_gen_odin(experiment_base):
         self.plotsettings = self.current_experiment.get(
             "plotsettings", {"do_plot": True, "density_plot": True, "layer_plot": False}
         )
-
+        if self.plotsettings["do_plot"]:
+            if self.plotsettings["density_plot"]:
+                self.do_desity_plot = True
+            if self.plotsettings["layer_plot"]:
+                self.layer_plot = True
         # _create_log_path_al(self.OOD_ratio)
         self.similarity = self.current_experiment.get("similarity", "E")
         scaling_factor = self.current_experiment.get("scaling_factor", "G")
@@ -521,10 +530,9 @@ class experiment_gen_odin(experiment_base):
             self.current_oracle_step = 0
             print("created new statusmanager")
 
-        for oracle_s in self.oracle_steps:
-            self.set_model(
-                self.current_experiment.get("model", "GenOdin"), self.similarity
-            )
+        for oracle_s in range(self.oracle_steps):
+            print(self.current_experiment.get("model", "GenOdin"))
+            self.set_model(self.current_experiment.get("model", "GenOdin"))
 
             self.create_dataloader()
             self.create_optimizer()
@@ -561,8 +569,12 @@ class experiment_gen_odin(experiment_base):
                     )
 
                     self.create_plots("density", pert_preds, gs, hs, targets, oracle_s)
-
-                test_predictions, test_labels = self.pool_predictions(self.test_loader)
+                    print("created density plots")
+                (
+                    test_predictions,
+                    test_labels,
+                    weighting_factor_list,
+                ) = self.pool_predictions(self.test_loader)
 
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)

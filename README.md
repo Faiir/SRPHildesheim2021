@@ -85,6 +85,7 @@ We construct the manager for the active learning experiment. It will use the sam
         {
           "exp_type": "looc",
           "exp_name": "funny_name_here",
+          "similarity": "E",
           "scaling_factor": "G / R",
           "oracle": "highest-entropy",
           "bugged_and_working": true,
@@ -92,6 +93,7 @@ We construct the manager for the active learning experiment. It will use the sam
           "model": "LOOC",
           "plots": false,
           "plotsettings": {
+            "do_plot": true,
             "density_plot": true,
             "layer_plot": true
           }
@@ -101,11 +103,15 @@ We construct the manager for the active learning experiment. It will use the sam
           "exp_name": "funny_name_here",
           "similarity": "C",
           "oracle": "highest-entropy",
+          "do_pertubed_images": true,
           "scaling_factor": "G / R",
           "model": "GenOdin",
           "bugged_and_working": false,
-          "do_pertubed_images": true,
-          "plots": false
+          "plotsettings": {
+            "do_plot": true,
+            "density_plot": true,
+            "layer_plot": true
+          }
         }
         {
           "exp_type": "DDU",
