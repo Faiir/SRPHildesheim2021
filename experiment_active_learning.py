@@ -5,9 +5,10 @@ import datetime
 import os
 import json
 import numpy as np
-from numpy.random import sample
+
+
 import pandas as pd
-from scipy.sparse import construct
+
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm import tqdm
 
@@ -298,10 +299,6 @@ class experiment_active_learning(experiment_base):
             tag=f"{self.metric}/{self.iD}/{self.experiment_settings.get('oracles', 'oracle')}/tsne",
             figure=tsne_plot,
         )
-
-    # overrides save_logs
-    def save_logs(self) -> None:
-        pass
 
     def pool_predictions(self, pool_loader) -> Union[np.ndarray, np.ndarray]:
         yhat = []
