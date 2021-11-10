@@ -112,7 +112,7 @@ We construct the manager for the active learning experiment. It will use the sam
           "exp_name": "funny_name_here",
           "plots": false,
           "model": "DDU",
-          "oracle": "ddu-sampler" // doesn't matter 
+          "oracle": "ddu-sampler" // doesn't matter
         }
       ]
     }
@@ -125,8 +125,8 @@ We construct the manager for the active learning experiment. It will use the sam
 # TODO
 
 - layer analysis
-- other datasets 
-- Gram-Class 
+- other datasets
+- Gram-Class
 - experiments
 - add larger model option for cifar100
 - train function to train the final networkn (add model, trainfunction, test function  / scores for this to report -> should load the datasets based on the statusmanager)

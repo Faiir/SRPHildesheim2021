@@ -486,6 +486,9 @@ class experiment_gen_odin(experiment_base):
 
         # _create_log_path_al(self.OOD_ratio)
         self.similarity = self.current_experiment.get("similarity", "E")
+        scaling_factor = self.current_experiment.get("scaling_factor", "G")
+        if scaling_factor != "G":
+            self.similarity += "R"
 
         self.set_sampler(self.current_experiment.get("oracles", "highest-entropy"))
 
