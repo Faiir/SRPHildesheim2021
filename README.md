@@ -114,11 +114,13 @@ We construct the manager for the active learning experiment. It will use the sam
           }
         }
         {
-          "exp_type": "DDU",
+          "exp_type": "ddu",
           "exp_name": "funny_name_here",
           "plots": false,
           "model": "DDU",
-          "oracle": "ddu-sampler" // doesn't matter
+          "oracle": "ddu-sampler",
+          "spectral_normalization": true,
+          "temp": 1.0
         }
       ]
     }

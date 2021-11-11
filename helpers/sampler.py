@@ -194,6 +194,8 @@ def DDU_sampler(
     inds = np.argsort(densities)[:number_samples]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()
-    status_manager.iloc[inds, -1] = iteration * status_manager.iloc[inds, -2]
+    status_manager["status"].iloc[inds] = (
+        iteration * status_manager["source"].iloc[inds]
+    )
 
     return None

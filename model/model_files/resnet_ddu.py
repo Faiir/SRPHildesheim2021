@@ -147,7 +147,7 @@ class ResNet(nn.Module):
         2. Average Pooling on the residual connections.
         """
         super(ResNet, self).__init__()
-        self.in_planes = 64
+        self.in_planes = 16
 
         self.mod = mod
 
@@ -176,22 +176,16 @@ class ResNet(nn.Module):
 
         self.bn1 = nn.BatchNorm2d(16)
 
-        if mnist:
-            self.conv1 = wrapped_conv(28, 1, 64, kernel_size=3, stride=1)
-            self.layer1 = self._make_layer(block, 28, 64, num_blocks[0], stride=1)
-            self.layer2 = self._make_layer(block, 28, 128, num_blocks[1], stride=2)
-            self.layer3 = self._make_layer(block, 14, 256, num_blocks[2], stride=2)
-            self.layer4 = self._make_layer(block, 7, 512, num_blocks[3], stride=2)
-        else:
-            self.conv1 = wrapped_conv(32, 3, 16, kernel_size=3, stride=1)
-            self.layer1 = self._make_layer(block, 32, 16, num_blocks[0], stride=1)
-            self.layer2 = self._make_layer(block, 32, 32, num_blocks[1], stride=2)
-            self.layer3 = self._make_layer(block, 16, 64, num_blocks[2], stride=2)
-            # self.layer4 = self._make_layer(block, 8, 512, num_blocks[3], stride=2)
+        self.conv1 = wrapped_conv(32, 3, 16, kernel_size=3, stride=1)
+        self.layer1 = self._make_layer(block, 32, 16, num_blocks[0], stride=1)
+        self.layer2 = self._make_layer(block, 32, 32, num_blocks[1], stride=2)
+        self.layer3 = self._make_layer(block, 16, 64, num_blocks[2], stride=2)
+        # self.layer4 = self._make_layer(block, 8, 512, num_blocks[3], stride=2)
         self.fc = nn.Linear(256 * block.expansion, num_classes)
         self.activation = F.leaky_relu if self.mod else F.relu
         self.feature = None
         self.temp = temp
+        self.softmax = nn.Softmax(dim=1)
 
     def _make_layer(self, block, input_size, planes, num_blocks, stride):
         strides = [stride] + [1] * (num_blocks - 1)
@@ -211,7 +205,7 @@ class ResNet(nn.Module):
             input_size = math.ceil(input_size / stride)
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=False):
         out = self.activation(self.bn1(self.conv1(x)))
         out = self.layer1(out)
         out = self.layer2(out)
@@ -221,6 +215,8 @@ class ResNet(nn.Module):
         out = out.view(out.size(0), -1)
         self.feature = out.clone().detach()
         out = self.fc(out) / self.temp
+        if apply_softmax:
+            out = self.softmax(out)
         return out
 
 

@@ -392,7 +392,7 @@ class experiment_ddu(experiment_base):
         return gmm, jitter_eps
 
     # overrides set_sampler
-    def set_sampler(self, sampler) -> None:
+    def set_sampler(self) -> None:
         self.sampler = DDU_sampler
 
     # overrides set_model
@@ -407,6 +407,8 @@ class experiment_ddu(experiment_base):
         else:
             raise NotImplemented
 
+        self.model.to(self.device)
+
     # overrides create_plots
     def create_plots(self) -> None:
         tsne_plot = get_tsne_plot(self.data_manager, self.iD, self.model, self.device)
@@ -419,13 +421,11 @@ class experiment_ddu(experiment_base):
     def save_logs(self) -> None:
         pass
 
-    def pool_predictions(self, pool_dataloader) -> Union[np.ndarray, np.ndarray]:
+    def pool_predictions(self, pool_loader) -> Union[np.ndarray, np.ndarray]:
         yhat = []
         labels_list = []
-        for (data, labels) in pool_dataloader:
-            pred = self.model(
-                data.to(self.device).float(), get_test_model=True, apply_softmax=True
-            )
+        for (data, labels) in pool_loader:
+            pred = self.model(data.to(self.device).float(), apply_softmax=True)
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
         predictions = np.concatenate(yhat)
@@ -443,7 +443,7 @@ class experiment_ddu(experiment_base):
 
     def create_optimizer(self) -> None:
         self.optimizer = optim.SGD(
-            self.model.parameters,
+            self.model.parameters(),
             weight_decay=self.weight_decay,
             lr=self.lr,
             momentum=self.momentum,
@@ -465,7 +465,6 @@ class experiment_ddu(experiment_base):
         self.OOD_ratio = self.current_experiment.get("OOD_ratio", 0.0)
 
         # training settings
-        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
         self.epochs = self.current_experiment.get("epochs", 100)
         self.batch_size = self.current_experiment.get("batch_size", 128)
         self.weight_decay = self.current_experiment.get("weight_decay", 1e-4)
@@ -487,6 +486,7 @@ class experiment_ddu(experiment_base):
         )
         self.temp = self.current_experiment.get("temp", 1.0)
         self.set_sampler()
+        self.oracle = self.current_experiment.get("oracle", "highest-entropy")
 
     # overrides perform_experiment
     def perform_experiment(self):
@@ -521,7 +521,7 @@ class experiment_ddu(experiment_base):
             embeddings, labels = self.get_embeddings(
                 self.model,
                 self.train_loader,
-                num_dim=512,
+                num_dim=256,
                 dtype=torch.double,
                 device=self.device,
                 storage_device=self.device,
@@ -531,13 +531,10 @@ class experiment_ddu(experiment_base):
                 embeddings=embeddings, labels=labels, num_classes=self.num_classes
             )
             self.gaussians_model = gaussians_model
-            if len(self.pool_dataloader) > 0:
+            if len(self.pool_loader) > 0:
 
-                pool_predictions, pool_labels_list = self.get_pool_predictions(
-                    self.model,
-                    self.pool_dataloader,
-                    device=self.device,
-                    return_labels=True,
+                pool_predictions, pool_labels_list = self.pool_predictions(
+                    self.pool_loader,
                 )
                 # class_prob = class_probs(train_loader)
                 pool_predictions = torch.from_numpy(pool_predictions).cuda()
@@ -545,7 +542,7 @@ class experiment_ddu(experiment_base):
                 logits, labels = self.gmm_evaluate(
                     self.model,
                     self.gaussians_model,
-                    self.pool_dataloader,
+                    self.pool_loader,
                     device=self.device,
                     num_classes=self.num_classes,
                     storage_device=self.device,
