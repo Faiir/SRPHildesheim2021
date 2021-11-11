@@ -350,10 +350,43 @@ class Detector:
 
         all_deviations = None
         indices_list = None
+
+        for PRED in self.classes:
+            if len(self.mins[PRED])>0:
+                list_of_mini = self.mins[PRED]
+                break
+
+        default_min = []
+        default_max = []
+        for ii,upper_list in enumerate(list_of_mini):
+            default_min_inner = []
+            default_max_inner = []
+            for jj,_ in enumerate(upper_list):
+                kk = 0
+                for PRED in self.classes:
+                    if len(self.mins[PRED])==0:
+                        pass
+                    else:
+                        if kk==0:
+                            val_min = self.mins[PRED][ii][jj]
+                            val_max = self.maxs[PRED][ii][jj]
+                        else:
+                            val_min += self.mins[PRED][ii][jj]
+                            val_max += self.maxs[PRED][ii][jj]
+                        kk+=1
+
+                default_min_inner.append(val_min/(kk+1)) 
+                default_max_inner.append(val_max/(kk+1))
+
+            default_min.append(default_min_inner)
+            default_max.append(default_max_inner)
+
+        self.mins['default'] = default_min
+        self.maxs['default'] = default_max
+
         for PRED in self.classes:
             test_indices = np.where(np.array(test_preds)==PRED)[0]
             
-            print(f"INFO ----------- \n\n\n DOING {PRED} : {len(test_indices)}")
             if len(test_indices)==0:
                 continue
             else:
@@ -365,6 +398,10 @@ class Detector:
             test_PRED = [data[i][0] for i in test_indices]
             test_confs_PRED = np.array([test_confs[i] for i in test_indices])
             
+
+            if len(self.mins[PRED])==0:
+                PRED = 'default'
+
             if device=='cuda':
                 mins = cuda(self.mins[PRED])
                 maxs = cuda(self.maxs[PRED])

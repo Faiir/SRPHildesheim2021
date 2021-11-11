@@ -370,6 +370,7 @@ class experiment_gram(experiment_base):
         self.validation_split = self.current_experiment.get("validation_split", 0.3)
         self.validation_source = self.current_experiment.get("validation_source", "train")
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
+        self.set_sampler(self.oracle)
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")
@@ -433,7 +434,7 @@ class experiment_gram(experiment_base):
                 POWERS = range(1,11)
                 dector.compute_minmaxs(self.model,self.train_loader,POWERS=POWERS)
                 pool_deviations = dector.compute_deviations(self.model,self.pool_loader,POWERS=POWERS)
-                if validation_source is not None:
+                if self.validation_source is not None:
                     validation = dector.compute_deviations(self.model,self.val_loader,POWERS=POWERS)
                     t95 = validation.mean(axis=0)+10**-7
                     pool_weighting_list = (pool_deviations/t95[np.newaxis,:]).sum(axis=1)
@@ -448,9 +449,11 @@ class experiment_gram(experiment_base):
                     weights=pool_weighting_list,
                 )
 
-                if self.do_desity_plot:
-                    assert NotImplementedError
-                    pass
+                (
+                    test_predictions,
+                    test_labels,
+                ) = self.pool_predictions(self.test_loader)
+
 
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)
