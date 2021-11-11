@@ -14,17 +14,37 @@ import torch.nn.init as init
 from torch.autograd import Variable, grad
 from torchvision import datasets, transforms
 from torch.nn.parameter import Parameter
+from torch.utils.data import Dataset
 
 import warnings
+warnings.filterwarnings('ignore')
 
-warnings.filterwarnings("ignore")
+class DataHandler_For_Arrays(Dataset):
+    """DataHandler_For_Arrays [Base pytorch dataset for all experiments]"""
 
+    def __init__(self, X, Y, transform=None, num_classes=10):
+        self.X = X  # X[np.newaxis,...] # x[:, np.newaxis]:
+        self.Y = Y
+        # self.Y = torch.as_tensor(self.Y)
+        # self.Y = torch.nn.functional.one_hot(self.Y, num_classes=10)
+        self.transform = transform
+        self.num_classes = num_classes
+
+    def __getitem__(self, index):
+        x, y = self.X[index], self.Y[index]
+
+        if self.transform:
+            x = self.transform(x)
+
+        return x, y
+
+    def __len__(self):
+        return len(self.X)
 
 def get_gram_resnet():
     def conv3x3(in_planes, out_planes, stride=1):
-        return nn.Conv2d(
-            in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
-        )
+        return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
+
 
     class LambdaLayer(nn.Module):
         def __init__(self, lambd):
@@ -34,10 +54,11 @@ def get_gram_resnet():
         def forward(self, x):
             return self.lambd(x)
 
+
     class BasicBlock(nn.Module):
         expansion = 1
 
-        def __init__(self, in_planes, planes, stride=1, option="A"):
+        def __init__(self, in_planes, planes, stride=1, option='A'):
             super(BasicBlock, self).__init__()
             self.conv1 = conv3x3(in_planes, planes, stride)
             self.bn1 = nn.BatchNorm2d(planes)
@@ -69,7 +90,7 @@ def get_gram_resnet():
                         ),
                         nn.BatchNorm2d(self.expansion * planes),
                     )
-
+        
         def forward(self, x):
             t = self.conv1(x)
             out = F.relu(self.bn1(t))
@@ -84,7 +105,7 @@ def get_gram_resnet():
             torch_model.record(t)
             out = F.relu(out)
             torch_model.record(out)
-
+            
             return out
 
     class ResNet(nn.Module):
@@ -98,11 +119,11 @@ def get_gram_resnet():
             self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
             self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
             self.linear = nn.Linear(64, num_classes)
-
+            
             self.collecting = False
             self.has_weighing_factor = False
             self.softmax = nn.Softmax(dim=-1)
-
+        
         def _make_layer(self, block, planes, num_blocks, stride):
             strides = [stride] + [1] * (num_blocks - 1)
             layers = []
@@ -111,7 +132,7 @@ def get_gram_resnet():
                 self.in_planes = planes * block.expansion
 
             return nn.Sequential(*layers)
-
+        
         def forward(self, x, apply_softmax=False):
             out = F.relu(self.bn1(self.conv1(x)))
             out = self.layer1(out)
@@ -124,12 +145,12 @@ def get_gram_resnet():
             if apply_softmax:
                 y = self.softmax(y)
             return y
-
+        
         def record(self, t):
             if self.collecting:
                 self.gram_feats.append(t)
-
-        def gram_feature_list(self, x):
+        
+        def gram_feature_list(self,x):
             if torch.cuda.is_available():
                 device = "cuda"
             else:
@@ -141,11 +162,11 @@ def get_gram_resnet():
             temp = self.gram_feats
             self.gram_feats = []
             return temp
-
+        
         def load(self, path="resnet_cifar10.pth"):
-            tm = torch.load(path, map_location="cpu")
+            tm = torch.load(path,map_location="cpu")        
             self.load_state_dict(tm)
-
+        
         def get_min_max(self, data, power):
             mins = []
             maxs = []
@@ -154,76 +175,71 @@ def get_gram_resnet():
                 device = "cuda"
             else:
                 device = "cpu"
+            
 
-            for i in range(0, len(data), 128):
-                batch = torch.stack(data[i : i + 128]).to(device)
+            for i in range(0,len(data),128):
+                batch = torch.stack(data[i:i+128]).to(device)
 
                 feat_list = self.gram_feature_list(batch)
-                for L, feat_L in enumerate(feat_list):
-                    if L == len(mins):
-                        mins.append([None] * len(power))
-                        maxs.append([None] * len(power))
-
-                    for p, P in enumerate(power):
-                        g_p = G_p(feat_L, P)
-
-                        current_min = g_p.min(dim=0, keepdim=True)[0]
-                        current_max = g_p.max(dim=0, keepdim=True)[0]
-
+                for L,feat_L in enumerate(feat_list):
+                    if L==len(mins):
+                        mins.append([None]*len(power))
+                        maxs.append([None]*len(power))
+                    
+                    for p,P in enumerate(power):
+                        g_p = G_p(feat_L,P)
+                        
+                        current_min = g_p.min(dim=0,keepdim=True)[0]
+                        current_max = g_p.max(dim=0,keepdim=True)[0]
+                        
                         if mins[L][p] is None:
                             mins[L][p] = current_min
                             maxs[L][p] = current_max
                         else:
-                            mins[L][p] = torch.min(current_min, mins[L][p])
-                            maxs[L][p] = torch.max(current_max, maxs[L][p])
-
-            return mins, maxs
-
-        def get_deviations(self, data, power, mins, maxs):
+                            mins[L][p] = torch.min(current_min,mins[L][p])
+                            maxs[L][p] = torch.max(current_max,maxs[L][p])
+            
+            return mins,maxs
+        
+        def get_deviations(self,data,power,mins,maxs):
             deviations = []
             if torch.cuda.is_available():
                 device = "cuda"
             else:
                 device = "cpu"
-            print("get deviations")
-
-            for i in tqdm(range(0, len(data), 128)):
-                batch = torch.stack(data[i : i + 128]).to(device)
-                print(batch.shape[0])
+                
+            for i in tqdm(range(0,len(data),128)):
+                batch = torch.stack(data[i:i+128]).to(device)
                 feat_list = self.gram_feature_list(batch)
                 batch_deviations = []
-                for L, feat_L in enumerate(feat_list):
+                for L,feat_L in enumerate(feat_list):
 
                     dev = 0
-                    for p, P in enumerate(power):
-                        g_p = G_p(feat_L, P)
-
-                        dev += (
-                            F.relu(mins[L][p] - g_p) / torch.abs(mins[L][p] + 10 ** -6)
-                        ).sum(dim=1, keepdim=True)
-                        dev += (
-                            F.relu(g_p - maxs[L][p]) / torch.abs(maxs[L][p] + 10 ** -6)
-                        ).sum(dim=1, keepdim=True)
+                    for p,P in enumerate(power):
+                        g_p = G_p(feat_L,P)
+                        
+                        dev +=  (F.relu(mins[L][p]-g_p)/torch.abs(mins[L][p]+10**-6)).sum(dim=1,keepdim=True)
+                        dev +=  (F.relu(g_p-maxs[L][p])/torch.abs(maxs[L][p]+10**-6)).sum(dim=1,keepdim=True)
                     batch_deviations.append(dev.cpu().detach().numpy())
-                batch_deviations = np.concatenate(batch_deviations, axis=1)
+                batch_deviations = np.concatenate(batch_deviations,axis=1)
                 deviations.append(batch_deviations)
 
-            deviations = np.concatenate(deviations, axis=0)
-
+            deviations = np.concatenate(deviations,axis=0)
+            
             return deviations
+
 
     torch_model = ResNet(BasicBlock, [3, 3, 3], num_classes=10)
     return torch_model
 
-
 def G_p(ob, p):
     temp = ob.detach()
-
-    temp = temp ** p
-    temp = temp.reshape(temp.shape[0], temp.shape[1], -1)
-    temp = ((torch.matmul(temp, temp.transpose(dim0=2, dim1=1)))).sum(dim=2)
-    temp = (temp.sign() * torch.abs(temp) ** (1 / p)).reshape(temp.shape[0], -1)
-
+    
+    temp = temp**p
+    temp = temp.reshape(temp.shape[0],temp.shape[1],-1)
+    temp = ((torch.matmul(temp,temp.transpose(dim0=2,dim1=1)))).sum(dim=2) 
+    temp = (temp.sign()*torch.abs(temp)**(1/p)).reshape(temp.shape[0],-1)
+    
     return temp
 
 
@@ -233,7 +249,6 @@ def cpu(ob):
             ob[i][j] = ob[i][j].cpu()
     return ob
 
-
 def cuda(ob):
     for i in range(len(ob)):
         for j in range(len(ob[i])):
@@ -241,31 +256,27 @@ def cuda(ob):
     return ob
 
 
-def detect(all_test_deviations, all_ood_deviations, verbose=True, normalize=True):
+def detect(all_test_deviations,all_ood_deviations, verbose=True, normalize=True):
     average_results = {}
-    for i in range(1, 11):
+    for i in range(1,11):
         random.seed(i)
-
-        validation_indices = random.sample(
-            range(len(all_test_deviations)), int(0.1 * len(all_test_deviations))
-        )
-        test_indices = sorted(
-            list(set(range(len(all_test_deviations))) - set(validation_indices))
-        )
+        
+        validation_indices = random.sample(range(len(all_test_deviations)),int(0.1*len(all_test_deviations)))
+        test_indices = sorted(list(set(range(len(all_test_deviations)))-set(validation_indices)))
 
         validation = all_test_deviations[validation_indices]
         test_deviations = all_test_deviations[test_indices]
 
-        t95 = validation.mean(axis=0) + 10 ** -7
+        t95 = validation.mean(axis=0)+10**-7
         if not normalize:
             t95 = np.ones_like(t95)
-        test_deviations = (test_deviations / t95[np.newaxis, :]).sum(axis=1)
-        ood_deviations = (all_ood_deviations / t95[np.newaxis, :]).sum(axis=1)
-
-        results = callog.compute_metric(-test_deviations, -ood_deviations)
+        test_deviations = (test_deviations/t95[np.newaxis,:]).sum(axis=1)
+        ood_deviations = (all_ood_deviations/t95[np.newaxis,:]).sum(axis=1)
+        
+        results = callog.compute_metric(-test_deviations,-ood_deviations)
         for m in results:
-            average_results[m] = average_results.get(m, 0) + results[m]
-
+            average_results[m] = average_results.get(m,0)+results[m]
+    
     for m in average_results:
         average_results[m] /= i
     if verbose:
@@ -273,99 +284,106 @@ def detect(all_test_deviations, all_ood_deviations, verbose=True, normalize=True
     return average_results
 
 
+
 class Detector:
     def __init__(self, num_classes=10):
         self.all_test_deviations = None
         self.mins = {}
         self.maxs = {}
-
+        
         self.classes = range(num_classes)
-
-    def compute_minmaxs(self, torch_model, train_loader, POWERS=[10]):
+    
+    def compute_minmaxs(self,torch_model,train_loader,POWERS=[10]):
         train_preds = []
         train_confs = []
         train_logits = []
-        data_train = train_loader.dataset
+        data_train = DataHandler_For_Arrays(X=torch.tensor([ii[0].numpy() for ii in train_loader.dataset]),
+                                Y=torch.tensor([ii[1] for ii in train_loader.dataset]))
 
         if torch.cuda.is_available():
             device = "cuda"
         else:
             device = "cpu"
 
-        for idx in range(0, len(data_train), 128):
-            batch = torch.squeeze(data_train[idx : idx + 128][0]).to(device)
+        for idx in range(0,len(data_train),128):
+            batch = torch.squeeze(data_train[idx:idx+128][0]).to(device)
             logits = torch_model(batch)
 
-            preds = np.argmax(logits.cpu().detach().numpy(), axis=1)
+            preds = np.argmax(logits.cpu().detach().numpy(),axis=1)
 
             train_preds.extend(preds)
 
         for PRED in self.classes:
-            train_indices = np.where(np.array(train_preds) == PRED)[0]
-            train_PRED = [data_train[i][0] for i in train_indices]
-            mins, maxs = torch_model.get_min_max(train_PRED, power=POWERS)
+            train_indices = np.where(np.array(train_preds)==PRED)[0]
+            train_PRED = ([data_train[i][0] for i in train_indices])
+            mins,maxs = torch_model.get_min_max(train_PRED,power=POWERS)
             self.mins[PRED] = cpu(mins)
             self.maxs[PRED] = cpu(maxs)
             torch.cuda.empty_cache()
 
-    def compute_deviations(self, torch_model, data_loader, POWERS=[10]):
-        assert len(self.mins) > 0, "Run compute_min_max first to generate mins and maxs"
+    
+    def compute_deviations(self,torch_model,data_loader,POWERS=[10]):
+        assert len(self.mins)>0, 'Run compute_min_max first to generate mins and maxs'
         test_preds = []
         test_confs = []
         test_logits = []
+
         if torch.cuda.is_available():
             device = "cuda"
         else:
             device = "cpu"
 
-        data = data_loader.dataset
-        for idx in range(0, len(data), 128):
-            batch = torch.squeeze(data[idx : idx + 128][0]).to(device)
+        data = DataHandler_For_Arrays(X=torch.tensor([ii[0].numpy() for ii in data_loader.dataset]),
+                                Y=torch.tensor([ii[1] for ii in data_loader.dataset]))
 
+        for idx in range(0,len(data),128):
+            batch =  torch.squeeze(data[idx:idx+128][0]).to(device)
+            
             logits = torch_model(batch)
-            confs = F.softmax(logits, dim=1).cpu().detach().numpy()
-            preds = np.argmax(confs, axis=1)
-            logits = logits.cpu().detach().numpy()
+            confs  = F.softmax(logits,dim=1).cpu().detach().numpy()
+            preds  = np.argmax(confs,axis=1)
+            logits = (logits.cpu().detach().numpy())
 
-            test_confs.extend(np.max(confs, axis=1))
+            test_confs.extend(np.max(confs,axis=1))    
             test_preds.extend(preds)
+
 
         all_deviations = None
         indices_list = None
         for PRED in self.classes:
-            test_indices = np.where(np.array(test_preds) == PRED)[0]
-            if len(test_indices) == 0:
+            test_indices = np.where(np.array(test_preds)==PRED)[0]
+            
+            print(f"INFO ----------- \n\n\n DOING {PRED} : {len(test_indices)}")
+            if len(test_indices)==0:
                 continue
             else:
                 if indices_list is None:
                     indices_list = indices_list
                 else:
-                    indices_list = np.concatenate([indices_list, test_indices], axis=0)
+                    indices_list = np.concatenate([indices_list,test_indices],axis=0)
+            
             test_PRED = [data[i][0] for i in test_indices]
             test_confs_PRED = np.array([test_confs[i] for i in test_indices])
-
-            if device == "cuda":
+            
+            if device=='cuda':
                 mins = cuda(self.mins[PRED])
                 maxs = cuda(self.maxs[PRED])
             else:
                 mins = self.mins[PRED]
                 maxs = self.maxs[PRED]
+            
+            test_deviations = torch_model.get_deviations(test_PRED,power=POWERS,mins=mins,maxs=maxs)/test_confs_PRED[:,np.newaxis]
+            
+            if device!='cuda':
+                self.mins[PRED] = cpu(mins)
+                self.maxs[PRED] = cpu(maxs)
 
-            test_deviations = (
-                torch_model.get_deviations(
-                    test_PRED, power=POWERS, mins=mins, maxs=maxs
-                )
-                / test_confs_PRED[:, np.newaxis]
-            )
-            cpu(mins)
-            cpu(maxs)
             if all_deviations is None:
                 all_deviations = test_deviations
             else:
-                all_deviations = np.concatenate(
-                    [all_deviations, test_deviations], axis=0
-                )
+                all_deviations = np.concatenate([all_deviations,test_deviations],axis=0)
+            
             torch.cuda.empty_cache()
-
+        
         all_deviations = all_deviations[np.argsort(indices_list)]
         return all_deviations
