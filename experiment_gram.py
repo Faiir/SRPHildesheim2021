@@ -313,8 +313,9 @@ class experiment_gram(experiment_base):
         weighting_factor_list = []
         for (data, labels) in pool_loader:
             pred = self.model(
-                    data.to(self.device).float()
-                    apply_softmax=True)
+                data.to(self.device).float(),
+                apply_softmax=True
+                )
 
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
