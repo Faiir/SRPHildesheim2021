@@ -76,7 +76,9 @@ class experiment_gram(experiment_base):
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        self.current_experiment = basic_settings | exp_settings
+
+        basic_settings.update(exp_settings)
+        self.current_experiment = basic_settings
         self.load_settings()
 
         if self.device == "cuda":
@@ -310,10 +312,9 @@ class experiment_gram(experiment_base):
         labels_list = []
         weighting_factor_list = []
         for (data, labels) in pool_loader:
-           pred = self.model(
+            pred = self.model(
                     data.to(self.device).float()
-                    apply_softmax=True,
-            )
+                    apply_softmax=True)
 
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)

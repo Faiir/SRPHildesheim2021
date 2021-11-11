@@ -19,7 +19,8 @@ class experiment_base(ABC):
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        self.current_experiment = basic_settings | exp_settings
+        basic_settings.update(exp_settings)
+        self.current_experiment = basic_settings
 
     @abstractmethod
     def train(self):

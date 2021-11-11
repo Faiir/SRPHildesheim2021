@@ -18,6 +18,7 @@ import torch.backends.cudnn as cudnn
 from robust_active_learning.experiment_active_learning import experiment_active_learning
 from robust_active_learning.experiment_ddu import experiment_ddu
 from robust_active_learning.experiment_genOdin import experiment_gen_odin
+from robust_active_learning.experiment_gram import experiment_gram
 
 # import shutil
 import time
@@ -73,7 +74,7 @@ def start_experiment(config, log_path):
                     basic_settings, exp_setting, log_path, writer
                 )
             elif exp_type == "gram":
-                current_exp = experiment_active_learning(
+                current_exp = experiment_gram(
                     basic_settings, exp_setting, log_path, writer
                 )
 
