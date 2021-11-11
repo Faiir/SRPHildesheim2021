@@ -32,6 +32,12 @@ We construct the manager for the active learning experiment. It will use the sam
     "oracle_steps": 20, // how many AL iterations
     "iD": "CIFAR10", // in-distribution dataset
     "OoD": ["FashionMNIST", "MNIST"], // SVHN CIFAR100, Soon: GrayScale Cifar, Subclass Cifar
+    "grayscale": false,
+    "subclass": {
+      "do_subclass": false,
+      "iD_classes": [],
+      "OoD_classes": []
+    },
     "labelled_size": 100, // starting training pool
     "pool_size": 5000, // unlabeled pool data
     "OOD_ratio": 0.15, // no. of OoD data in the unlabelled pool
@@ -133,7 +139,7 @@ We construct the manager for the active learning experiment. It will use the sam
 # TODO
 
 - layer analysis
-- other datasets
+- other datasets -> grayscale ---
 - Gram-Class
 - experiments
 - add larger model option for cifar100
