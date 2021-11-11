@@ -8,7 +8,6 @@ import json
 import numpy as np
 from numpy.random import sample
 import pandas as pd
-from scipy.sparse import construct
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm import tqdm
 
@@ -19,11 +18,11 @@ import torch.optim as optim
 from torchsummary import summary
 
 from robust_active_learning.model.get_model import get_model
+from robust_active_learning.model.model_files.gram_resnet import Detector
 
 
 # project
 from .experiment_base import experiment_base
-from .model.model_files.small_resnet_original import resnet20
 from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot, density_plot
 from .data.datahandler_for_array import create_dataloader
@@ -311,29 +310,18 @@ class experiment_gram(experiment_base):
         labels_list = []
         weighting_factor_list = []
         for (data, labels) in pool_loader:
-            if self.bugged_and_working:
-                tuple_data = self.model(
-                    data.to(self.device).float(),
-                    get_test_model=True,
-                    apply_softmax=False,
-                )
-            else:
-                tuple_data = self.model(
-                    data.to(self.device).float(),
-                    get_test_model=True,
+           pred = self.model(
+                    data.to(self.device).float()
                     apply_softmax=True,
-                )
-
-            pred = tuple_data[0]
-            weighting_factor = tuple_data[1]
-            weighting_factor_list.append(weighting_factor.to("cpu").detach().numpy())
+            )
 
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
+
+
         predictions = np.concatenate(yhat)
         labels_list = np.concatenate(labels_list)
-        weighting_factor_list = np.concatenate(weighting_factor_list)
-        return predictions, labels_list, weighting_factor_list
+        return predictions, labels_list
 
     def create_dataloader(self) -> None:
         result_tup = create_dataloader(
@@ -345,25 +333,7 @@ class experiment_gram(experiment_base):
         self.val_loader = result_tup[3]
 
     def create_optimizer(self) -> None:
-        base_params = []
-        gen_odin_params = []
-        for name, param in self.model.named_parameters():
-            if name not in [
-                "h_func.bias",
-                "h_func.weights",
-                "scaling_factor",
-            ]:
-                base_params.append(param)  # can't do the name tupel
-            else:
-                if self.verbose >= 2:
-                    print("added name: ", name)
-                gen_odin_params.append(param)
-
-        self.optimizer = optim.SGD(
-            [
-                {"params": base_params},
-                {"params": gen_odin_params, "weight_decay": 0.0},
-            ],
+        self.optimizer = optim.SGD(self.model.parameters(),
             weight_decay=self.weight_decay,
             lr=self.lr,
             momentum=self.momentum,
@@ -395,8 +365,8 @@ class experiment_gram(experiment_base):
         self.momentum = self.current_experiment.get("momentum", 0.9)
         self.lr_sheduler = self.current_experiment.get("lr_sheduler", True)
         self.num_classes = self.current_experiment.get("num_classes", 10)
-        self.validation_split = self.current_experiment.get("validation_split", "train")
-        self.validation_source = self.current_experiment.get("validation_source", 0.3)
+        self.validation_split = self.current_experiment.get("validation_split", 0.3)
+        self.validation_source = self.current_experiment.get("validation_source", "train")
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
@@ -405,7 +375,7 @@ class experiment_gram(experiment_base):
         self.verbose = self.current_experiment.get("verbose", 1)
         # self.do_desity_plot = self.current_experiment.get("do_desity_plot", False)
         self.plotsettings = self.current_experiment.get(
-            "plotsettings", {"do_plot": True, "density_plot": True, "layer_plot": False}
+            "plotsettings", {"do_plot": False, "density_plot": False, "layer_plot": False}
         )
         if self.plotsettings["do_plot"]:
             if self.plotsettings["density_plot"]:
@@ -430,9 +400,10 @@ class experiment_gram(experiment_base):
             self.current_oracle_step = 0
             print("created new statusmanager")
 
+        
         for oracle_s in range(self.oracle_steps):
-            print(self.current_experiment.get("model", "GenOdin"))
-            self.set_model(self.current_experiment.get("model", "GenOdin"))
+            print(self.current_experiment.get("model", "gram_resnet"))
+            self.set_model(self.current_experiment.get("model", "gram_resnet"))
 
             self.create_dataloader()
             self.create_optimizer()
@@ -450,9 +421,22 @@ class experiment_gram(experiment_base):
             if len(self.pool_loader) > 0:
                 (
                     pool_predictions,
-                    pool_labels_list,
-                    pool_weighting_list,
+                    pool_labels_list
                 ) = self.pool_predictions(self.pool_loader)
+
+
+                                
+
+                dector = Detector()
+                POWERS = range(1,11)
+                dector.compute_minmaxs(self.model,self.train_loader,POWERS=POWERS)
+                pool_deviations = dector.compute_deviations(self.model,self.pool_loader,POWERS=POWERS)
+                if validation_source is not None:
+                    validation = dector.compute_deviations(self.model,self.val_loader,POWERS=POWERS)
+                    t95 = validation.mean(axis=0)+10**-7
+                    pool_weighting_list = (pool_deviations/t95[np.newaxis,:]).sum(axis=1)
+        
+                pool_weighting_list = np.exp(-pool_weighting_list)
 
                 self.sampler(
                     self.datamanager,
@@ -463,18 +447,8 @@ class experiment_gram(experiment_base):
                 )
 
                 if self.do_desity_plot:
-                    pert_preds, gs, hs, targets = self.pertube_image(
-                        self.pool_loader,
-                        self.val_loader,
-                    )
-
-                    self.create_plots("density", pert_preds, gs, hs, targets, oracle_s)
-                    print("created density plots")
-                (
-                    test_predictions,
-                    test_labels,
-                    weighting_factor_list,
-                ) = self.pool_predictions(self.test_loader)
+                    assert NotImplementedError
+                    pass
 
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)

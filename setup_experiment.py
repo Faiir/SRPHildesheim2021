@@ -72,8 +72,10 @@ def start_experiment(config, log_path):
                 current_exp = experiment_active_learning(
                     basic_settings, exp_setting, log_path, writer
                 )
-            elif exp_type == "gramm":
-                raise NotImplementedError
+            elif exp_type == "gram":
+                current_exp = experiment_active_learning(
+                    basic_settings, exp_setting, log_path, writer
+                )
 
             elif exp_type == "looc":
                 current_exp = experiment_gen_odin(

@@ -25,13 +25,11 @@
       },
       "exp_settings": [
         {
-          "exp_type": "ddu",
-          "exp_name": "funny_name_here",
+          "exp_type": "gram",
+          "exp_name": "first_try",
           "plots": false,
-          "model": "DDU",
-          "oracle": "ddu-sampler",
-          "spectral_normalization": true,
-          "temp": 1.0
+          "model": "gram_resnet",
+          "oracle": "highest-entropy"
         }
       ]
     }
