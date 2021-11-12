@@ -75,8 +75,8 @@ class experiment_active_learning(experiment_base):
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        basic_settings.update(exp_settings)
-        self.current_experiment = basic_settings
+        self.current_experiment = basic_settings.update(exp_settings)
+
         self.load_settings()
 
         if self.device == "cuda":

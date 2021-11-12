@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+import torch
 from torchvision.datasets.cifar import CIFAR100
 
 import torchvision.transforms as transforms
@@ -78,6 +79,7 @@ class Data_manager:
         pool_size,
         OoD_ratio,
         test_iD_size=None,
+        subclass={"do_subclass": False},
     ):
 
         self.iD_datasets = iD_datasets
@@ -93,6 +95,70 @@ class Data_manager:
 
         list_of_datasets = self.iD_datasets + self.OoD_datasets
         self.datasets_dict = data_loader(list_of_datasets)
+
+        if subclass["do_subclass"]:
+            for c, dataset in enumerate(self.iD_datasets):
+
+                cls = set(subclass["iD_classes"])
+                idx_train = [
+                    i
+                    for i, val in enumerate(
+                        self.datasets_dict[dataset + "_train"].targets
+                    )
+                    if val in cls
+                ]
+                idx_test = [
+                    i
+                    for i, val in enumerate(
+                        self.datasets_dict[dataset + "_test"].targets
+                    )
+                    if val in cls
+                ]
+
+                self.datasets_dict[dataset + "_train"].data = np.compress(
+                    idx_train, self.datasets_dict[dataset + "_train"].data, axis=0
+                )
+                self.datasets_dict[dataset + "_train"].targets = np.compress(
+                    idx_train, self.datasets_dict[dataset + "_train"].targets, axis=0
+                ).tolist()
+
+                self.datasets_dict[dataset + "_test"].data = np.compress(
+                    idx_test, self.datasets_dict[dataset + "_test"].data, axis=0
+                )
+                self.datasets_dict[dataset + "_test"].targets = np.compress(
+                    idx_test, self.datasets_dict[dataset + "_test"].targets, axis=0
+                ).tolist()
+
+            for c, dataset in enumerate(self.OoD_datasets):
+                cls = set(subclass["OoD_classes"])
+                idx_train = [
+                    i
+                    for i, val in enumerate(
+                        self.datasets_dict[dataset + "_train"].targets
+                    )
+                    if val in cls
+                ]
+                idx_test = [
+                    i
+                    for i, val in enumerate(
+                        self.datasets_dict[dataset + "_test"].targets
+                    )
+                    if val in cls
+                ]
+
+                self.datasets_dict[dataset + "_train"].data = np.compress(
+                    idx_train, self.datasets_dict[dataset + "_train"].data, axis=0
+                )
+                self.datasets_dict[dataset + "_train"].targets = np.compress(
+                    idx_train, self.datasets_dict[dataset + "_train"].targets, axis=0
+                ).tolist()
+
+                self.datasets_dict[dataset + "_test"].data = np.compress(
+                    idx_test, self.datasets_dict[dataset + "_test"].data, axis=0
+                )
+                self.datasets_dict[dataset + "_test"].targets = np.compress(
+                    idx_test, self.datasets_dict[dataset + "_test"].targets, axis=0
+                ).tolist()
 
         self.iD_samples_size = 0
         for ii in self.iD_datasets:
@@ -435,30 +501,53 @@ def tmp_func(x):
     return x.repeat(3, 1, 1)
 
 
-def data_loader(datasets_list: list) -> dict:
+def data_loader(datasets_list: list, grayscale=False) -> dict:
     """
     This function takes in a list of datasets to be used in the experiments
     """
     print(f"INFO ------ List of datasets being loaded are {datasets_list}")
+
     datasets_dict = {}
     if "CIFAR10" in datasets_list:
-        datasets_dict["CIFAR10_train"] = CIFAR10(
-            root=r"/dataset/CHIFAR10/",
-            train=True,
-            download=True,
-            transform=transforms.Compose(
+        if not grayscale:
+            cifar_train_transform = transforms.Compose(
                 [
                     transforms.ToTensor(),
                     transforms.RandomHorizontalFlip(),
                     transforms.RandomCrop(32, 4),
                 ]
-            ),
+            )
+            cifar_test_transform = transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                ]
+            )
+        else:
+            cifar_train_transform = transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.Grayscale(3),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.RandomCrop(32, 4),
+                ]
+            )
+            cifar_test_transform = transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.Grayscale(3),
+                ]
+            )
+        datasets_dict["CIFAR10_train"] = CIFAR10(
+            root=r"/dataset/CHIFAR10/",
+            train=True,
+            download=True,
+            transform=cifar_train_transform,
         )
         datasets_dict["CIFAR10_test"] = CIFAR10(
             root=r"/dataset/CHIFAR10/",
             train=False,
             download=True,
-            transform=transforms.ToTensor(),
+            transform=cifar_test_transform,
         )
 
         print("INFO ----- Dataset Loaded : CIFAR10")
@@ -564,6 +653,61 @@ def data_loader(datasets_list: list) -> dict:
 
         print("INFO ----- Dataset Loaded : CIFAR100")
         datasets_list.remove("CIFAR100")
+
+    if "CIFAR10_ood" in datasets_list:
+
+        cifar_train_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(32, 4),
+            ]
+        )
+        cifar_test_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+            ]
+        )
+
+        datasets_dict["CIFAR10_ood_train"] = CIFAR10(
+            root=r"/dataset/CHIFAR10/",
+            train=True,
+            download=True,
+            transform=cifar_train_transform,
+        )
+        datasets_dict["CIFAR10_ood_test"] = CIFAR10(
+            root=r"/dataset/CHIFAR10/",
+            train=False,
+            download=True,
+            transform=cifar_test_transform,
+        )
+
+        print("INFO ----- Dataset Loaded : CIFAR10_ood")
+        datasets_list.remove("CIFAR10_ood")
+
+    if "CIFAR100_ood" in datasets_list:
+        datasets_dict["CIFAR100_ood_train"] = CIFAR100(
+            root=r"/dataset/CIFAR100",
+            train=True,
+            download=True,
+            transform=transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.RandomCrop(32, 4),
+                ]
+            ),
+        )
+
+        datasets_dict["CIFAR100_ood_test"] = CIFAR100(
+            root=r"/dataset/CIFAR100",
+            train=False,
+            download=True,
+            transform=transforms.ToTensor(),
+        )
+
+        print("INFO ----- Dataset Loaded : CIFAR100_ood")
+        datasets_list.remove("CIFAR100_ood")
 
     assert (
         len(datasets_list) == 0
