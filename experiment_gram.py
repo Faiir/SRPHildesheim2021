@@ -1,3 +1,4 @@
+import gc
 from typing import Dict, List, Union
 
 # python
@@ -5,10 +6,8 @@ import datetime
 import os
 import json
 import numpy as np
-
-
+from numpy.random import sample
 import pandas as pd
-
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm import tqdm
 
@@ -18,16 +17,17 @@ import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
 
-from .helpers.measures import accuracy, auroc, f1
+from robust_active_learning.model.get_model import get_model
+from robust_active_learning.model.model_files.gram_resnet import Detector
 
 
 # project
 from .experiment_base import experiment_base
-from .model.get_model import get_model
 from .helpers.early_stopping import EarlyStopping
-from .helpers.plots import get_tsne_plot
-from .data.datamanager import Data_manager
+from .helpers.plots import get_tsne_plot, density_plot
 from .data.datahandler_for_array import create_dataloader
+from .data.datamanager import Data_manager
+from .helpers.measures import accuracy, auroc, f1
 
 
 def verbosity(message, verbose, epoch):
@@ -62,7 +62,8 @@ def _create_log_path_al(log_dir: str = ".", OOD_ratio: float = 0.0) -> None:
     return log_path
 
 
-class experiment_active_learning(experiment_base):
+
+class experiment_gram(experiment_base):
     def __init__(
         self,
         basic_settings: Dict,
@@ -75,8 +76,9 @@ class experiment_active_learning(experiment_base):
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        self.current_experiment = basic_settings.update(exp_settings)
 
+        basic_settings.update(exp_settings)
+        self.current_experiment = basic_settings
         self.load_settings()
 
         if self.device == "cuda":
@@ -278,36 +280,47 @@ class experiment_active_learning(experiment_base):
             from .helpers.sampler import uncertainity_sampling_least_confident
 
             self.sampler = uncertainity_sampling_least_confident
-        elif sampler == "extra_class_entropy":
-            from .helpers.sampler import extra_class_sampler
-
-            self.sampler = extra_class_sampler(self.extra_class_thresholding)
+        else:
+            raise NotImplementedError
 
     # overrides set_model
     def set_model(self, model_name) -> None:
-        if model_name == "base":
-            self.model = get_model(
-                model_name, num_classes=self.num_classes
-            )  # needs rewrite maybe
+        if model_name == "gram_resnet":
+            self.model = get_model(model_name)
         else:
             raise NotImplementedError
         self.model.to(self.device)
 
     # overrides create_plots
-    def create_plots(self) -> None:
-        tsne_plot = get_tsne_plot(self.data_manager, self.iD, self.model, self.device)
-        self.writer.add_figure(
-            tag=f"{self.metric}/{self.iD}/{self.experiment_settings.get('oracles', 'oracle')}/tsne",
-            figure=tsne_plot,
-        )
+    def create_plots(self, plot_name, pret_preds, gs, hs, targets, oracle_step) -> None:
+        raise NotImplementedError
+        if plot_name == "tsne":
+            tsne_plot = get_tsne_plot(
+                self.data_manager, self.iD, self.model, self.device
+            )
+            self.writer.add_figure(
+                tag=f"{self.metric}/{self.iD}/{self.experiment_settings.get('oracles', 'oracle')}/tsne",
+                figure=tsne_plot,
+            )
+        elif plot_name == "density":
+            density_plot(pret_preds, gs, hs, targets, self.writer, oracle_step)
+        else:
+            raise NotImplementedError  # for layer analsis i guess -> maybe split into seperate functions
 
-    def pool_predictions(self, pool_loader) -> Union[np.ndarray, np.ndarray]:
+    def pool_predictions(self, pool_loader) -> Union[np.ndarray, np.ndarray, np.ndarray]:
         yhat = []
         labels_list = []
+        weighting_factor_list = []
         for (data, labels) in pool_loader:
-            pred = self.model(data.to(self.device).float(), apply_softmax=True)
+            pred = self.model(
+                data.to(self.device).float(),
+                apply_softmax=True
+                )
+
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
+
+
         predictions = np.concatenate(yhat)
         labels_list = np.concatenate(labels_list)
         return predictions, labels_list
@@ -322,8 +335,7 @@ class experiment_active_learning(experiment_base):
         self.val_loader = result_tup[3]
 
     def create_optimizer(self) -> None:
-        self.optimizer = optim.SGD(
-            self.model.parameters(),
+        self.optimizer = optim.SGD(self.model.parameters(),
             weight_decay=self.weight_decay,
             lr=self.lr,
             momentum=self.momentum,
@@ -336,6 +348,7 @@ class experiment_active_learning(experiment_base):
     # overrides load_settings
     def load_settings(self) -> None:
         # active Learning settings
+        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
         self.oracle_stepsize = self.current_experiment.get("oracle_stepsize", 100)
         self.oracle_steps = self.current_experiment.get("oracle_steps", 10)
         self.iD = self.current_experiment.get("iD", "Cifar10")
@@ -354,33 +367,28 @@ class experiment_active_learning(experiment_base):
         self.momentum = self.current_experiment.get("momentum", 0.9)
         self.lr_sheduler = self.current_experiment.get("lr_sheduler", True)
         self.num_classes = self.current_experiment.get("num_classes", 10)
-        self.validation_split = self.current_experiment.get("validation_split", "train")
-        self.validation_source = self.current_experiment.get("validation_source", 0.3)
+        self.validation_split = self.current_experiment.get("validation_split", 0.3)
+        self.validation_source = self.current_experiment.get("validation_source", "train")
+        self.oracle = self.current_experiment.get("oracle", "highest-entropy")
+        self.set_sampler(self.oracle)
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")
         # logging
         self.verbose = self.current_experiment.get("verbose", 1)
-
+        # self.do_desity_plot = self.current_experiment.get("do_desity_plot", False)
+        self.plotsettings = self.current_experiment.get(
+            "plotsettings", {"do_plot": False, "density_plot": False, "layer_plot": False}
+        )
+        if self.plotsettings["do_plot"]:
+            if self.plotsettings["density_plot"]:
+                self.do_desity_plot = True
+            if self.plotsettings["layer_plot"]:
+                self.layer_plot = True
         # _create_log_path_al(self.OOD_ratio)
-
-        # extra class
-        if self.current_experiment["exp_type"] == "extra_class":
-            self.extra_class_thresholding = self.current_experiment.get(
-                "extra_class_thresholding", 0.1
-            )
-
-            self.num_classes += 1
-            # self.set_model(
-            #     self.current_experiment.get("model", "base"), self.num_classes
-            # )
-        self.oracle = self.current_experiment.get("oracle", "highest-entropy")
-        self.set_sampler(self.oracle)
-        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
 
     # overrides perform_experiment
     def perform_experiment(self):
-
         self.train_loss_hist = []
         check_path = os.path.join(
             self.log_path, "status_manager_dir", "intial_statusmanager.csv"
@@ -395,14 +403,14 @@ class experiment_active_learning(experiment_base):
             self.current_oracle_step = 0
             print("created new statusmanager")
 
+        
         for oracle_s in range(self.oracle_steps):
-            self.set_model(
-                self.current_experiment.get("model", "base"),
-            )
+            print(self.current_experiment.get("model", "gram_resnet"))
+            self.set_model(self.current_experiment.get("model", "gram_resnet"))
+
             self.create_dataloader()
             self.create_optimizer()
 
-            # , train_loader, val_loader, optimizer, criterion, device
             self.train(
                 self.train_loader,
                 self.val_loader,
@@ -416,17 +424,36 @@ class experiment_active_learning(experiment_base):
             if len(self.pool_loader) > 0:
                 (
                     pool_predictions,
-                    pool_labels_list,
+                    pool_labels_list
                 ) = self.pool_predictions(self.pool_loader)
+
+
+                                
+
+                dector = Detector()
+                POWERS = range(1,11)
+                dector.compute_minmaxs(self.model,self.train_loader,POWERS=POWERS)
+                pool_deviations = dector.compute_deviations(self.model,self.pool_loader,POWERS=POWERS)
+                if self.validation_source is not None:
+                    validation = dector.compute_deviations(self.model,self.val_loader,POWERS=POWERS)
+                    t95 = validation.mean(axis=0)+10**-7
+                    pool_weighting_list = (pool_deviations/t95[np.newaxis,:]).sum(axis=1)
+        
+                pool_weighting_list = np.exp(-pool_weighting_list)
 
                 self.sampler(
                     self.datamanager,
                     number_samples=self.oracle_stepsize,
                     net=self.model,
                     predictions=pool_predictions,
+                    weights=pool_weighting_list,
                 )
 
-                test_predictions, test_labels = self.pool_predictions(self.test_loader)
+                (
+                    test_predictions,
+                    test_labels,
+                ) = self.pool_predictions(self.test_loader)
+
 
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)
@@ -455,6 +482,7 @@ class experiment_active_learning(experiment_base):
                     exp_name=self.exp_name,
                 )
                 self.save_al_logs()
+
         self.datamanager.status_manager.to_csv(
             os.path.join(
                 self.log_path,
