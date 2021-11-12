@@ -140,7 +140,7 @@ We construct the manager for the active learning experiment. It will use the sam
 
 - layer analysis
 - other datasets -> grayscale ---
-- Gram-Class
+- Gram-Class ---
 - experiments
 - add larger model option for cifar100
 - train function to train the final networkn (add model, trainfunction, test function  / scores for this to report -> should load the datasets based on the statusmanager
