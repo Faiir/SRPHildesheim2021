@@ -19,6 +19,7 @@ from robust_active_learning.experiment_active_learning import experiment_active_
 from robust_active_learning.experiment_ddu import experiment_ddu
 from robust_active_learning.experiment_genOdin import experiment_gen_odin
 from robust_active_learning.experiment_gram import experiment_gram
+from robust_active_learning.helpers.final_train import final_traing
 
 # import shutil
 import time
@@ -94,6 +95,7 @@ def start_experiment(config, log_path):
             current_exp.perform_experiment()
             del current_exp
             gc.collect
+    final_traing(log_path, config)
 
 
 def main():

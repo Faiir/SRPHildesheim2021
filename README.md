@@ -1,5 +1,5 @@
 
-# SRP-Hildesheim2021
+# SRP-Hildesheim2021 - Robust Active Learning
 
 # Set up enviornment
 
@@ -13,8 +13,8 @@ In colab
 
 ```#!/bin/bash
 
-%cd ./project
 python -m setup_experiment -c "path\to\config\.json"
+
 ```
 
 # Experiment settings
@@ -133,16 +133,40 @@ We construct the manager for the active learning experiment. It will use the sam
   ]
 
 
-
 ```
 
 # TODO
 
 - layer analysis
-- other datasets -> grayscale ---
-- Gram-Class ---
-- experiments
+- experiments ()
 - add larger model option for cifar100
-- train function to train the final networkn (add model, trainfunction, test function  / scores for this to report -> should load the datasets based on the statusmanager
+- add baseline for FinalTraining (Niklas)
+- write down experiment setup and send to supervisors ()
 
-test commit
+# Dataset Options
+
+- cifar10 - mnist, fmnist, (svhn)
+- grayscaled cifar - mnist and fmnist (grayscaled svhn)
+- cifar10 - sublass 0-6 iD and 7-9 Ood
+- cifar100 - subclassed -> per superclass (20) vs other 80 iD classes
+
+# AL+OoD Experiments
+
+min. 3x per experiment version - per AL-OoD
+
+- 15% OoD
+- 30% OoD
+
+- 50%  grayscaled cifar - mnist and fmnist (grayscaled svhn)
+
+# Presentation
+
+30 mins of presentation
+
+- Motivation  (Done)
+- Research Question (Done )
+- Related Work / Explanation of Methods -> Expand on DDU and Looc (theory) (50%)
+- Looc-Layer Analysis (Abdur)
+- Experiments (Setup, Metrics, Good and Bad results) (All of us)
+- Conclusion (whole thing)
+- Link to Profiles / Github whatever 
