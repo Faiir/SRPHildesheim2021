@@ -169,4 +169,4 @@ min. 3x per experiment version - per AL-OoD
 - Looc-Layer Analysis (Abdur)
 - Experiments (Setup, Metrics, Good and Bad results) (All of us)
 - Conclusion (whole thing)
-- Link to Profiles / Github whatever 
+- Link to Profiles / Github whatever

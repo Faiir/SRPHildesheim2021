@@ -62,7 +62,6 @@ def _create_log_path_al(log_dir: str = ".", OOD_ratio: float = 0.0) -> None:
     return log_path
 
 
-
 class experiment_gram(experiment_base):
     def __init__(
         self,
@@ -75,7 +74,6 @@ class experiment_gram(experiment_base):
         self.log_path = log_path
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
         basic_settings.update(exp_settings)
         self.current_experiment = basic_settings
@@ -307,19 +305,17 @@ class experiment_gram(experiment_base):
         else:
             raise NotImplementedError  # for layer analsis i guess -> maybe split into seperate functions
 
-    def pool_predictions(self, pool_loader) -> Union[np.ndarray, np.ndarray, np.ndarray]:
+    def pool_predictions(
+        self, pool_loader
+    ) -> Union[np.ndarray, np.ndarray, np.ndarray]:
         yhat = []
         labels_list = []
         weighting_factor_list = []
         for (data, labels) in pool_loader:
-            pred = self.model(
-                data.to(self.device).float(),
-                apply_softmax=True
-                )
+            pred = self.model(data.to(self.device).float(), apply_softmax=True)
 
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
-
 
         predictions = np.concatenate(yhat)
         labels_list = np.concatenate(labels_list)
@@ -335,7 +331,8 @@ class experiment_gram(experiment_base):
         self.val_loader = result_tup[3]
 
     def create_optimizer(self) -> None:
-        self.optimizer = optim.SGD(self.model.parameters(),
+        self.optimizer = optim.SGD(
+            self.model.parameters(),
             weight_decay=self.weight_decay,
             lr=self.lr,
             momentum=self.momentum,
@@ -368,7 +365,9 @@ class experiment_gram(experiment_base):
         self.lr_sheduler = self.current_experiment.get("lr_sheduler", True)
         self.num_classes = self.current_experiment.get("num_classes", 10)
         self.validation_split = self.current_experiment.get("validation_split", 0.3)
-        self.validation_source = self.current_experiment.get("validation_source", "train")
+        self.validation_source = self.current_experiment.get(
+            "validation_source", "train"
+        )
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
         self.set_sampler(self.oracle)
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
@@ -378,7 +377,8 @@ class experiment_gram(experiment_base):
         self.verbose = self.current_experiment.get("verbose", 1)
         # self.do_desity_plot = self.current_experiment.get("do_desity_plot", False)
         self.plotsettings = self.current_experiment.get(
-            "plotsettings", {"do_plot": False, "density_plot": False, "layer_plot": False}
+            "plotsettings",
+            {"do_plot": False, "density_plot": False, "layer_plot": False},
         )
         if self.plotsettings["do_plot"]:
             if self.plotsettings["density_plot"]:
@@ -395,6 +395,7 @@ class experiment_gram(experiment_base):
         )
         if os.path.exists(check_path):
             self.datamanager.status_manager = pd.read_csv(check_path, index_col=0)
+            self.datamanager.reset_pool()
             print("loaded statusmanager from file")
         else:
             # self.datamanager.reset_pool()
@@ -403,7 +404,7 @@ class experiment_gram(experiment_base):
             self.current_oracle_step = 0
             print("created new statusmanager")
 
-        
+        self.current_oracle_step = 0
         for oracle_s in range(self.oracle_steps):
             print(self.current_experiment.get("model", "gram_resnet"))
             self.set_model(self.current_experiment.get("model", "gram_resnet"))
@@ -422,23 +423,25 @@ class experiment_gram(experiment_base):
 
             self.current_oracle_step += 1
             if len(self.pool_loader) > 0:
-                (
-                    pool_predictions,
-                    pool_labels_list
-                ) = self.pool_predictions(self.pool_loader)
-
-
-                                
+                (pool_predictions, pool_labels_list) = self.pool_predictions(
+                    self.pool_loader
+                )
 
                 dector = Detector()
-                POWERS = range(1,11)
-                dector.compute_minmaxs(self.model,self.train_loader,POWERS=POWERS)
-                pool_deviations = dector.compute_deviations(self.model,self.pool_loader,POWERS=POWERS)
+                POWERS = range(1, 11)
+                dector.compute_minmaxs(self.model, self.train_loader, POWERS=POWERS)
+                pool_deviations = dector.compute_deviations(
+                    self.model, self.pool_loader, POWERS=POWERS
+                )
                 if self.validation_source is not None:
-                    validation = dector.compute_deviations(self.model,self.val_loader,POWERS=POWERS)
-                    t95 = validation.mean(axis=0)+10**-7
-                    pool_weighting_list = (pool_deviations/t95[np.newaxis,:]).sum(axis=1)
-        
+                    validation = dector.compute_deviations(
+                        self.model, self.val_loader, POWERS=POWERS
+                    )
+                    t95 = validation.mean(axis=0) + 10 ** -7
+                    pool_weighting_list = (pool_deviations / t95[np.newaxis, :]).sum(
+                        axis=1
+                    )
+
                 pool_weighting_list = np.exp(-pool_weighting_list)
 
                 self.sampler(
@@ -453,7 +456,6 @@ class experiment_gram(experiment_base):
                     test_predictions,
                     test_labels,
                 ) = self.pool_predictions(self.test_loader)
-
 
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)

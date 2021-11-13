@@ -223,7 +223,7 @@ class ResNet(nn.Module):
 def resnet18(spectral_normalization=True, mod=True, temp=1.0, mnist=False, **kwargs):
     model = ResNet(
         BasicBlock,
-        [2, 2, 2, 2],
+        [3, 3, 3],
         spectral_normalization=spectral_normalization,
         mod=mod,
         temp=temp,

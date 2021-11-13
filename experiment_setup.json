@@ -31,67 +31,6 @@
       },
       "exp_settings": [
         {
-          "exp_type": "baseline",
-          "exp_name": "baseline-no-ood-cifar-015",
-          "plots": false,
-          "model": "base",
-          "oracle": "highest-entropy"
-        },
-        {
-          "exp_type": "baseline-ood",
-          "exp_name": "baseline-ood-cifar-015",
-          "oracle": "highest-entropy",
-          "model": "base",
-          "plots": false
-        },
-        {
-          "exp_type": "extra_class",
-          "exp_name": "extra_class-soft-cifar-015",
-          "extra_class-type": "soft",
-          "extra_class_thresholding": 0.1,
-          "oracle": "highest-entropy",
-          "model": "base",
-          "plots": false
-        },
-        {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-015",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false
-        },
-        {
-          "exp_type": "looc",
-          "exp_name": "looc-cifar-015",
-          "similarity": "E",
-          "scaling_factor": "R",
-          "oracle": "highest-entropy",
-          "bugged_and_working": true,
-          "do_pertubed_images": true,
-          "model": "LOOC",
-          "plots": false,
-          "plotsettings": {
-            "do_plot": true,
-            "density_plot": true,
-            "layer_plot": true
-          }
-        },
-        {
-          "exp_type": "genodin",
-          "exp_name": "genodin-CR-cifar-015",
-          "similarity": "C",
-          "oracle": "highest-entropy",
-          "do_pertubed_images": true,
-          "scaling_factor": "R",
-          "model": "GenOdin",
-          "bugged_and_working": false,
-          "plotsettings": {
-            "do_plot": true,
-            "density_plot": true,
-            "layer_plot": true
-          }
-        },
-        {
           "exp_type": "ddu",
           "exp_name": "ddu-cifar-015",
           "plots": false,

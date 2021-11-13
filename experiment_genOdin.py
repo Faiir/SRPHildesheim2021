@@ -87,7 +87,8 @@ class experiment_gen_odin(experiment_base):
         self.writer = writer
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        self.current_experiment = basic_settings.update(exp_settings)
+        basic_settings.update(exp_settings)
+        self.current_experiment = basic_settings
         self.load_settings()
 
         if self.device == "cuda":
@@ -493,6 +494,9 @@ class experiment_gen_odin(experiment_base):
                 self.do_desity_plot = True
             if self.plotsettings["layer_plot"]:
                 self.layer_plot = True
+        else:
+            self.do_desity_plot = False
+            self.layer_plot = False
         # _create_log_path_al(self.OOD_ratio)
         self.similarity = self.current_experiment.get("similarity", "E")
         scaling_factor = self.current_experiment.get("scaling_factor", "G")
@@ -522,14 +526,15 @@ class experiment_gen_odin(experiment_base):
         )
         if os.path.exists(check_path):
             self.datamanager.status_manager = pd.read_csv(check_path, index_col=0)
+            self.datamanager.reset_pool()
             print("loaded statusmanager from file")
         else:
             # self.datamanager.reset_pool()
             save_path = os.path.join(self.log_path, "status_manager_dir")
             self.datamanager.create_merged_data(path=save_path)
-            self.current_oracle_step = 0
-            print("created new statusmanager")
 
+            print("created new statusmanager")
+        self.current_oracle_step = 0
         for oracle_s in range(self.oracle_steps):
             print(self.current_experiment.get("model", "GenOdin"))
             self.set_model(self.current_experiment.get("model", "GenOdin"))

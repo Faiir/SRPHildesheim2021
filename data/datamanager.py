@@ -496,6 +496,21 @@ class Data_manager:
         self.OoD_extra_class = False
         self.status_manager.loc[self.status_manager["status"] != 1, "status"] = 0
 
+        self.config = {
+            "Total_overall_examples": len(self.status_manager),
+            "Total_base_examples": len(
+                self.status_manager[self.status_manager["source"] > 0]
+            ),
+            "Total_OOD_examples": len(
+                self.status_manager[self.status_manager["source"] < 0]
+            ),
+            "Initial_examples_labelled": len(
+                self.status_manager[self.status_manager["status"] == 1]
+            ),
+        }
+
+        self.log = {}
+
 
 def tmp_func(x):
     return x.repeat(3, 1, 1)
