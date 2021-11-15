@@ -30,6 +30,12 @@ from .data.datamanager import Data_manager
 from .data.datahandler_for_array import create_dataloader
 from .helpers.measures import accuracy, auroc, f1
 
+from .data.deprecated.datahandler_for_array import (
+    create_dataloader as create_dataloader_old,
+)
+from .data.deprecated.datamanager import get_datamanager as get_datamanager_old
+from .data.deprecated.sampler import DDU_sampler as DDU_sampler_old
+
 
 def verbosity(message, verbose, epoch):
     if verbose == 1:
@@ -93,7 +99,7 @@ class experiment_ddu(experiment_base):
         if self.device == "cuda":
             torch.backends.cudnn.benchmark = True
 
-        self.construct_datamanager()
+        # self.construct_datamanager()
 
     # overrides train
     def train(self, train_loader, val_loader, optimizer, criterion, device, **kwargs):
@@ -276,83 +282,74 @@ class experiment_ddu(experiment_base):
 
     def get_embeddings(
         self,
-        model,
-        loader: torch.utils.data.DataLoader,
         num_dim: int,
         dtype,
-        device,
-        storage_device,
     ):
-        num_samples = len(loader.dataset)
+        num_samples = len(self.train_loader.dataset)
         embeddings = torch.empty(
-            (num_samples, num_dim), dtype=dtype, device=storage_device
+            (num_samples, num_dim), dtype=dtype, device=self.device
         )
-        labels = torch.empty(num_samples, dtype=torch.int, device=storage_device)
+        labels = torch.empty(num_samples, dtype=torch.int, device=self.device)
 
         with torch.no_grad():
             start = 0
-            for data, label in tqdm(loader):
-                data = data.to(device)
-                label = label.to(device)
+            for data, label in tqdm(self.train_loader):
+                data = data.to(self.device)
+                label = label.to(self.device)
 
-                if isinstance(model, nn.DataParallel):
-                    out = model.module(data)
-                    out = model.module.feature
+                if isinstance(self.model, nn.DataParallel):
+                    out = self.model.module(data)
+                    out = self.model.module.feature
                 else:
-                    out = model(data)
-                    out = model.feature
+                    out = self.model(data)
+                    out = self.model.feature
 
                 end = start + len(data)
                 embeddings[start:end].copy_(out, non_blocking=True)
                 labels[start:end].copy_(label, non_blocking=True)
                 start = end
-
+        self.embeddings = embeddings
+        self.labels = labels
         return embeddings, labels
 
-    def gmm_forward(self, model, gaussians_model, data_B_X):
+    def gmm_forward(self, data_B_X):
 
-        if isinstance(model, nn.DataParallel):
-            features_B_Z = model.module(data_B_X)
-            features_B_Z = model.module.feature
+        if isinstance(self.model, nn.DataParallel):
+            features_B_Z = self.model.module(data_B_X)
+            features_B_Z = self.model.module.feature
         else:
-            features_B_Z = model(data_B_X)
-            features_B_Z = model.feature
+            features_B_Z = self.model(data_B_X)
+            features_B_Z = self.model.feature
 
-        log_probs_B_Y = gaussians_model.log_prob(features_B_Z[:, None, :])
+        log_probs_B_Y = self.gaussians_model.log_prob(features_B_Z[:, None, :])
 
         return log_probs_B_Y
 
     def gmm_evaluate(
-        self, model, gaussians_model, loader, device, num_classes, storage_device
+        self,
     ):
 
-        num_samples = len(loader.dataset)
+        num_samples = len(self.pool_loader.dataset)
         logits_N_C = torch.empty(
-            (num_samples, num_classes), dtype=torch.float, device=storage_device
+            (num_samples, self.num_classes), dtype=torch.float, device=self.device
         ).cuda()
-        labels_N = torch.empty(
-            num_samples, dtype=torch.int, device=storage_device
-        ).cuda()
+        labels_N = torch.empty(num_samples, dtype=torch.int, device=self.device).cuda()
 
         with torch.no_grad():
             start = 0
-            for data, label in tqdm(loader):
-                data = data.to(device)
-                label = label.to(device)
+            for data, label in tqdm(self.pool_loader):
+                data = data.to(self.device)
+                label = label.to(self.device)
 
-                logit_B_C = self.gmm_forward(model, gaussians_model, data)
+                logit_B_C = self.gmm_forward(data)
 
                 end = start + len(data)
+
                 logits_N_C[start:end].copy_(logit_B_C, non_blocking=True)
                 labels_N[start:end].copy_(label, non_blocking=True)
                 start = end
 
         return logits_N_C, labels_N
-
-    def gmm_get_logits(self, gmm, embeddings):
-
-        log_probs_B_Y = gmm.log_prob(embeddings[:, None, :])
-        return log_probs_B_Y
 
     def gmm_fit(self, embeddings, labels, num_classes):
         with torch.no_grad():
@@ -418,10 +415,6 @@ class experiment_ddu(experiment_base):
             figure=tsne_plot,
         )
 
-    # overrides save_logs
-    def save_logs(self) -> None:
-        pass
-
     def pool_predictions(self, pool_loader) -> Union[np.ndarray, np.ndarray]:
         yhat = []
         labels_list = []
@@ -443,13 +436,16 @@ class experiment_ddu(experiment_base):
         self.val_loader = result_tup[3]
 
     def create_optimizer(self) -> None:
-        self.optimizer = optim.SGD(
-            self.model.parameters(),
-            weight_decay=self.weight_decay,
-            lr=self.lr,
-            momentum=self.momentum,
-            nesterov=self.nesterov,
+        self.optimizer = optim.Adam(
+            self.model.parameters(), weight_decay=5e-4  # self.weight_decay
         )
+        # self.optimizer = optim.SGD(
+        #     self.model.parameters(),
+        #     weight_decay=self.weight_decay,
+        #     lr=self.lr,
+        #     momentum=self.momentum,
+        #     nesterov=self.nesterov,
+        # )
 
     def create_criterion(self) -> None:
         self.criterion = nn.CrossEntropyLoss()
@@ -508,7 +504,16 @@ class experiment_ddu(experiment_base):
 
         for oracle_s in range(self.oracle_steps):
             self.set_model("DDU")  # hardcoded till we add larger models
-            self.create_dataloader()
+            result_tup = create_dataloader(
+                self.datamanager,
+                batch_size=self.batch_size,
+                validation_source=self.validation_source,
+                validation_split=0.1,
+            )
+            self.train_loader = result_tup[0]
+            self.test_loader = result_tup[1]
+            self.pool_loader = result_tup[2]
+            self.val_loader = result_tup[3]
             self.create_optimizer()
 
             self.train(
@@ -519,18 +524,15 @@ class experiment_ddu(experiment_base):
                 self.device,
             )
             self.test()
+
             self.model.eval()
-            embeddings, labels = self.get_embeddings(
-                self.model,
-                self.train_loader,
-                num_dim=256,
-                dtype=torch.double,
-                device=self.device,
-                storage_device=self.device,
-            )
+            embeddings, labels = self.get_embeddings(num_dim=256, dtype=torch.double)
+
             print("fitting gmm")
             gaussians_model, jitter_eps = self.gmm_fit(
-                embeddings=embeddings, labels=labels, num_classes=self.num_classes
+                embeddings=self.embeddings,
+                labels=self.labels,
+                num_classes=self.num_classes,
             )
             self.gaussians_model = gaussians_model
             if len(self.pool_loader) > 0:
@@ -541,14 +543,7 @@ class experiment_ddu(experiment_base):
                 # class_prob = class_probs(train_loader)
                 pool_predictions = torch.from_numpy(pool_predictions).cuda()
                 print("finished pool prediction")
-                logits, labels = self.gmm_evaluate(
-                    self.model,
-                    self.gaussians_model,
-                    self.pool_loader,
-                    device=self.device,
-                    num_classes=self.num_classes,
-                    storage_device=self.device,
-                )
+                logits, labels = self.gmm_evaluate()
 
                 # logits, labels = (
                 #     logits.detach().to("cpu").numpy(),
@@ -559,8 +554,6 @@ class experiment_ddu(experiment_base):
                 self.sampler(
                     dataset_manager=self.datamanager,
                     number_samples=self.oracle_stepsize,
-                    net=self.model,
-                    predictions=pool_predictions,
                     gmm_logits=logits,
                     class_probs=pool_predictions,
                 )
@@ -592,6 +585,115 @@ class experiment_ddu(experiment_base):
                     log_dict=dict_to_add,
                     ood_ratio=self.OOD_ratio,
                     exp_name=self.exp_name,
+                )
+                self.save_al_logs()
+                # self.save_logs(self.data_manager, self.log_path)
+        self.current_oracle_step += 1
+        self.datamanager.status_manager.to_csv(
+            os.path.join(
+                self.log_path,
+                "status_manager_dir",
+                f"{self.exp_name}-result-statusmanager.csv",
+            )
+        )
+
+    def perform_old_experiment(self):
+        self.datamanager = get_datamanager_old()
+        self.sampler = DDU_sampler_old
+        self.datamanager.create_merged_data(
+            5000,
+            pool_size=self.pool_size,
+            labelled_size=self.labelled_size,
+            OOD_ratio=self.OOD_ratio,
+        )
+        self.current_oracle_step = 0
+        self.train_loss_hist = []
+
+        for oracle_s in range(self.oracle_steps):
+            self.set_model("DDU")  # hardcoded till we add larger models
+            result_tup = create_dataloader_old(
+                self.datamanager,
+                batch_size=self.batch_size,
+                validation_source=self.validation_source,
+                validation_split=0.1,
+            )
+            self.train_loader = result_tup[0]
+            self.test_loader = result_tup[1]
+            self.pool_loader = result_tup[2]
+            self.val_loader = result_tup[3]
+
+            self.create_optimizer()
+
+            self.train(
+                self.train_loader,
+                self.val_loader,
+                self.optimizer,
+                self.criterion,
+                self.device,
+            )
+            self.test()
+
+            self.model.eval()
+            self.embeddings, self.labels = self.get_embeddings(
+                num_dim=256, dtype=torch.double
+            )
+
+            print("fitting gmm")
+            gaussians_model, jitter_eps = self.gmm_fit(
+                embeddings=self.embeddings,
+                labels=self.labels,
+                num_classes=self.num_classes,
+            )
+            self.gaussians_model = gaussians_model
+            if len(self.pool_loader) > 0:
+
+                pool_predictions, pool_labels_list = self.pool_predictions(
+                    self.pool_loader,
+                )
+                # class_prob = class_probs(train_loader)
+                pool_predictions = torch.from_numpy(pool_predictions).cuda()
+                print("finished pool prediction")
+                logits, labels = self.gmm_evaluate()
+
+                # logits, labels = (
+                #     logits.detach().to("cpu").numpy(),
+                #     labels.detach().to("cpu").numpy(),
+                # )
+                print("finished gmm evaluation")
+                # samples from unlabelled pool predictions
+                self.sampler(
+                    dataset_manager=self.datamanager,
+                    number_samples=self.oracle_stepsize,
+                    gmm_logits=logits,
+                    class_probs=pool_predictions,
+                    net=None,
+                    predictions=None,
+                )
+
+                test_predictions, test_labels = self.pool_predictions(self.test_loader)
+
+                test_accuracy = accuracy(test_labels, test_predictions)
+                # f1_score = f1(test_labels, test_predictions)
+
+                dict_to_add = {
+                    "test_loss": self.avg_test_loss,
+                    "train_loss": self.avg_train_loss_hist,
+                    "test_accuracy": test_accuracy,
+                    "train_accuracy": self.avg_train_acc_hist,
+                }
+
+                print(dict_to_add)
+                # if self.metric.lower() == "auroc":
+                #     auroc_score = auroc(self.data_manager, oracle_s)
+
+                #     dict_to_add = {"auroc": auroc_score}
+
+                self.datamanager.add_log(
+                    writer=self.writer,
+                    oracle=self.oracle,
+                    dataset=self.iD,
+                    metric=self.metric,
+                    log_dict=dict_to_add,
                 )
                 self.save_al_logs()
                 # self.save_logs(self.data_manager, self.log_path)

@@ -15,7 +15,7 @@
         "labelled_size": 1000,
         "pool_size": 30000,
         "OOD_ratio": 0.15,
-        "epochs": 10,
+        "epochs": 100,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -27,7 +27,7 @@
         "validation_split": 0.1,
         "validation_source": "test",
         "criterion": "crossentropy",
-        "verbose": 1
+        "verbose": 2
       },
       "exp_settings": [
         {
