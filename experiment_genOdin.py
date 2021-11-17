@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
 
-from robust_active_learning.model.get_model import get_model
+from .model.get_model import get_model
 
 
 # project

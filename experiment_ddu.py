@@ -99,7 +99,7 @@ class experiment_ddu(experiment_base):
         if self.device == "cuda":
             torch.backends.cudnn.benchmark = True
 
-        # self.construct_datamanager()
+        self.construct_datamanager()
 
     # overrides train
     def train(self, train_loader, val_loader, optimizer, criterion, device, **kwargs):
