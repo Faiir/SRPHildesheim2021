@@ -743,7 +743,6 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
 
 def dataset_creator(indices_dict, datasets_dict):
     dataset_list = []
-    print(indices_dict)
     for dataset_name in indices_dict:
         dataset_list.append(
             Subset(datasets_dict[dataset_name], indices_dict[dataset_name])

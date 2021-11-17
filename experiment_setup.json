@@ -3,7 +3,7 @@
     {
       "basic_settings": {
         "oracle_stepsize": 50,
-        "oracle_steps": 3,
+        "oracle_steps": 20,
         "iD": "CIFAR10",
         "OoD": ["FashionMNIST", "MNIST"],
         "grayscale": false,
@@ -12,10 +12,10 @@
           "iD_classes": [],
           "OoD_classes": []
         },
-        "labelled_size": 1000,
-        "pool_size": 30000,
+        "labelled_size": 3000,
+        "pool_size": 23000,
         "OOD_ratio": 0.15,
-        "epochs": 10,
+        "epochs": 100,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -27,7 +27,7 @@
         "validation_split": 0.1,
         "validation_source": "test",
         "criterion": "crossentropy",
-        "verbose": 1
+        "verbose": 2
       },
       "exp_settings": [
         {
