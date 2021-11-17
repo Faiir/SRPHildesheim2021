@@ -315,7 +315,10 @@ class experiment_active_learning(experiment_base):
 
     def create_dataloader(self) -> None:
         result_tup = create_dataloader(
-            self.datamanager, self.batch_size, 0.1, validation_source="train"
+            self.datamanager,
+            self.batch_size,
+            self.validation_split,
+            validation_source=self.validation_source,
         )
         self.train_loader = result_tup[0]
         self.test_loader = result_tup[1]
@@ -355,8 +358,10 @@ class experiment_active_learning(experiment_base):
         self.momentum = self.current_experiment.get("momentum", 0.9)
         self.lr_sheduler = self.current_experiment.get("lr_sheduler", True)
         self.num_classes = self.current_experiment.get("num_classes", 10)
-        self.validation_split = self.current_experiment.get("validation_split", "train")
-        self.validation_source = self.current_experiment.get("validation_source", 0.3)
+        self.validation_split = self.current_experiment.get("validation_split", 0.3)
+        self.validation_source = self.current_experiment.get(
+            "validation_source", "test"
+        )
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")

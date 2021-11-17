@@ -353,7 +353,10 @@ class experiment_gen_odin(experiment_base):
 
     def create_dataloader(self) -> None:
         result_tup = create_dataloader(
-            self.datamanager, self.batch_size, 0.1, validation_source="train"
+            self.datamanager,
+            self.batch_size,
+            self.validation_split,
+            validation_source=self.validation_source,
         )
         self.train_loader = result_tup[0]
         self.test_loader = result_tup[1]
