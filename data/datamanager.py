@@ -23,7 +23,7 @@ import os
 # from ..helpers.memory_tracer import display_top
 import tracemalloc
 
-from collections import Counter
+from collections import Counter, OrderedDict
 import linecache
 import os
 import tracemalloc
@@ -333,7 +333,7 @@ class Data_manager:
 
         self.log = {}
 
-        self.status_manager.sort_values(["dataset_name", "inds"],inplace=True)
+        self.status_manager.sort_values(["dataset_name"],inplace=True)
         self.status_manager.reset_index(drop=True,inplace=True)
 
         if path is not None:
