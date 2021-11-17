@@ -23,7 +23,7 @@ import os
 # from ..helpers.memory_tracer import display_top
 import tracemalloc
 
-from collections import Counter
+from collections import Counter, OrderedDict
 import linecache
 import os
 import tracemalloc
@@ -333,6 +333,9 @@ class Data_manager:
 
         self.log = {}
 
+        self.status_manager.sort_values(["dataset_name"],inplace=True)
+        self.status_manager.reset_index(drop=True,inplace=True)
+
         if path is not None:
             self.status_manager.to_csv(os.path.join(path, "intial_statusmanager.csv"))
         # self.save_experiment_start(csv=save_csv)
@@ -378,12 +381,14 @@ class Data_manager:
         else:
             labelled_mask = self.status_manager[self.status_manager["status"] > 0].index
 
-        inds_dict = (
+        inds_df = (
             self.status_manager.iloc[labelled_mask]
-            .groupby("dataset_name")["inds"]
+            .groupby("dataset_name",sort=False)["inds"]
             .agg(list)
-            .to_dict()
         )
+        inds_dict = OrderedDict()
+        for ii in inds_df.index:
+            inds_dict[ii] = inds_df[ii]
 
         return dataset_creator(inds_dict, self.datasets_dict)
 
@@ -394,13 +399,15 @@ class Data_manager:
         ), "Dataset not initialized. Call create_merged_data()"
 
         labelled_ood_mask = self.status_manager[self.status_manager["status"] < 0].index
-
-        inds_dict = (
+        
+        inds_df = (
             self.status_manager.iloc[labelled_ood_mask]
-            .groupby("dataset_name")["inds"]
+            .groupby("dataset_name",sort=False)["inds"]
             .agg(list)
-            .to_dict()
         )
+        inds_dict = OrderedDict()
+        for ii in inds_df.index:
+            inds_dict[ii] = inds_df[ii]
 
         return dataset_creator(inds_dict, self.datasets_dict)
 
@@ -421,12 +428,15 @@ class Data_manager:
 
         unlabelled_mask = self.status_manager[self.status_manager["status"] == 0].index
 
-        inds_dict = (
+        inds_df = (
             self.status_manager.iloc[unlabelled_mask]
-            .groupby("dataset_name")["inds"]
+            .groupby("dataset_name",sort=False)["inds"]
             .agg(list)
-            .to_dict()
         )
+        inds_dict = OrderedDict()
+        for ii in inds_df.index:
+            inds_dict[ii] = inds_df[ii]
+
 
         return dataset_creator(inds_dict, self.datasets_dict)
 
@@ -741,6 +751,7 @@ def dataset_creator(indices_dict, datasets_dict):
     chained_dataset = ConcatDataset(dataset_list)
 
     return chained_dataset
+
 
 
 # import pandas as pd

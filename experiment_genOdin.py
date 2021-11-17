@@ -290,6 +290,10 @@ class experiment_gen_odin(experiment_base):
             from .helpers.sampler import uncertainity_sampling_least_confident
 
             self.sampler = uncertainity_sampling_least_confident
+        elif sampler == "LOOC":
+            from .helpers.sampler import LOOC_highest_entropy
+
+            self.sampler = LOOC_highest_entropy
         else:
             raise NotImplementedError
 
