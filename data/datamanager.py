@@ -80,6 +80,7 @@ class Data_manager:
         OoD_ratio,
         test_iD_size=None,
         subclass={"do_subclass": False},
+        grayscale=False,
     ):
 
         self.iD_datasets = iD_datasets
@@ -88,13 +89,13 @@ class Data_manager:
         self.OoD_extra_class = False
         self.labelled_size = labelled_size
         self.unlabelled_size = pool_size
-
+        self.grayscale = grayscale
         assert (
             len(self.iD_datasets) == 1
         ), f"Only one dataset can be in-Dist, found {self.iD_datasets}"
 
         list_of_datasets = self.iD_datasets + self.OoD_datasets
-        self.datasets_dict = data_loader(list_of_datasets)
+        self.datasets_dict = data_loader(list_of_datasets, grayscale=self.grayscale)
 
         if subclass["do_subclass"]:
             for c, dataset in enumerate(self.iD_datasets):
@@ -333,8 +334,8 @@ class Data_manager:
 
         self.log = {}
 
-        self.status_manager.sort_values(["dataset_name"],inplace=True)
-        self.status_manager.reset_index(drop=True,inplace=True)
+        self.status_manager.sort_values(["dataset_name"], inplace=True)
+        self.status_manager.reset_index(drop=True, inplace=True)
 
         if path is not None:
             self.status_manager.to_csv(os.path.join(path, "intial_statusmanager.csv"))
@@ -383,7 +384,7 @@ class Data_manager:
 
         inds_df = (
             self.status_manager.iloc[labelled_mask]
-            .groupby("dataset_name",sort=False)["inds"]
+            .groupby("dataset_name", sort=False)["inds"]
             .agg(list)
         )
         inds_dict = OrderedDict()
@@ -399,10 +400,10 @@ class Data_manager:
         ), "Dataset not initialized. Call create_merged_data()"
 
         labelled_ood_mask = self.status_manager[self.status_manager["status"] < 0].index
-        
+
         inds_df = (
             self.status_manager.iloc[labelled_ood_mask]
-            .groupby("dataset_name",sort=False)["inds"]
+            .groupby("dataset_name", sort=False)["inds"]
             .agg(list)
         )
         inds_dict = OrderedDict()
@@ -430,13 +431,12 @@ class Data_manager:
 
         inds_df = (
             self.status_manager.iloc[unlabelled_mask]
-            .groupby("dataset_name",sort=False)["inds"]
+            .groupby("dataset_name", sort=False)["inds"]
             .agg(list)
         )
         inds_dict = OrderedDict()
         for ii in inds_df.index:
             inds_dict[ii] = inds_df[ii]
-
 
         return dataset_creator(inds_dict, self.datasets_dict)
 
@@ -751,7 +751,6 @@ def dataset_creator(indices_dict, datasets_dict):
     chained_dataset = ConcatDataset(dataset_list)
 
     return chained_dataset
-
 
 
 # import pandas as pd

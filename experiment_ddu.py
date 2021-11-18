@@ -52,8 +52,6 @@ def centered_cov_torch(x):
     return res
 
 
-
-
 DOUBLE_INFO = torch.finfo(torch.double)
 JITTERS = [0, DOUBLE_INFO.tiny] + [10 ** exp for exp in range(-308, 0, 1)]
 
@@ -492,16 +490,18 @@ class experiment_ddu(experiment_base):
         self.set_sampler()
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
 
- 
     def class_probs(self, data_loader):
         num_classes = 10
         class_n = len(data_loader.dataset)
         class_count = torch.zeros(num_classes)
         for data, label in data_loader:
-            class_count += torch.Tensor([torch.sum(label.to(self.device) == c) for c in range(num_classes)])
+            class_count += torch.Tensor(
+                [torch.sum(label.to(self.device) == c) for c in range(num_classes)]
+            )
 
         class_prob = class_count / class_n
         return class_prob
+
     # overrides perform_experiment
     def perform_experiment(self):
         self.train_loss_hist = []
@@ -604,7 +604,6 @@ class experiment_ddu(experiment_base):
                 f"{self.exp_name}-result-statusmanager.csv",
             )
         )
-
 
     def perform_old_experiment(self):
         self.datamanager = get_datamanager_old()

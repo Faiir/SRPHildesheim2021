@@ -38,15 +38,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0
-        },
-        {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-015",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false
         }
-
       ]
     }
   ]
