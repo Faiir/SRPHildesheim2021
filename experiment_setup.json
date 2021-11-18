@@ -15,7 +15,7 @@
         "labelled_size": 1000,
         "pool_size": 30000,
         "OOD_ratio": 0.15,
-        "epochs": 200,
+        "epochs": 100,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -40,67 +40,13 @@
           "temp": 1.0
         },
         {
-          "exp_type": "looc",
-          "exp_name": "funny_name_here",
-          "similarity": "E",
-          "scaling_factor": "R",
-          "oracle": "LOOC",
-          "bugged_and_working": true,
-          "do_pertubed_images": true,
-          "model": "LOOC",
-          "plots": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": true
-          }
-        },
-        {
-          "exp_type": "genodin",
-          "exp_name": "funny_name_here",
-          "similarity": "C",
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-015",
           "oracle": "highest-entropy",
-          "do_pertubed_images": true,
-          "scaling_factor": "R",
-          "model": "GenOdin",
-          "bugged_and_working": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": true
-          }
-        },
-        {
-          "exp_type": "looc",
-          "exp_name": "funny_name_here",
-          "similarity": "E",
-          "scaling_factor": "",
-          "oracle": "highest-entropy",
-          "bugged_and_working": true,
-          "do_pertubed_images": true,
-          "model": "LOOC",
-          "plots": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": true
-          }
-        },
-        {
-          "exp_type": "genodin",
-          "exp_name": "funny_name_here",
-          "similarity": "C",
-          "oracle": "LOOC",
-          "do_pertubed_images": true,
-          "scaling_factor": "",
-          "model": "GenOdin",
-          "bugged_and_working": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": true
-          }
+          "model": "gram_resnet",
+          "plots": false
         }
+
       ]
     }
   ]

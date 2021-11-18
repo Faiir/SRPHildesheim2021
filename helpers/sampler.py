@@ -200,8 +200,6 @@ def gen0din_sampler(dataset_manager, number_samples, net, predictions=None):
 
 
 def compute_density(logits, class_probs):
-    logits.cuda()
-    class_probs.cuda()
     return torch.sum((torch.exp(logits) * class_probs), dim=1)
 
 
