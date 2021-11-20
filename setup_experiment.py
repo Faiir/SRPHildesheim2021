@@ -19,6 +19,7 @@ from robust_active_learning.experiment_active_learning import experiment_active_
 from robust_active_learning.experiment_ddu import experiment_ddu
 from robust_active_learning.experiment_genOdin import experiment_gen_odin
 from robust_active_learning.experiment_gram import experiment_gram
+from robust_active_learning.experiment_extraclass import experiment_extraclass
 from robust_active_learning.helpers.final_train import final_traing
 
 # import shutil
@@ -59,7 +60,14 @@ def start_experiment(config, log_path):
         basic_settings = experiment["basic_settings"]
 
         for exp_setting in experiment["exp_settings"]:
+            if exp_setting.get('perform_experiment',True):
+                print(f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is being performed.\n\n')
+            else:
+                print(f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is not being performed.\n\n')
+                continue
+
             exp_type = exp_setting["exp_type"]
+
 
             if exp_type == "baseline":
                 current_exp = experiment_active_learning(
@@ -71,14 +79,13 @@ def start_experiment(config, log_path):
                     basic_settings, exp_setting, log_path, writer
                 )
             elif exp_type == "extra_class":
-                current_exp = experiment_active_learning(
+                current_exp = experiment_extraclass(
                     basic_settings, exp_setting, log_path, writer
                 )
             elif exp_type == "gram":
                 current_exp = experiment_gram(
                     basic_settings, exp_setting, log_path, writer
                 )
-
             elif exp_type == "looc":
                 current_exp = experiment_gen_odin(
                     basic_settings, exp_setting, log_path, writer
@@ -94,7 +101,7 @@ def start_experiment(config, log_path):
 
             current_exp.perform_experiment()
             del current_exp
-            gc.collect
+            gc.collect()
     final_traing(log_path, config)
 
 

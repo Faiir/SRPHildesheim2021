@@ -285,66 +285,43 @@ class experiment_extraclass(experiment_base):
             from .helpers.sampler import LOOC_highest_entropy
 
             self.sampler = LOOC_highest_entropy
+        elif sampler == "extra_class_entropy":
+            from .helpers.sampler import extra_class_sampler
+
+            self.sampler = extra_class_sampler(self.extra_class_thresholding)
         else:
             raise NotImplementedError
 
+
+    def create_plots(self):
+        pass
+        
     # overrides set_model
     def set_model(self, model_name) -> None:
-        if model_name == "GenOdin" or model_name == "LOOC":
-            self.model = get_model(
+        self.model = get_model(
                 model_name,
                 num_classes=self.num_classes,
-                similarity=self.similarity,
+                similarity=None,
             )
-        else:
-            raise NotImplementedError
         self.model.to(self.device)
 
-    # overrides create_plots
-    def create_plots(self, plot_name, pret_preds, gs, hs, targets, oracle_step) -> None:
-        if plot_name == "tsne":
-            tsne_plot = get_tsne_plot(
-                self.data_manager, self.iD, self.model, self.device
-            )
-            self.writer.add_figure(
-                tag=f"{self.metric}/{self.iD}/{self.experiment_settings.get('oracles', 'oracle')}/tsne",
-                figure=tsne_plot,
-            )
-        elif plot_name == "density":
-            density_plot(pret_preds, gs, hs, targets, self.writer, oracle_step)
-        else:
-            raise NotImplementedError  # for layer analsis i guess -> maybe split into seperate functions
 
     def pool_predictions(
         self, pool_loader
     ) -> Union[np.ndarray, np.ndarray, np.ndarray]:
         yhat = []
         labels_list = []
-        weighting_factor_list = []
         for (data, labels) in pool_loader:
-            if self.bugged_and_working:
-                tuple_data = self.model(
-                    data.to(self.device).float(),
-                    get_test_model=True,
-                    apply_softmax=False,
+            pred = self.model(
+                data.to(self.device).float(),
+                apply_softmax=True,
                 )
-            else:
-                tuple_data = self.model(
-                    data.to(self.device).float(),
-                    get_test_model=True,
-                    apply_softmax=True,
-                )
-
-            pred = tuple_data[0]
-            weighting_factor = tuple_data[1]
-            weighting_factor_list.append(weighting_factor.to("cpu").detach().numpy())
 
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
         predictions = np.concatenate(yhat)
         labels_list = np.concatenate(labels_list)
-        weighting_factor_list = np.concatenate(weighting_factor_list)
-        return predictions, labels_list, weighting_factor_list
+        return predictions, labels_list
 
     def create_dataloader(self) -> None:
         result_tup = create_dataloader(
@@ -387,71 +364,6 @@ class experiment_extraclass(experiment_base):
     def create_criterion(self) -> None:
         self.criterion = nn.CrossEntropyLoss()
 
-    def pertube_image(self, pool_loader, val_loader):
-        gs = []
-        hs = []
-        pert_preds = []
-        targets = []
-        device = self.device
-
-        epsi_list = [0.0025, 0.005, 0.01, 0.02, 0.04, 0.08]
-        best_eps = 0
-        scores = []
-        self.model.eval()
-        for eps in tqdm(epsi_list):
-            preds = 0
-            for batch_idx, (data, target) in enumerate(val_loader):
-                self.model.zero_grad(set_to_none=True)
-                backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
-                data, target = data.to(device).float(), target.to(device).long()
-                data.requires_grad = True
-                output, g, h = self.model(data, get_test_model=True, apply_softmax=True)
-                pred, _ = output.max(dim=-1, keepdim=True)
-
-                pred.backward(backward_tensor)
-                with torch.no_grad():
-                    del output, target, g, h, backward_tensor
-                    pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad)
-                    del data
-                    gc.collect()
-
-                    yhat = self.model(pert_imgage, apply_softmax=True)
-                    pred = torch.max(yhat, dim=-1, keepdim=False, out=None).values
-                    preds += torch.sum(pred)
-                    del pred, yhat, pert_imgage
-                    gc.collect()
-            scores.append(preds.detach().cpu().numpy())
-
-        torch.cuda.empty_cache()
-        self.model.zero_grad(set_to_none=True)
-        eps = epsi_list[np.argmax(scores)]
-        del scores
-
-        targets = []
-        for batch_idx, (data, target) in enumerate(pool_loader):
-            self.model.zero_grad(set_to_none=True)
-            backward_tensor = torch.ones((data.size(0), 1)).float().to(device)
-            data, target = data.to(device).float(), target.to(device).long()
-            data.requires_grad = True
-            output, g, h = self.model(data, get_test_model=True, apply_softmax=True)
-            pred, _ = output.max(dim=-1, keepdim=True)
-
-            pred.backward(backward_tensor)
-            pert_imgage = fgsm_attack(data, epsilon=eps, data_grad=data.grad.data)
-            targets.append(target.to("cpu").numpy().astype(np.float16))
-            del data, output, target, g, h
-
-            with torch.no_grad():
-                pert_pred, g, h = self.model(
-                    pert_imgage, get_test_model=True, apply_softmax=True
-                )
-                gs.append(g.detach().to("cpu").numpy().astype(np.float16))
-                hs.append(h.detach().to("cpu").numpy().astype(np.float16))
-                pert_preds.append(pert_pred.detach().to("cpu").numpy())
-            del pert_pred, g, h
-            gc.collect()
-
-        return pert_preds, gs, hs, targets
 
     # overrides load_settings
     def load_settings(self) -> None:
@@ -474,47 +386,17 @@ class experiment_extraclass(experiment_base):
         self.nesterov = self.current_experiment.get("nesterov", False)
         self.momentum = self.current_experiment.get("momentum", 0.9)
         self.lr_sheduler = self.current_experiment.get("lr_sheduler", True)
-        self.num_classes = self.current_experiment.get("num_classes", 10)
+        self.num_classes = self.current_experiment.get("num_classes")+1
         self.validation_split = self.current_experiment.get("validation_split", "train")
         self.validation_source = self.current_experiment.get("validation_source", 0.3)
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
-        # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")
-        # logging
+
         self.verbose = self.current_experiment.get("verbose", 1)
-        # self.do_desity_plot = self.current_experiment.get("do_desity_plot", False)
-        self.plotsettings = self.current_experiment.get(
-            "plotsettings", {"do_plot": True, "density_plot": True, "layer_plot": False}
-        )
-        if self.plotsettings["do_plot"]:
-            if self.plotsettings["density_plot"]:
-                self.do_desity_plot = True
-            if self.plotsettings["layer_plot"]:
-                self.layer_plot = True
-        else:
-            self.do_desity_plot = False
-            self.layer_plot = False
-        # _create_log_path_al(self.OOD_ratio)
-        self.similarity = self.current_experiment.get("similarity", "E")
-        scaling_factor = self.current_experiment.get("scaling_factor", "G")
-        if scaling_factor != "G":
-            self.similarity += "R"
 
-        self.set_sampler(self.current_experiment.get("oracles", "highest-entropy"))
-
-        self.bugged_and_working = self.current_experiment.get(
-            "bugged_and_working", None
-        )
-        print("loaded settings")
-        if self.current_experiment.get("bugged_and_working", None) is None:
-            bugged_and_working = self.current_experiment.get("bugged_and_working", True)
-            print(
-                f"INFO ---- flag bugged_and_working is not set. Using default value of {bugged_and_working}"
-            )
-        else:
-            bugged_and_working = self.current_experiment["bugged_and_working"]
-            print(f"INFO ---- flag bugged_and_working is set to {bugged_and_working}")
+        self.extra_class_thresholding = self.current_experiment.get("extra_class_thresholding", "hard")
+        self.set_sampler(self.current_experiment.get("oracles", "extra_class_entropy"))
 
     # overrides perform_experiment
     def perform_experiment(self):
@@ -536,8 +418,7 @@ class experiment_extraclass(experiment_base):
         self.datamanager.OoD_extra_class = True
 
         for oracle_s in range(self.oracle_steps):
-            print(self.current_experiment.get("model", "GenOdin"))
-            self.set_model(self.current_experiment.get("model", "GenOdin"))
+            self.set_model(self.current_experiment.get("model", "base"))
 
             self.create_dataloader()
             self.create_optimizer()
@@ -556,30 +437,16 @@ class experiment_extraclass(experiment_base):
                 (
                     pool_predictions,
                     pool_labels_list,
-                    pool_weighting_list,
                 ) = self.pool_predictions(self.pool_loader)
 
                 self.sampler(
                     self.datamanager,
                     number_samples=self.oracle_stepsize,
                     net=self.model,
-                    predictions=pool_predictions,
-                    weights=pool_weighting_list,
+                    predictions=pool_predictions
                 )
 
-                if self.do_desity_plot:
-                    pert_preds, gs, hs, targets = self.pertube_image(
-                        self.pool_loader,
-                        self.val_loader,
-                    )
-
-                    self.create_plots("density", pert_preds, gs, hs, targets, oracle_s)
-                    print("created density plots")
-                (
-                    test_predictions,
-                    test_labels,
-                    weighting_factor_list,
-                ) = self.pool_predictions(self.test_loader)
+                test_predictions, test_labels = self.pool_predictions(self.test_loader)
 
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)
