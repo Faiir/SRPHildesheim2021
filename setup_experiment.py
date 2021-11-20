@@ -20,6 +20,7 @@ from robust_active_learning.experiment_ddu import experiment_ddu
 from robust_active_learning.experiment_genOdin import experiment_gen_odin
 from robust_active_learning.experiment_gram import experiment_gram
 from robust_active_learning.experiment_extraclass import experiment_extraclass
+from robust_active_learning.experiment_without_OoD import experiment_without_OoD
 from robust_active_learning.helpers.final_train import final_traing
 
 # import shutil
@@ -70,7 +71,7 @@ def start_experiment(config, log_path):
 
 
             if exp_type == "baseline":
-                current_exp = experiment_active_learning(
+                current_exp = experiment_without_OoD(
                     basic_settings, exp_setting, log_path, writer
                 )
 

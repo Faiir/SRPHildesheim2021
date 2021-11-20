@@ -440,6 +440,25 @@ class Data_manager:
 
         return dataset_creator(inds_dict, self.datasets_dict)
 
+    def get_unlabelled_iD_pool_dataset(self):
+        """get_unlabelled_pool_data [returns the state of the unlabelled pool]"""
+        assert (
+            self.iter is not None
+        ), "Dataset not initialized. Call create_merged_data()"
+
+        unlabelled_mask = self.status_manager[(self.status_manager["status"] == 0) & (self.status_manager["source"] == 1)].index
+
+        inds_df = (
+            self.status_manager.iloc[unlabelled_mask]
+            .groupby("dataset_name", sort=False)["inds"]
+            .agg(list)
+        )
+        inds_dict = OrderedDict()
+        for ii in inds_df.index:
+            inds_dict[ii] = inds_df[ii]
+
+        return dataset_creator(inds_dict, self.datasets_dict)
+
     def add_log(
         self, writer, oracle, dataset, metric, ood_ratio, exp_name, log_dict=None
     ):

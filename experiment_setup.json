@@ -41,6 +41,14 @@
           "perform_experiment": false
         },
         {
+          "exp_type": "baseline",
+          "exp_name": "funny_name_here",
+          "oracle": "baseline",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
           "exp_type": "extra_class",
           "exp_name": "extra_class_hard",
           "extra_class_thresholding": "hard",
@@ -62,8 +70,8 @@
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
-          "perform_experiment": false
-        },
+          "perform_experiment": true
+        }
       ]
     }
   ]
