@@ -15,7 +15,7 @@
         "labelled_size": 1000,
         "pool_size": 2000,
         "OOD_ratio": 0.5,
-        "epochs": 100,
+        "epochs": 50,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
