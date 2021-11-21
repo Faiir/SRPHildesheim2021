@@ -375,6 +375,8 @@ class Detector:
             default_max_inner = []
             for jj, _ in enumerate(upper_list):
                 kk = 0
+                val_min = None
+                val_max = None
                 for PRED in self.classes:
                     if len(self.mins[PRED]) == 0:
                         pass
@@ -386,8 +388,13 @@ class Detector:
                             val_min += self.mins[PRED][ii][jj]
                             val_max += self.maxs[PRED][ii][jj]
                         kk += 1
-
+                
+                if val_min is None:
+                    val_min = torch.ones_like(self.mins[PRED][ii][jj])
                 default_min_inner.append(val_min / (kk + 1))
+
+                if val_max is None:
+                    val_max = torch.ones_like(self.maxs[PRED][ii][jj])
                 default_max_inner.append(val_max / (kk + 1))
 
             default_min.append(default_min_inner)
