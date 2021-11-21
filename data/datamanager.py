@@ -80,6 +80,7 @@ class Data_manager:
         OoD_ratio,
         test_iD_size=None,
         subclass={"do_subclass": False},
+        grayscale=False,
     ):
 
         self.iD_datasets = iD_datasets
@@ -88,13 +89,13 @@ class Data_manager:
         self.OoD_extra_class = False
         self.labelled_size = labelled_size
         self.unlabelled_size = pool_size
-
+        self.grayscale = grayscale
         assert (
             len(self.iD_datasets) == 1
         ), f"Only one dataset can be in-Dist, found {self.iD_datasets}"
 
         list_of_datasets = self.iD_datasets + self.OoD_datasets
-        self.datasets_dict = data_loader(list_of_datasets)
+        self.datasets_dict = data_loader(list_of_datasets, grayscale=self.grayscale)
 
         if subclass["do_subclass"]:
             for c, dataset in enumerate(self.iD_datasets):
@@ -115,19 +116,31 @@ class Data_manager:
                     if val in cls
                 ]
 
-                self.datasets_dict[dataset + "_train"].data = np.compress(
-                    idx_train, self.datasets_dict[dataset + "_train"].data, axis=0
+                self.datasets_dict[dataset + "_train"].data = np.take(
+                    self.datasets_dict[dataset + "_train"].data, idx_train, axis=0
                 )
-                self.datasets_dict[dataset + "_train"].targets = np.compress(
-                    idx_train, self.datasets_dict[dataset + "_train"].targets, axis=0
+                self.datasets_dict[dataset + "_train"].targets = np.take(
+                    self.datasets_dict[dataset + "_train"].targets, idx_train, axis=0
+                )
+
+                self.datasets_dict[dataset + "_test"].data = np.take(
+                    self.datasets_dict[dataset + "_test"].data, idx_test, axis=0
+                )
+                self.datasets_dict[dataset + "_test"].targets = np.take(
+                    self.datasets_dict[dataset + "_test"].targets, idx_test, axis=0
                 ).tolist()
 
-                self.datasets_dict[dataset + "_test"].data = np.compress(
-                    idx_test, self.datasets_dict[dataset + "_test"].data, axis=0
-                )
-                self.datasets_dict[dataset + "_test"].targets = np.compress(
-                    idx_test, self.datasets_dict[dataset + "_test"].targets, axis=0
-                ).tolist()
+                new_labels = [subclass["iD_classes"].index(i) for i in cls]
+
+                self.datasets_dict[dataset + "_train"].targets = [
+                    new_labels[subclass["iD_classes"].index(i)]
+                    for i in self.datasets_dict[dataset + "_train"].targets
+                ]
+
+                self.datasets_dict[dataset + "_test"].targets = [
+                    new_labels[subclass["iD_classes"].index(i)]
+                    for i in self.datasets_dict[dataset + "_test"].targets
+                ]
 
             for c, dataset in enumerate(self.OoD_datasets):
                 cls = set(subclass["OoD_classes"])
@@ -146,19 +159,30 @@ class Data_manager:
                     if val in cls
                 ]
 
-                self.datasets_dict[dataset + "_train"].data = np.compress(
-                    idx_train, self.datasets_dict[dataset + "_train"].data, axis=0
+                self.datasets_dict[dataset + "_train"].data = np.take(
+                    self.datasets_dict[dataset + "_train"].data, idx_train, axis=0
                 )
-                self.datasets_dict[dataset + "_train"].targets = np.compress(
-                    idx_train, self.datasets_dict[dataset + "_train"].targets, axis=0
+                self.datasets_dict[dataset + "_train"].targets = np.take(
+                    self.datasets_dict[dataset + "_train"].targets, idx_train, axis=0
+                )
+
+                self.datasets_dict[dataset + "_test"].data = np.take(
+                    self.datasets_dict[dataset + "_test"].data, idx_test, axis=0
+                )
+                self.datasets_dict[dataset + "_test"].targets = np.take(
+                    self.datasets_dict[dataset + "_test"].targets, idx_test, axis=0
                 ).tolist()
 
-                self.datasets_dict[dataset + "_test"].data = np.compress(
-                    idx_test, self.datasets_dict[dataset + "_test"].data, axis=0
-                )
-                self.datasets_dict[dataset + "_test"].targets = np.compress(
-                    idx_test, self.datasets_dict[dataset + "_test"].targets, axis=0
-                ).tolist()
+                new_labels = [subclass["OoD_classes"].index(i) for i in cls]
+                self.datasets_dict[dataset + "_train"].targets = [
+                    new_labels[subclass["OoD_classes"].index(i)]
+                    for i in self.datasets_dict[dataset + "_train"].targets
+                ]
+
+                self.datasets_dict[dataset + "_test"].targets = [
+                    new_labels[subclass["OoD_classes"].index(i)]
+                    for i in self.datasets_dict[dataset + "_test"].targets
+                ]
 
         self.iD_samples_size = 0
         for ii in self.iD_datasets:
@@ -333,8 +357,8 @@ class Data_manager:
 
         self.log = {}
 
-        self.status_manager.sort_values(["dataset_name"],inplace=True)
-        self.status_manager.reset_index(drop=True,inplace=True)
+        self.status_manager.sort_values(["dataset_name"], inplace=True)
+        self.status_manager.reset_index(drop=True, inplace=True)
 
         if path is not None:
             self.status_manager.to_csv(os.path.join(path, "intial_statusmanager.csv"))
@@ -366,6 +390,18 @@ class Data_manager:
             f"Restored following config \nTotal_overall_examples: {toe} \nTotal_base_examples: {tbe} \nTotal_OOD_examples: {toode}\n Initial_examples_labelled: {iel}   "
         )
 
+    def get_pool_source_labels(self):
+        """
+        Returns an binary array of source labels for pool datasamples.
+        0: OoD
+        1: iD
+        """
+        unlabelled_mask = self.status_manager[self.status_manager["status"] == 0].index
+        return np.array(
+            (self.status_manager.source.iloc[unlabelled_mask].values + 1) / 2,
+            dtype=np.bool,
+        )
+
     def get_train_dataset(self):
         """get_train_data [returns the current state of the trainingspool]"""
         ## Returns all data that has been labelled so far
@@ -383,7 +419,7 @@ class Data_manager:
 
         inds_df = (
             self.status_manager.iloc[labelled_mask]
-            .groupby("dataset_name",sort=False)["inds"]
+            .groupby("dataset_name", sort=False)["inds"]
             .agg(list)
         )
         inds_dict = OrderedDict()
@@ -399,10 +435,10 @@ class Data_manager:
         ), "Dataset not initialized. Call create_merged_data()"
 
         labelled_ood_mask = self.status_manager[self.status_manager["status"] < 0].index
-        
+
         inds_df = (
             self.status_manager.iloc[labelled_ood_mask]
-            .groupby("dataset_name",sort=False)["inds"]
+            .groupby("dataset_name", sort=False)["inds"]
             .agg(list)
         )
         inds_dict = OrderedDict()
@@ -430,13 +466,33 @@ class Data_manager:
 
         inds_df = (
             self.status_manager.iloc[unlabelled_mask]
-            .groupby("dataset_name",sort=False)["inds"]
+            .groupby("dataset_name", sort=False)["inds"]
             .agg(list)
         )
         inds_dict = OrderedDict()
         for ii in inds_df.index:
             inds_dict[ii] = inds_df[ii]
 
+        return dataset_creator(inds_dict, self.datasets_dict)
+
+    def get_unlabelled_iD_pool_dataset(self):
+        """get_unlabelled_pool_data [returns the state of the unlabelled pool]"""
+        assert (
+            self.iter is not None
+        ), "Dataset not initialized. Call create_merged_data()"
+
+        unlabelled_mask = self.status_manager[
+            (self.status_manager["status"] == 0) & (self.status_manager["source"] == 1)
+        ].index
+
+        inds_df = (
+            self.status_manager.iloc[unlabelled_mask]
+            .groupby("dataset_name", sort=False)["inds"]
+            .agg(list)
+        )
+        inds_dict = OrderedDict()
+        for ii in inds_df.index:
+            inds_dict[ii] = inds_df[ii]
 
         return dataset_creator(inds_dict, self.datasets_dict)
 
@@ -751,7 +807,6 @@ def dataset_creator(indices_dict, datasets_dict):
     chained_dataset = ConcatDataset(dataset_list)
 
     return chained_dataset
-
 
 
 # import pandas as pd

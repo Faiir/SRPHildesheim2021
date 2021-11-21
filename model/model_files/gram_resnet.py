@@ -44,7 +44,7 @@ class DataHandler_For_Arrays(Dataset):
         return len(self.X)
 
 
-def get_gram_resnet():
+def get_gram_resnet(num_classes):
     def conv3x3(in_planes, out_planes, stride=1):
         return nn.Conv2d(
             in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
@@ -221,10 +221,10 @@ def get_gram_resnet():
                         g_p = G_p(feat_L, P)
 
                         dev += (
-                            F.relu(mins[L][p] - g_p) / torch.abs(mins[L][p] + 10 ** -6)
+                            F.relu(mins[L][p] - g_p) / (torch.abs(mins[L][p]) + 1)
                         ).sum(dim=1, keepdim=True)
                         dev += (
-                            F.relu(g_p - maxs[L][p]) / torch.abs(maxs[L][p] + 10 ** -6)
+                            F.relu(g_p - maxs[L][p]) / (torch.abs(maxs[L][p]) + 1)
                         ).sum(dim=1, keepdim=True)
                     batch_deviations.append(dev.cpu().detach().numpy())
                 batch_deviations = np.concatenate(batch_deviations, axis=1)
@@ -234,7 +234,7 @@ def get_gram_resnet():
 
             return deviations
 
-    torch_model = ResNet(BasicBlock, [3, 3, 3], num_classes=10)
+    torch_model = ResNet(BasicBlock, [3, 3, 3], num_classes=num_classes)
     return torch_model
 
 
@@ -332,6 +332,8 @@ class Detector:
             self.mins[PRED] = cpu(mins)
             self.maxs[PRED] = cpu(maxs)
             torch.cuda.empty_cache()
+       
+        
 
     def compute_deviations(self, torch_model, data_loader, POWERS=[10]):
         assert len(self.mins) > 0, "Run compute_min_max first to generate mins and maxs"
@@ -362,56 +364,20 @@ class Detector:
 
         all_deviations = None
         indices_list = None
+        test_confs = np.array(test_confs)
 
         for PRED in self.classes:
-            if len(self.mins[PRED]) > 0:
-                list_of_mini = self.mins[PRED]
-                break
-
-        default_min = []
-        default_max = []
-        for ii, upper_list in enumerate(list_of_mini):
-            default_min_inner = []
-            default_max_inner = []
-            for jj, _ in enumerate(upper_list):
-                kk = 0
-                for PRED in self.classes:
-                    if len(self.mins[PRED]) == 0:
-                        pass
-                    else:
-                        if kk == 0:
-                            val_min = self.mins[PRED][ii][jj]
-                            val_max = self.maxs[PRED][ii][jj]
-                        else:
-                            val_min += self.mins[PRED][ii][jj]
-                            val_max += self.maxs[PRED][ii][jj]
-                        kk += 1
-
-                default_min_inner.append(val_min / (kk + 1))
-                default_max_inner.append(val_max / (kk + 1))
-
-            default_min.append(default_min_inner)
-            default_max.append(default_max_inner)
-
-        self.mins["default"] = default_min
-        self.maxs["default"] = default_max
-
-        for PRED in self.classes:
-            test_indices = np.where(np.array(test_preds) == PRED)[0]
-
+            test_indices = np.where(np.array(test_preds) == PRED)[0]            
             if len(test_indices) == 0:
                 continue
             else:
                 if indices_list is None:
-                    indices_list = indices_list
+                    indices_list = test_indices
                 else:
                     indices_list = np.concatenate([indices_list, test_indices], axis=0)
 
             test_PRED = [data[i][0] for i in test_indices]
             test_confs_PRED = np.array([test_confs[i] for i in test_indices])
-
-            if len(self.mins[PRED]) == 0:
-                PRED = "default"
 
             if device == "cuda":
                 mins = cuda(self.mins[PRED])
@@ -424,7 +390,7 @@ class Detector:
                 torch_model.get_deviations(
                     test_PRED, power=POWERS, mins=mins, maxs=maxs
                 )
-                / test_confs_PRED[:, np.newaxis]
+                / (+test_confs_PRED[:, np.newaxis])
             )
 
             if device != "cuda":

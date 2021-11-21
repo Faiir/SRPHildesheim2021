@@ -8,6 +8,7 @@ import json
 import numpy as np
 from numpy.random import sample
 import pandas as pd
+from scipy.sparse import construct
 from torch.utils.tensorboard.writer import SummaryWriter
 from tqdm import tqdm
 
@@ -17,12 +18,12 @@ import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
 
-from robust_active_learning.model.get_model import get_model
-from robust_active_learning.model.model_files.gram_resnet import Detector
+from .model.get_model import get_model
 
 
 # project
 from .experiment_base import experiment_base
+from .model.model_files.small_resnet_original import resnet20
 from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot, density_plot
 from .data.datahandler_for_array import create_dataloader
@@ -62,7 +63,8 @@ def _create_log_path_al(log_dir: str = ".", OOD_ratio: float = 0.0) -> None:
     return log_path
 
 
-class experiment_gram(experiment_base):
+
+class experiment_extraclass(experiment_base):
     def __init__(
         self,
         basic_settings: Dict,
@@ -83,6 +85,7 @@ class experiment_gram(experiment_base):
             torch.backends.cudnn.benchmark = True
 
         self.construct_datamanager()
+
 
     # overrides train
     def train(self, train_loader, val_loader, optimizer, criterion, device, **kwargs):
@@ -278,46 +281,44 @@ class experiment_gram(experiment_base):
             from .helpers.sampler import uncertainity_sampling_least_confident
 
             self.sampler = uncertainity_sampling_least_confident
+        elif sampler == "LOOC":
+            from .helpers.sampler import LOOC_highest_entropy
+
+            self.sampler = LOOC_highest_entropy
+        elif sampler == "extra_class_entropy":
+            from .helpers.sampler import extra_class_sampler
+
+            self.sampler = extra_class_sampler(self.extra_class_thresholding)
         else:
             raise NotImplementedError
 
+
+    def create_plots(self):
+        pass
+        
     # overrides set_model
     def set_model(self, model_name) -> None:
-        if model_name == "gram_resnet":
-            self.model = get_model(model_name,
-                                    num_classes=self.num_classes)
-        else:
-            raise NotImplementedError
+        self.model = get_model(
+                model_name,
+                num_classes=self.num_classes,
+                similarity=None,
+            )
         self.model.to(self.device)
 
-    # overrides create_plots
-    def create_plots(self, plot_name, pret_preds, gs, hs, targets, oracle_step) -> None:
-        raise NotImplementedError
-        if plot_name == "tsne":
-            tsne_plot = get_tsne_plot(
-                self.data_manager, self.iD, self.model, self.device
-            )
-            self.writer.add_figure(
-                tag=f"{self.metric}/{self.iD}/{self.experiment_settings.get('oracles', 'oracle')}/tsne",
-                figure=tsne_plot,
-            )
-        elif plot_name == "density":
-            density_plot(pret_preds, gs, hs, targets, self.writer, oracle_step)
-        else:
-            raise NotImplementedError  # for layer analsis i guess -> maybe split into seperate functions
 
     def pool_predictions(
         self, pool_loader
     ) -> Union[np.ndarray, np.ndarray, np.ndarray]:
         yhat = []
         labels_list = []
-        weighting_factor_list = []
         for (data, labels) in pool_loader:
-            pred = self.model(data.to(self.device).float(), apply_softmax=True)
+            pred = self.model(
+                data.to(self.device).float(),
+                apply_softmax=True,
+                )
 
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
-
         predictions = np.concatenate(yhat)
         labels_list = np.concatenate(labels_list)
         return predictions, labels_list
@@ -335,8 +336,25 @@ class experiment_gram(experiment_base):
         self.val_loader = result_tup[3]
 
     def create_optimizer(self) -> None:
+        base_params = []
+        gen_odin_params = []
+        for name, param in self.model.named_parameters():
+            if name not in [
+                "h_func.bias",
+                "h_func.weights",
+                "scaling_factor",
+            ]:
+                base_params.append(param)  # can't do the name tupel
+            else:
+                if self.verbose >= 2:
+                    print("added name: ", name)
+                gen_odin_params.append(param)
+
         self.optimizer = optim.SGD(
-            self.model.parameters(),
+            [
+                {"params": base_params},
+                {"params": gen_odin_params, "weight_decay": 0.0},
+            ],
             weight_decay=self.weight_decay,
             lr=self.lr,
             momentum=self.momentum,
@@ -345,6 +363,7 @@ class experiment_gram(experiment_base):
 
     def create_criterion(self) -> None:
         self.criterion = nn.CrossEntropyLoss()
+
 
     # overrides load_settings
     def load_settings(self) -> None:
@@ -367,29 +386,17 @@ class experiment_gram(experiment_base):
         self.nesterov = self.current_experiment.get("nesterov", False)
         self.momentum = self.current_experiment.get("momentum", 0.9)
         self.lr_sheduler = self.current_experiment.get("lr_sheduler", True)
-        self.num_classes = self.current_experiment.get("num_classes", 10)
-        self.validation_split = self.current_experiment.get("validation_split", 0.3)
-        self.validation_source = self.current_experiment.get(
-            "validation_source", "train"
-        )
+        self.num_classes = self.current_experiment.get("num_classes")+1
+        self.validation_split = self.current_experiment.get("validation_split", "train")
+        self.validation_source = self.current_experiment.get("validation_source", 0.3)
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
-        self.set_sampler(self.oracle)
-        # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")
-        # logging
+
         self.verbose = self.current_experiment.get("verbose", 1)
-        # self.do_desity_plot = self.current_experiment.get("do_desity_plot", False)
-        self.plotsettings = self.current_experiment.get(
-            "plotsettings",
-            {"do_plot": False, "density_plot": False, "layer_plot": False},
-        )
-        if self.plotsettings["do_plot"]:
-            if self.plotsettings["density_plot"]:
-                self.do_desity_plot = True
-            if self.plotsettings["layer_plot"]:
-                self.layer_plot = True
-        # _create_log_path_al(self.OOD_ratio)
+
+        self.extra_class_thresholding = self.current_experiment.get("extra_class_thresholding", "hard")
+        self.set_sampler(self.current_experiment.get("oracles", "extra_class_entropy"))
 
     # overrides perform_experiment
     def perform_experiment(self):
@@ -405,18 +412,14 @@ class experiment_gram(experiment_base):
             # self.datamanager.reset_pool()
             save_path = os.path.join(self.log_path, "status_manager_dir")
             self.datamanager.create_merged_data(path=save_path)
-            self.current_oracle_step = 0
             print("created new statusmanager")
 
         self.current_oracle_step = 0
+        self.datamanager.OoD_extra_class = True
+        
 
-        
-        
         for oracle_s in range(self.oracle_steps):
-            model_name = self.current_experiment.get("model", "gram_resnet") 
-            print(model_name)
-            self.set_model(model_name)
-            
+            self.set_model(self.current_experiment.get("model", "base"))
             self.create_dataloader()
             self.create_optimizer()
 
@@ -431,47 +434,23 @@ class experiment_gram(experiment_base):
 
             self.current_oracle_step += 1
             if len(self.pool_loader) > 0:
-                (pool_predictions, pool_labels_list) = self.pool_predictions(
-                    self.pool_loader
-                )
+                (
+                    pool_predictions,
+                    pool_labels_list,
+                ) = self.pool_predictions(self.pool_loader)
 
-                dector = Detector()
-                POWERS = range(2, 7)
-                dector.compute_minmaxs(self.model, self.train_loader, POWERS=POWERS)
-                pool_deviations = dector.compute_deviations(
-                    self.model, self.pool_loader, POWERS=POWERS
-                )
-                print("pool_deviations", pool_deviations.min(), pool_deviations.max())
-                if self.validation_source is not None:
-                    validation = dector.compute_deviations(
-                        self.model, self.val_loader, POWERS=POWERS
-                    )
-                    t95 = validation.mean(axis=0) + 10**-7
-                    pool_weighting_list = (pool_deviations / t95[np.newaxis, :]).sum(axis=1)
-                else:
-                    pool_weighting_list = pool_deviations.sum(axis=1)
-
-
-                pool_weighting_list = pool_weighting_list/pool_weighting_list.max()
-                pool_weighting_list = 1 - pool_weighting_list
-                print("pool_weighting_list", pool_weighting_list.min(), pool_weighting_list.max())
                 source_labels = self.datamanager.get_pool_source_labels()
-                iD_Prob = pool_weighting_list
+                iD_Prob = 1-pool_predictions[:,-1]
                 auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
-
 
                 self.sampler(
                     self.datamanager,
                     number_samples=self.oracle_stepsize,
                     net=self.model,
-                    predictions=pool_predictions,
-                    weights=pool_weighting_list,
+                    predictions=pool_predictions
                 )
 
-                (
-                    test_predictions,
-                    test_labels,
-                ) = self.pool_predictions(self.test_loader)
+                test_predictions, test_labels = self.pool_predictions(self.test_loader)
 
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)

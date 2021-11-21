@@ -67,6 +67,39 @@ def uncertainity_sampling_least_confident(
     return None
 
 
+def baseline_sampler(
+    dataset_manager, number_samples, net, predictions=None, weights=None
+):
+    """uncertainity_sampling_highest_entropy [Uses highest entropy to sample training data from the unlabelled pool]
+    [This function selects num_samples from the pool of  all the unlabelled data at random and add them to labelled training data assumes prediction is in shape (number_of_samples,num_classes)]
+    Args:
+        dataset_manager ([type]): [description]
+        number_samples ([type]): [description]
+        net ([type]): [description]
+        predictions ([type], optional): [description]. Defaults to None.
+    """
+
+    status_manager = dataset_manager.status_manager
+    mask = (status_manager["status"] == 0) & (status_manager["source"] == 1)
+    pool_samples_count = len(status_manager[mask])
+
+    assert pool_samples_count > 0, "No sample left in pool to label"
+    assert (
+        pool_samples_count > number_samples
+    ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
+
+    entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
+    inds = np.argsort(entropy)[-number_samples:]
+    inds = status_manager[mask].index[inds]
+    iteration = 1 + status_manager["status"].max()
+
+    status_manager["status"].iloc[inds] = (
+        iteration * status_manager["source"].iloc[inds]
+    )
+
+    return None
+
+
 def uncertainity_sampling_highest_entropy(
     dataset_manager, number_samples, net, predictions=None, weights=None
 ):
@@ -90,6 +123,7 @@ def uncertainity_sampling_highest_entropy(
     entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
     if weights is not None:
         entropy = np.squeeze(weights) * entropy
+        
     inds = np.argsort(entropy)[-number_samples:]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()
@@ -199,17 +233,13 @@ def gen0din_sampler(dataset_manager, number_samples, net, predictions=None):
     return None
 
 
-def compute_density(logits, class_probs):
-    logits.cuda()
-    class_probs.cuda()
-    return torch.sum((torch.exp(logits) * class_probs), dim=1)
+
 
 
 def DDU_sampler(
     dataset_manager,
     number_samples,
-    gmm_logits=None,
-    class_probs=None,
+    densities=None,
 ):
 
     status_manager = dataset_manager.status_manager
@@ -220,8 +250,6 @@ def DDU_sampler(
         pool_samples_count > number_samples
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
-    densities = compute_density(gmm_logits, class_probs)
-    densities = densities.detach().to("cpu").numpy()
     inds = np.argsort(densities)[-number_samples:]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()

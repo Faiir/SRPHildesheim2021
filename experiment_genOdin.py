@@ -541,7 +541,10 @@ class experiment_gen_odin(experiment_base):
             self.datamanager.create_merged_data(path=save_path)
 
             print("created new statusmanager")
+            
         self.current_oracle_step = 0
+        
+        
         for oracle_s in range(self.oracle_steps):
             print(self.current_experiment.get("model", "GenOdin"))
             self.set_model(self.current_experiment.get("model", "GenOdin"))
@@ -565,6 +568,12 @@ class experiment_gen_odin(experiment_base):
                     pool_labels_list,
                     pool_weighting_list,
                 ) = self.pool_predictions(self.pool_loader)
+
+
+
+                source_labels = self.datamanager.get_pool_source_labels()
+                iD_Prob = pool_weighting_list
+                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
 
                 self.sampler(
                     self.datamanager,
@@ -597,6 +606,7 @@ class experiment_gen_odin(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
+                    "Pool_AUROC" : auroc_score
                 }
 
                 print(dict_to_add)

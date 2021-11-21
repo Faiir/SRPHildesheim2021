@@ -3,7 +3,7 @@
     {
       "basic_settings": {
         "oracle_stepsize": 50,
-        "oracle_steps": 5,
+        "oracle_steps": 10,
         "iD": "CIFAR10",
         "OoD": ["FashionMNIST", "MNIST"],
         "grayscale": false,
@@ -14,7 +14,7 @@
         },
         "labelled_size": 1000,
         "pool_size": 30000,
-        "OOD_ratio": 0.15,
+        "OOD_ratio": 0.5,
         "epochs": 200,
         "batch_size": 64,
         "weight_decay": 1e-4,
@@ -31,75 +31,78 @@
       },
       "exp_settings": [
         {
+          "exp_type": "genodin",
+          "exp_name": "genodin-cifar-015",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": false,
+            "layer_plot": false
+          },
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "looc",
+          "exp_name": "looc-cifar-015",
+          "similarity": "C",
+          "oracle": "LOOC",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "LOOC",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": false,
+            "layer_plot": false
+          },
+          "perform_experiment": false
+        },
+        {
           "exp_type": "ddu",
           "exp_name": "ddu-cifar-015",
           "plots": false,
           "model": "DDU",
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
-          "temp": 1.0
+          "temp": 1.0,
+          "perform_experiment": false
         },
         {
-          "exp_type": "looc",
+          "exp_type": "baseline",
           "exp_name": "funny_name_here",
-          "similarity": "E",
-          "scaling_factor": "R",
-          "oracle": "LOOC",
-          "bugged_and_working": true,
-          "do_pertubed_images": true,
-          "model": "LOOC",
+          "oracle": "baseline",
+          "model": "base",
           "plots": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": true
-          }
+          "perform_experiment": false
         },
         {
-          "exp_type": "genodin",
-          "exp_name": "funny_name_here",
-          "similarity": "C",
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_hard",
+          "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
-          "do_pertubed_images": true,
-          "scaling_factor": "R",
-          "model": "GenOdin",
-          "bugged_and_working": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": true
-          }
+          "model" : "base",
+          "perform_experiment": false
         },
         {
-          "exp_type": "looc",
-          "exp_name": "funny_name_here",
-          "similarity": "E",
-          "scaling_factor": "",
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_soft",
+          "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
-          "bugged_and_working": true,
-          "do_pertubed_images": true,
-          "model": "LOOC",
+          "model" : "base",
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "funny_name_here",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
           "plots": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": true
-          }
-        },
-        {
-          "exp_type": "genodin",
-          "exp_name": "funny_name_here",
-          "similarity": "C",
-          "oracle": "LOOC",
-          "do_pertubed_images": true,
-          "scaling_factor": "",
-          "model": "GenOdin",
-          "bugged_and_working": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": true
-          }
+          "perform_experiment": true
         }
       ]
     }

@@ -205,7 +205,7 @@ def final_traing(log_dir, config):
         verbose = basic_settings.get("verbose", 1)
         criterion = nn.CrossEntropyLoss()
         with open(
-            os.path.join(log_dir, "final_result.csv"), encoding="utf-8"
+            os.path.join(log_dir, "final_result.csv"),"w",encoding="utf-8"
         ) as result_file:
             result_file.write(
                 f"Experiment_name,Starting_size,Train_size,OOD_ratio,Train_Acc,Train_Loss,Val_Acc,Val_Loss,Test_Acc,Test_Loss\n"
@@ -277,7 +277,7 @@ def final_traing(log_dir, config):
             )
 
             with open(
-                os.path.join(log_dir, "final_result.csv"), encoding="utf-8"
+                os.path.join(log_dir, "final_result.csv"),"w", encoding="utf-8"
             ) as result_file:
                 result_file.write(
                     f"{exp_name},{labelled_size},{len(train_loader)},{OOD_ratio},{avg_train_acc},{avg_train_loss},{avg_val_acc},{avg_val_loss},{avg_test_acc},{avg_test_loss}\n"

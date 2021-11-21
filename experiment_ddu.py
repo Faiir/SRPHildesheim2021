@@ -51,6 +51,8 @@ def centered_cov_torch(x):
     res = 1 / (n - 1) * x.t().mm(x)
     return res
 
+def compute_density(logits, class_probs):
+    return torch.sum((torch.exp(logits) * class_probs), dim=1)
 
 DOUBLE_INFO = torch.finfo(torch.double)
 JITTERS = [0, DOUBLE_INFO.tiny] + [10 ** exp for exp in range(-308, 0, 1)]
@@ -490,6 +492,18 @@ class experiment_ddu(experiment_base):
         self.set_sampler()
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
 
+    def class_probs(self, data_loader):
+        num_classes = 10
+        class_n = len(data_loader.dataset)
+        class_count = torch.zeros(num_classes)
+        for data, label in data_loader:
+            class_count += torch.Tensor(
+                [torch.sum(label.to(self.device) == c) for c in range(num_classes)]
+            )
+
+        class_prob = class_count / class_n
+        return class_prob
+
     # overrides perform_experiment
     def perform_experiment(self):
         self.train_loss_hist = []
@@ -536,22 +550,24 @@ class experiment_ddu(experiment_base):
                 pool_predictions, pool_labels_list = self.pool_predictions(
                     self.pool_loader,
                 )
-                # class_prob = class_probs(train_loader)
+                class_prob = self.class_probs(self.train_loader).to(self.device)
                 pool_predictions = torch.from_numpy(pool_predictions).cuda()
                 print("finished pool prediction")
                 logits, labels = self.gmm_evaluate()
-
-                # logits, labels = (
-                #     logits.detach().to("cpu").numpy(),
-                #     labels.detach().to("cpu").numpy(),
-                # )
                 print("finished gmm evaluation")
+
+                densities = compute_density(logits, class_prob)
+                densities = densities.detach().to("cpu").numpy()
+
+                source_labels = self.datamanager.get_pool_source_labels()
+                iD_Prob = 1-np.exp(-densities)
+                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
+
                 # samples from unlabelled pool predictions
                 self.sampler(
                     dataset_manager=self.datamanager,
                     number_samples=self.oracle_stepsize,
-                    gmm_logits=logits,
-                    class_probs=pool_predictions,
+                    densities=densities,
                 )
 
                 test_predictions, test_labels = self.pool_predictions(self.test_loader)
@@ -565,6 +581,7 @@ class experiment_ddu(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
+                    "Pool_AUROC" : auroc_score
                 }
 
                 print(dict_to_add)

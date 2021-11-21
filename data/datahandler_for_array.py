@@ -37,7 +37,7 @@ class DataHandler_For_Arrays(Dataset):
 
 
 def create_dataloader(
-    data_manager, batch_size=128, validation_split=None, validation_source=None
+    data_manager, batch_size=128, validation_split=None, validation_source=None, only_iD_pool = False
 ):
     """
     Args:
@@ -49,7 +49,11 @@ def create_dataloader(
     Returns:
         PyTorch's train, test and pool loader. (Validation loader is also returned if source is not None)
     """
-    pool_dataset = data_manager.get_unlabelled_pool_dataset()
+    if only_iD_pool:
+        pool_dataset = data_manager.get_unlabelled_iD_pool_dataset()
+    else:
+        pool_dataset = data_manager.get_unlabelled_pool_dataset()
+        
     train_dataset = data_manager.get_train_dataset()
     test_dataset = data_manager.get_test_dataset()
 

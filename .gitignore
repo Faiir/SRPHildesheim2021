@@ -1,7 +1,7 @@
 #local notebooks
-
+*ipynb
 SRP_Project.ipynb
-
+test.ipynb
 
 #single files
 test.py
