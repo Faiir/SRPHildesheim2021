@@ -44,7 +44,7 @@ class DataHandler_For_Arrays(Dataset):
         return len(self.X)
 
 
-def get_gram_resnet():
+def get_gram_resnet(num_classes):
     def conv3x3(in_planes, out_planes, stride=1):
         return nn.Conv2d(
             in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
@@ -234,7 +234,7 @@ def get_gram_resnet():
 
             return deviations
 
-    torch_model = ResNet(BasicBlock, [3, 3, 3], num_classes=10)
+    torch_model = ResNet(BasicBlock, [3, 3, 3], num_classes=num_classes)
     return torch_model
 
 
@@ -375,6 +375,8 @@ class Detector:
             default_max_inner = []
             for jj, _ in enumerate(upper_list):
                 kk = 0
+                val_min = None
+                val_max = None
                 for PRED in self.classes:
                     if len(self.mins[PRED]) == 0:
                         pass
@@ -386,8 +388,13 @@ class Detector:
                             val_min += self.mins[PRED][ii][jj]
                             val_max += self.maxs[PRED][ii][jj]
                         kk += 1
-
+                
+                if val_min is None:
+                    val_min = torch.ones_like(self.mins[PRED][ii][jj])
                 default_min_inner.append(val_min / (kk + 1))
+
+                if val_max is None:
+                    val_max = torch.ones_like(self.maxs[PRED][ii][jj])
                 default_max_inner.append(val_max / (kk + 1))
 
             default_min.append(default_min_inner)
@@ -403,7 +410,7 @@ class Detector:
                 continue
             else:
                 if indices_list is None:
-                    indices_list = indices_list
+                    indices_list = test_indices
                 else:
                     indices_list = np.concatenate([indices_list, test_indices], axis=0)
 

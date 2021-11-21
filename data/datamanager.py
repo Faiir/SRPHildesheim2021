@@ -398,7 +398,8 @@ class Data_manager:
         """
         unlabelled_mask = self.status_manager[self.status_manager["status"] == 0].index
         return np.array(
-            (self.status_manager.source[unlabelled_mask].values + 1) / 2, dtype=np.bool
+            (self.status_manager.source.iloc[unlabelled_mask].values + 1) / 2,
+            dtype=np.bool,
         )
 
     def get_train_dataset(self):
