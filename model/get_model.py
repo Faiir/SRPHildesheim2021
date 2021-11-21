@@ -69,7 +69,7 @@ def get_model(
             temp=kwargs.get("temp", 1.0),
         )
     elif model_name == "gram_resnet":
-        return get_gram_resnet()
+        return get_gram_resnet(num_classes=kwargs.get("num_classes", 10))
     else:
         raise ValueError(f"Model {model_name} not found")
     # if model_name == "base":

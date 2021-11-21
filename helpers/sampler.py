@@ -232,15 +232,13 @@ def gen0din_sampler(dataset_manager, number_samples, net, predictions=None):
     return None
 
 
-def compute_density(logits, class_probs):
-    return torch.sum((torch.exp(logits) * class_probs), dim=1)
+
 
 
 def DDU_sampler(
     dataset_manager,
     number_samples,
-    gmm_logits=None,
-    class_probs=None,
+    densities=None,
 ):
 
     status_manager = dataset_manager.status_manager
@@ -251,8 +249,6 @@ def DDU_sampler(
         pool_samples_count > number_samples
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
-    densities = compute_density(gmm_logits, class_probs)
-    densities = densities.detach().to("cpu").numpy()
     inds = np.argsort(densities)[-number_samples:]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()

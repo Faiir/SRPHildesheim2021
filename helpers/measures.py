@@ -15,7 +15,7 @@ def accuracy(true_labels, predictions):
     return 100 * np.mean(predicted_labels == (true_labels.flatten()))
 
 
-def auroc(iD_Prob, source_labels, writer, oracle_step, normalize=False, plot_auc= True):
+def auroc(iD_Prob, source_labels, writer, oracle_step, plot_auc= True, name=None):
     """
     Computes the ROC score and plots the ROC_AUC curve. 
     Inputs:
@@ -23,20 +23,16 @@ def auroc(iD_Prob, source_labels, writer, oracle_step, normalize=False, plot_auc
         source_labels - pool labels (1: iD, 0: OoD)
         writer - tensorboard writer
         oracle_step
-        normalize - flag to use if Score is provided instead of Probability.
         plot_auc - flag to plot the curves
     """
 
-    if normalize:
-        scaler = MinMaxScaler()
-        perdictions = scaler.fit_transform(iD_Prob)
-    else:
-        perdictions = iD_Prob
-    
+    scaler = MinMaxScaler()
+    perdictions = scaler.fit_transform(iD_Prob)
     score = roc_auc_score(source_labels, perdictions)
+
     if score<0.5:
         print('INFO ----- ROC function requires iD_Prob, not OoD_Prob')
-        return auroc(-iD_Prob, source_labels, writer, oracle_step, normalize)
+        return auroc(-iD_Prob, source_labels, writer, oracle_step)
    
     if plot_auc:
         fpr, tpr, _ = roc_curve(source_labels, perdictions)
@@ -56,6 +52,9 @@ def auroc(iD_Prob, source_labels, writer, oracle_step, normalize=False, plot_auc
         plt.ylabel("True Positive Rate")
         plt.title("ROC")
         plt.legend(loc="lower right")
-        writer.add_figure(tag=f"AUROC_{oracle_step}", figure=fig)
+        if name is None:
+            writer.add_figure(tag=f"AUROC_{oracle_step}", figure=fig)
+        else:
+            writer.add_figure(tag=f"AUROC_{name}_{oracle_step}", figure=fig)
 
     return score

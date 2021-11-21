@@ -15,7 +15,7 @@
         "labelled_size": 1000,
         "pool_size": 2000,
         "OOD_ratio": 0.5,
-        "epochs": 10,
+        "epochs": 100,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -31,6 +31,38 @@
       },
       "exp_settings": [
         {
+          "exp_type": "genodin",
+          "exp_name": "genodin-cifar-015",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": false,
+            "layer_plot": false
+          },
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "looc",
+          "exp_name": "looc-cifar-015",
+          "similarity": "C",
+          "oracle": "LOOC",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "LOOC",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": false,
+            "layer_plot": false
+          },
+          "perform_experiment": false
+        },
+        {
           "exp_type": "ddu",
           "exp_name": "ddu-cifar-015",
           "plots": false,
@@ -38,7 +70,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "baseline",
@@ -54,7 +86,7 @@
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model" : "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
@@ -62,7 +94,7 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model" : "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "gram",

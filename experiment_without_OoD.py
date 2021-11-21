@@ -426,6 +426,7 @@ class experiment_without_OoD(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
+                    "Pool_AUROC" : 0
                 }
 
                 print(dict_to_add)

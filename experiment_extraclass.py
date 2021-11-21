@@ -416,10 +416,10 @@ class experiment_extraclass(experiment_base):
 
         self.current_oracle_step = 0
         self.datamanager.OoD_extra_class = True
+        
 
         for oracle_s in range(self.oracle_steps):
             self.set_model(self.current_experiment.get("model", "base"))
-
             self.create_dataloader()
             self.create_optimizer()
 
@@ -441,7 +441,7 @@ class experiment_extraclass(experiment_base):
 
                 source_labels = self.datamanager.get_pool_source_labels()
                 iD_Prob = 1-pool_predictions[:,-1]
-                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, normalize=False, plot_auc= True)
+                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
 
                 self.sampler(
                     self.datamanager,
@@ -461,7 +461,7 @@ class experiment_extraclass(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
-                    "AUROC" : auroc_score
+                    "Pool_AUROC" : auroc_score
                 }
 
                 print(dict_to_add)

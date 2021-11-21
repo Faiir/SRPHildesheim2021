@@ -51,6 +51,8 @@ def centered_cov_torch(x):
     res = 1 / (n - 1) * x.t().mm(x)
     return res
 
+def compute_density(logits, class_probs):
+    return torch.sum((torch.exp(logits) * class_probs), dim=1)
 
 DOUBLE_INFO = torch.finfo(torch.double)
 JITTERS = [0, DOUBLE_INFO.tiny] + [10 ** exp for exp in range(-308, 0, 1)]
@@ -552,18 +554,20 @@ class experiment_ddu(experiment_base):
                 pool_predictions = torch.from_numpy(pool_predictions).cuda()
                 print("finished pool prediction")
                 logits, labels = self.gmm_evaluate()
-
-                # logits, labels = (
-                #     logits.detach().to("cpu").numpy(),
-                #     labels.detach().to("cpu").numpy(),
-                # )
                 print("finished gmm evaluation")
+
+                densities = compute_density(logits, class_probs)
+                densities = densities.detach().to("cpu").numpy()
+
+                source_labels = self.datamanager.get_pool_source_labels()
+                iD_Prob = densities
+                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
+
                 # samples from unlabelled pool predictions
                 self.sampler(
                     dataset_manager=self.datamanager,
                     number_samples=self.oracle_stepsize,
-                    gmm_logits=logits.to(self.device),
-                    class_probs=class_prob.to(self.device),
+                    densities=densities,
                 )
 
                 test_predictions, test_labels = self.pool_predictions(self.test_loader)
@@ -577,6 +581,7 @@ class experiment_ddu(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
+                    "Pool_AUROC" : auroc_score
                 }
 
                 print(dict_to_add)
