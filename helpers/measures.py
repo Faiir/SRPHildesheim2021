@@ -15,7 +15,7 @@ def accuracy(true_labels, predictions):
     return 100 * np.mean(predicted_labels == (true_labels.flatten()))
 
 
-def AUROC(iD_Prob, source_labels, writer, oracle_step, normalize=False, plot_auc= True):
+def auroc(iD_Prob, source_labels, writer, oracle_step, normalize=False, plot_auc= True):
     """
     Computes the ROC score and plots the ROC_AUC curve. 
     Inputs:
@@ -30,14 +30,16 @@ def AUROC(iD_Prob, source_labels, writer, oracle_step, normalize=False, plot_auc
     if normalize:
         scaler = MinMaxScaler()
         perdictions = scaler.fit_transform(iD_Prob)
+    else:
+        perdictions = iD_Prob
     
-    score = roc_auc_score(perdictions, source_labels)
+    score = roc_auc_score(source_labels, perdictions)
     if score<0.5:
         print('INFO ----- ROC function requires iD_Prob, not OoD_Prob')
-        return AUROC(-iD_Prob, source_labels, writer, oracle_step, normalize)
+        return auroc(-iD_Prob, source_labels, writer, oracle_step, normalize)
    
     if plot_auc:
-        fpr, tpr, _ = roc_curve(perdictions, source_labels)
+        fpr, tpr, _ = roc_curve(source_labels, perdictions)
         fig = plt.figure()
         lw = 1
         plt.plot(

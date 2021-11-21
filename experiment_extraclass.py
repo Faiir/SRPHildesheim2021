@@ -439,6 +439,10 @@ class experiment_extraclass(experiment_base):
                     pool_labels_list,
                 ) = self.pool_predictions(self.pool_loader)
 
+                source_labels = self.datamanager.get_pool_source_labels()
+                iD_Prob = 1-pool_predictions[:,-1]
+                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, normalize=False, plot_auc= True)
+
                 self.sampler(
                     self.datamanager,
                     number_samples=self.oracle_stepsize,
@@ -450,10 +454,6 @@ class experiment_extraclass(experiment_base):
 
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)
-
-                source_labels = self.data_manager.get_pool_source_labels()
-                iD_Prob = 1-pool_predictions[:,-1]
-                auroc_score = AUROC(iD_Prob, source_labels, self.writer, self.current_oracle_step, normalize=False, plot_auc= True)
 
                 dict_to_add = {
                     "test_loss": self.avg_test_loss,

@@ -15,7 +15,7 @@
         "labelled_size": 1000,
         "pool_size": 2000,
         "OOD_ratio": 0.5,
-        "epochs": 100,
+        "epochs": 10,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -46,7 +46,7 @@
           "oracle": "baseline",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
@@ -70,7 +70,7 @@
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         }
       ]
     }
