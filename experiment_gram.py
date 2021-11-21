@@ -452,7 +452,8 @@ class experiment_gram(experiment_base):
                     pool_weighting_list = pool_deviations.sum(axis=1)
 
 
-                pool_weighting_list = np.exp(-pool_weighting_list)
+                pool_weighting_list = pool_weighting_list/pool_weighting_list.max()
+                pool_weighting_list = 1 - pool_weighting_list
                 print("pool_weighting_list", pool_weighting_list.min(), pool_weighting_list.max())
                 source_labels = self.datamanager.get_pool_source_labels()
                 iD_Prob = pool_weighting_list
