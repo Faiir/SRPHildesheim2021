@@ -35,7 +35,7 @@ def auroc(iD_Prob, source_labels, writer, oracle_step, plot_auc= True, name=None
     perdictions = scaler.fit_transform(iD_Prob)
     score = roc_auc_score(source_labels, perdictions)
 
-    if score<0.5:
+    if score<0.499:
         print('INFO ----- ROC function requires iD_Prob, not OoD_Prob')
         return auroc(-iD_Prob, source_labels, writer, oracle_step)
    

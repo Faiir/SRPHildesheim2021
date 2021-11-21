@@ -443,12 +443,12 @@ class experiment_gram(experiment_base):
                     validation = dector.compute_deviations(
                         self.model, self.val_loader, POWERS=POWERS
                     )
-                    t95 = validation.mean(axis=0) + 10 ** -7
+                    t95 = validation.mean(axis=0) + 1
                     pool_weighting_list = (pool_deviations / t95[np.newaxis, :]).sum(
                         axis=1
                     )
                 else:
-                    pool_weighting_list = (pool_deviations/pool_deviations.std(axis=1,keepdims=True)).sum(axis=1)
+                    pool_weighting_list = (pool_deviations/(1 + pool_deviations.std(axis=1,keepdims=True))).sum(axis=1)
 
 
                 pool_weighting_list = np.exp(-pool_weighting_list)
