@@ -70,7 +70,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "baseline",
@@ -102,7 +102,7 @@
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
-          "perform_experiment": false
+          "perform_experiment": true
         }
       ]
     }

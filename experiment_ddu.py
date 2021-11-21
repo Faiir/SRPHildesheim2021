@@ -556,11 +556,11 @@ class experiment_ddu(experiment_base):
                 logits, labels = self.gmm_evaluate()
                 print("finished gmm evaluation")
 
-                densities = compute_density(logits, class_probs)
+                densities = compute_density(logits, class_prob)
                 densities = densities.detach().to("cpu").numpy()
 
                 source_labels = self.datamanager.get_pool_source_labels()
-                iD_Prob = densities
+                iD_Prob = 1-np.exp(-densities)
                 auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
 
                 # samples from unlabelled pool predictions

@@ -26,6 +26,10 @@ def auroc(iD_Prob, source_labels, writer, oracle_step, plot_auc= True, name=None
         plot_auc - flag to plot the curves
     """
 
+    
+    if len(iD_Prob.shape)==1:
+        iD_Prob = iD_Prob[...,np.newaxis]
+        
     scaler = MinMaxScaler()
     perdictions = scaler.fit_transform(iD_Prob)
     score = roc_auc_score(source_labels, perdictions)

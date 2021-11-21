@@ -44,7 +44,7 @@ class DataHandler_For_Arrays(Dataset):
         return len(self.X)
 
 
-def get_gram_resnet():
+def get_gram_resnet(num_classes):
     def conv3x3(in_planes, out_planes, stride=1):
         return nn.Conv2d(
             in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
@@ -234,7 +234,7 @@ def get_gram_resnet():
 
             return deviations
 
-    torch_model = ResNet(BasicBlock, [3, 3, 3], num_classes=10)
+    torch_model = ResNet(BasicBlock, [3, 3, 3], num_classes=num_classes)
     return torch_model
 
 
