@@ -123,6 +123,7 @@ def uncertainity_sampling_highest_entropy(
     entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
     if weights is not None:
         entropy = np.squeeze(weights) * entropy
+        
     inds = np.argsort(entropy)[-number_samples:]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()

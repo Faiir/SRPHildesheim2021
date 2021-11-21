@@ -447,12 +447,16 @@ class experiment_gram(experiment_base):
                     pool_weighting_list = (pool_deviations / t95[np.newaxis, :]).sum(
                         axis=1
                     )
+                else:
+                    pool_weighting_list = (pool_deviations/pool_deviations.std(axis=1,keepdims=True)).sum(axis=1)
+
 
                 pool_weighting_list = np.exp(-pool_weighting_list)
-
+                
                 source_labels = self.datamanager.get_pool_source_labels()
                 iD_Prob = pool_weighting_list
                 auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
+
 
                 self.sampler(
                     self.datamanager,

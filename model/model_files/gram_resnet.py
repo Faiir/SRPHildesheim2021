@@ -403,7 +403,7 @@ class Detector:
                 continue
             else:
                 if indices_list is None:
-                    indices_list = indices_list
+                    indices_list = test_indices
                 else:
                     indices_list = np.concatenate([indices_list, test_indices], axis=0)
 
