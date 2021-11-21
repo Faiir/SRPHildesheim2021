@@ -2,20 +2,29 @@
   "experiments": [
     {
       "basic_settings": {
-        "oracle_stepsize": 50,
-        "oracle_steps": 5,
-        "iD": "CIFAR10",
+        "oracle_stepsize": 150,
+        "oracle_steps": 3,
+        "iD": "CIFAR100",
         "OoD": ["FashionMNIST", "MNIST"],
         "grayscale": false,
         "subclass": {
-          "do_subclass": false,
-          "iD_classes": [],
-          "OoD_classes": []
+          "do_subclass": true,
+          "iD_classes": [
+            0, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23,
+            24, 26, 27, 28, 29, 31, 32, 33, 34, 36, 37, 38, 39, 41, 42, 43, 44,
+            46, 47, 48, 49, 51, 52, 53, 54, 56, 57, 58, 59, 61, 62, 63, 64, 66,
+            67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 81, 82, 83, 84, 86, 87,
+            88, 89, 91, 92, 93, 94, 96, 97, 98, 99
+          ],
+          "OoD_classes": [
+            1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
+            85, 90, 95
+          ]
         },
-        "labelled_size": 1000,
-        "pool_size": 2000,
-        "OOD_ratio": 0.5,
-        "epochs": 10,
+        "labelled_size": 4000,
+        "pool_size": 12000,
+        "OOD_ratio": 0.15,
+        "epochs": 100,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -23,7 +32,7 @@
         "nesterov": false,
         "momentum": 0.9,
         "lr_sheduler": true,
-        "num_classes": 10,
+        "num_classes": 100,
         "validation_split": 0.1,
         "validation_source": "test",
         "criterion": "crossentropy",
@@ -42,6 +51,14 @@
         },
         {
           "exp_type": "baseline",
+          "exp_name": "baseline-cifar100-resnet20",
+          "oracle": "baseline",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "baseline-ood",
           "exp_name": "funny_name_here",
           "oracle": "baseline",
           "model": "base",
@@ -53,16 +70,16 @@
           "exp_name": "extra_class_hard",
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
-          "model" : "base",
-          "perform_experiment": true
+          "model": "base",
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
           "exp_name": "extra_class_soft",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
-          "model" : "base",
-          "perform_experiment": true
+          "model": "base",
+          "perform_experiment": false
         },
         {
           "exp_type": "gram",

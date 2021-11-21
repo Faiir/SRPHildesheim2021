@@ -116,19 +116,31 @@ class Data_manager:
                     if val in cls
                 ]
 
-                self.datasets_dict[dataset + "_train"].data = np.compress(
-                    idx_train, self.datasets_dict[dataset + "_train"].data, axis=0
+                self.datasets_dict[dataset + "_train"].data = np.take(
+                    self.datasets_dict[dataset + "_train"].data, idx_train, axis=0
                 )
-                self.datasets_dict[dataset + "_train"].targets = np.compress(
-                    idx_train, self.datasets_dict[dataset + "_train"].targets, axis=0
+                self.datasets_dict[dataset + "_train"].targets = np.take(
+                    self.datasets_dict[dataset + "_train"].targets, idx_train, axis=0
+                )
+
+                self.datasets_dict[dataset + "_test"].data = np.take(
+                    self.datasets_dict[dataset + "_test"].data, idx_test, axis=0
+                )
+                self.datasets_dict[dataset + "_test"].targets = np.take(
+                    self.datasets_dict[dataset + "_test"].targets, idx_test, axis=0
                 ).tolist()
 
-                self.datasets_dict[dataset + "_test"].data = np.compress(
-                    idx_test, self.datasets_dict[dataset + "_test"].data, axis=0
-                )
-                self.datasets_dict[dataset + "_test"].targets = np.compress(
-                    idx_test, self.datasets_dict[dataset + "_test"].targets, axis=0
-                ).tolist()
+                new_labels = [subclass["iD_classes"].index(i) for i in cls]
+
+                self.datasets_dict[dataset + "_train"].targets = [
+                    new_labels[subclass["iD_classes"].index(i)]
+                    for i in self.datasets_dict[dataset + "_train"].targets
+                ]
+
+                self.datasets_dict[dataset + "_test"].targets = [
+                    new_labels[subclass["iD_classes"].index(i)]
+                    for i in self.datasets_dict[dataset + "_test"].targets
+                ]
 
             for c, dataset in enumerate(self.OoD_datasets):
                 cls = set(subclass["OoD_classes"])
@@ -147,19 +159,30 @@ class Data_manager:
                     if val in cls
                 ]
 
-                self.datasets_dict[dataset + "_train"].data = np.compress(
-                    idx_train, self.datasets_dict[dataset + "_train"].data, axis=0
+                self.datasets_dict[dataset + "_train"].data = np.take(
+                    self.datasets_dict[dataset + "_train"].data, idx_train, axis=0
                 )
-                self.datasets_dict[dataset + "_train"].targets = np.compress(
-                    idx_train, self.datasets_dict[dataset + "_train"].targets, axis=0
+                self.datasets_dict[dataset + "_train"].targets = np.take(
+                    self.datasets_dict[dataset + "_train"].targets, idx_train, axis=0
+                )
+
+                self.datasets_dict[dataset + "_test"].data = np.take(
+                    self.datasets_dict[dataset + "_test"].data, idx_test, axis=0
+                )
+                self.datasets_dict[dataset + "_test"].targets = np.take(
+                    self.datasets_dict[dataset + "_test"].targets, idx_test, axis=0
                 ).tolist()
 
-                self.datasets_dict[dataset + "_test"].data = np.compress(
-                    idx_test, self.datasets_dict[dataset + "_test"].data, axis=0
-                )
-                self.datasets_dict[dataset + "_test"].targets = np.compress(
-                    idx_test, self.datasets_dict[dataset + "_test"].targets, axis=0
-                ).tolist()
+                new_labels = [subclass["OoD_classes"].index(i) for i in cls]
+                self.datasets_dict[dataset + "_train"].targets = [
+                    new_labels[subclass["OoD_classes"].index(i)]
+                    for i in self.datasets_dict[dataset + "_train"].targets
+                ]
+
+                self.datasets_dict[dataset + "_test"].targets = [
+                    new_labels[subclass["OoD_classes"].index(i)]
+                    for i in self.datasets_dict[dataset + "_test"].targets
+                ]
 
         self.iD_samples_size = 0
         for ii in self.iD_datasets:
@@ -371,11 +394,12 @@ class Data_manager:
         """
         Returns an binary array of source labels for pool datasamples.
         0: OoD
-        1: iD  
+        1: iD
         """
         unlabelled_mask = self.status_manager[self.status_manager["status"] == 0].index
-        return np.array((self.status_manager.source[unlabelled_mask].values+1)/2,dtype=np.bool)
-
+        return np.array(
+            (self.status_manager.source[unlabelled_mask].values + 1) / 2, dtype=np.bool
+        )
 
     def get_train_dataset(self):
         """get_train_data [returns the current state of the trainingspool]"""
@@ -456,7 +480,9 @@ class Data_manager:
             self.iter is not None
         ), "Dataset not initialized. Call create_merged_data()"
 
-        unlabelled_mask = self.status_manager[(self.status_manager["status"] == 0) & (self.status_manager["source"] == 1)].index
+        unlabelled_mask = self.status_manager[
+            (self.status_manager["status"] == 0) & (self.status_manager["source"] == 1)
+        ].index
 
         inds_df = (
             self.status_manager.iloc[unlabelled_mask]
