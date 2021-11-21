@@ -367,6 +367,16 @@ class Data_manager:
             f"Restored following config \nTotal_overall_examples: {toe} \nTotal_base_examples: {tbe} \nTotal_OOD_examples: {toode}\n Initial_examples_labelled: {iel}   "
         )
 
+    def get_pool_source_labels(self):
+        """
+        Returns an binary array of source labels for pool datasamples.
+        0: OoD
+        1: iD  
+        """
+        unlabelled_mask = self.status_manager[self.status_manager["status"] == 0].index
+        return (self.status_manager.source[unlabelled_mask].values+1)/2
+
+
     def get_train_dataset(self):
         """get_train_data [returns the current state of the trainingspool]"""
         ## Returns all data that has been labelled so far

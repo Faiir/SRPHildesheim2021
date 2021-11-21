@@ -451,12 +451,17 @@ class experiment_extraclass(experiment_base):
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)
 
+                source_labels = self.data_manager.get_pool_source_labels()
+                iD_Prob = 1-pool_predictions[:,-1]
+                auroc_score = AUROC(iD_Prob, source_labels, self.writer, self.current_oracle_step, normalize=False, plot_auc= True)
+
                 dict_to_add = {
                     "test_loss": self.avg_test_loss,
                     "train_loss": self.avg_train_loss_hist,
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
+                    "AUROC" : auroc_score
                 }
 
                 print(dict_to_add)
