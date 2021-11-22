@@ -17,8 +17,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
 
-from robust_active_learning.model.get_model import get_model
-from robust_active_learning.model.model_files.gram_resnet import Detector
+from .model.get_model import get_model
+from .model.model_files.gram_resnet import Detector
 
 
 # project
@@ -284,8 +284,7 @@ class experiment_gram(experiment_base):
     # overrides set_model
     def set_model(self, model_name) -> None:
         if model_name == "gram_resnet":
-            self.model = get_model(model_name,
-                                    num_classes=self.num_classes)
+            self.model = get_model(model_name, num_classes=self.num_classes)
         else:
             raise NotImplementedError
         self.model.to(self.device)
@@ -409,14 +408,11 @@ class experiment_gram(experiment_base):
             print("created new statusmanager")
 
         self.current_oracle_step = 0
-
-        
-        
+        model_name = self.current_experiment.get("model", "gram_resnet")
+        self.set_model(model_name)
         for oracle_s in range(self.oracle_steps):
-            model_name = self.current_experiment.get("model", "gram_resnet") 
             print(model_name)
-            self.set_model(model_name)
-            
+
             self.create_dataloader()
             self.create_optimizer()
 
@@ -446,19 +442,29 @@ class experiment_gram(experiment_base):
                     validation = dector.compute_deviations(
                         self.model, self.val_loader, POWERS=POWERS
                     )
-                    t95 = validation.mean(axis=0) + 10**-7
-                    pool_weighting_list = (pool_deviations / t95[np.newaxis, :]).sum(axis=1)
+                    t95 = validation.mean(axis=0) + 10 ** -7
+                    pool_weighting_list = (pool_deviations / t95[np.newaxis, :]).sum(
+                        axis=1
+                    )
                 else:
                     pool_weighting_list = pool_deviations.sum(axis=1)
 
-
-                pool_weighting_list = pool_weighting_list/pool_weighting_list.max()
+                pool_weighting_list = pool_weighting_list / pool_weighting_list.max()
                 pool_weighting_list = 1 - pool_weighting_list
-                print("pool_weighting_list", pool_weighting_list.min(), pool_weighting_list.max())
+                print(
+                    "pool_weighting_list",
+                    pool_weighting_list.min(),
+                    pool_weighting_list.max(),
+                )
                 source_labels = self.datamanager.get_pool_source_labels()
                 iD_Prob = pool_weighting_list
-                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
-
+                auroc_score = auroc(
+                    iD_Prob,
+                    source_labels,
+                    self.writer,
+                    self.current_oracle_step,
+                    plot_auc=True,
+                )
 
                 self.sampler(
                     self.datamanager,
@@ -482,7 +488,7 @@ class experiment_gram(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
-                    "Pool_AUROC" : auroc_score
+                    "Pool_AUROC": auroc_score,
                 }
 
                 print(dict_to_add)

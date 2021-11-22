@@ -402,10 +402,11 @@ class experiment_active_learning(experiment_base):
 
             print("created new statusmanager")
         self.current_oracle_step = 0
+        self.set_model(
+            self.current_experiment.get("model", "base"),
+        )
         for oracle_s in range(self.oracle_steps):
-            self.set_model(
-                self.current_experiment.get("model", "base"),
-            )
+
             self.create_dataloader()
             self.create_optimizer()
 

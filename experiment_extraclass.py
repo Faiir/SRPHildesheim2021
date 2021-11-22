@@ -63,7 +63,6 @@ def _create_log_path_al(log_dir: str = ".", OOD_ratio: float = 0.0) -> None:
     return log_path
 
 
-
 class experiment_extraclass(experiment_base):
     def __init__(
         self,
@@ -85,7 +84,6 @@ class experiment_extraclass(experiment_base):
             torch.backends.cudnn.benchmark = True
 
         self.construct_datamanager()
-
 
     # overrides train
     def train(self, train_loader, val_loader, optimizer, criterion, device, **kwargs):
@@ -292,19 +290,17 @@ class experiment_extraclass(experiment_base):
         else:
             raise NotImplementedError
 
-
     def create_plots(self):
         pass
-        
+
     # overrides set_model
     def set_model(self, model_name) -> None:
         self.model = get_model(
-                model_name,
-                num_classes=self.num_classes,
-                similarity=None,
-            )
+            model_name,
+            num_classes=self.num_classes,
+            similarity=None,
+        )
         self.model.to(self.device)
-
 
     def pool_predictions(
         self, pool_loader
@@ -315,7 +311,7 @@ class experiment_extraclass(experiment_base):
             pred = self.model(
                 data.to(self.device).float(),
                 apply_softmax=True,
-                )
+            )
 
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
@@ -364,7 +360,6 @@ class experiment_extraclass(experiment_base):
     def create_criterion(self) -> None:
         self.criterion = nn.CrossEntropyLoss()
 
-
     # overrides load_settings
     def load_settings(self) -> None:
         # active Learning settings
@@ -386,7 +381,7 @@ class experiment_extraclass(experiment_base):
         self.nesterov = self.current_experiment.get("nesterov", False)
         self.momentum = self.current_experiment.get("momentum", 0.9)
         self.lr_sheduler = self.current_experiment.get("lr_sheduler", True)
-        self.num_classes = self.current_experiment.get("num_classes")+1
+        self.num_classes = self.current_experiment.get("num_classes") + 1
         self.validation_split = self.current_experiment.get("validation_split", "train")
         self.validation_source = self.current_experiment.get("validation_source", 0.3)
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
@@ -395,7 +390,9 @@ class experiment_extraclass(experiment_base):
 
         self.verbose = self.current_experiment.get("verbose", 1)
 
-        self.extra_class_thresholding = self.current_experiment.get("extra_class_thresholding", "hard")
+        self.extra_class_thresholding = self.current_experiment.get(
+            "extra_class_thresholding", "hard"
+        )
         self.set_sampler(self.current_experiment.get("oracles", "extra_class_entropy"))
 
     # overrides perform_experiment
@@ -416,10 +413,10 @@ class experiment_extraclass(experiment_base):
 
         self.current_oracle_step = 0
         self.datamanager.OoD_extra_class = True
-        
 
+        self.set_model(self.current_experiment.get("model", "base"))
         for oracle_s in range(self.oracle_steps):
-            self.set_model(self.current_experiment.get("model", "base"))
+
             self.create_dataloader()
             self.create_optimizer()
 
@@ -440,14 +437,20 @@ class experiment_extraclass(experiment_base):
                 ) = self.pool_predictions(self.pool_loader)
 
                 source_labels = self.datamanager.get_pool_source_labels()
-                iD_Prob = 1-pool_predictions[:,-1]
-                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
+                iD_Prob = 1 - pool_predictions[:, -1]
+                auroc_score = auroc(
+                    iD_Prob,
+                    source_labels,
+                    self.writer,
+                    self.current_oracle_step,
+                    plot_auc=True,
+                )
 
                 self.sampler(
                     self.datamanager,
                     number_samples=self.oracle_stepsize,
                     net=self.model,
-                    predictions=pool_predictions
+                    predictions=pool_predictions,
                 )
 
                 test_predictions, test_labels = self.pool_predictions(self.test_loader)
@@ -461,7 +464,7 @@ class experiment_extraclass(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
-                    "Pool_AUROC" : auroc_score
+                    "Pool_AUROC": auroc_score,
                 }
 
                 print(dict_to_add)

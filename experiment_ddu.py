@@ -51,8 +51,10 @@ def centered_cov_torch(x):
     res = 1 / (n - 1) * x.t().mm(x)
     return res
 
+
 def compute_density(logits, class_probs):
     return torch.sum((torch.exp(logits) * class_probs), dim=1)
+
 
 DOUBLE_INFO = torch.finfo(torch.double)
 JITTERS = [0, DOUBLE_INFO.tiny] + [10 ** exp for exp in range(-308, 0, 1)]
@@ -520,9 +522,9 @@ class experiment_ddu(experiment_base):
             self.datamanager.create_merged_data(path=save_path)
             print("created new statusmanager")
         self.current_oracle_step = 0
-
+        self.set_model("DDU")  # hardcoded till we add larger models
         for oracle_s in range(self.oracle_steps):
-            self.set_model("DDU")  # hardcoded till we add larger models
+
             result_tup = self.create_dataloader()
             self.create_optimizer()
 
@@ -560,8 +562,14 @@ class experiment_ddu(experiment_base):
                 densities = densities.detach().to("cpu").numpy()
 
                 source_labels = self.datamanager.get_pool_source_labels()
-                iD_Prob = 1-np.exp(-densities)
-                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
+                iD_Prob = 1 - np.exp(-densities)
+                auroc_score = auroc(
+                    iD_Prob,
+                    source_labels,
+                    self.writer,
+                    self.current_oracle_step,
+                    plot_auc=True,
+                )
 
                 # samples from unlabelled pool predictions
                 self.sampler(
@@ -581,7 +589,7 @@ class experiment_ddu(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
-                    "Pool_AUROC" : auroc_score
+                    "Pool_AUROC": auroc_score,
                 }
 
                 print(dict_to_add)
@@ -623,7 +631,7 @@ class experiment_ddu(experiment_base):
         self.train_loss_hist = []
 
         for oracle_s in range(self.oracle_steps):
-            self.set_model("DDU")  # hardcoded till we add larger models
+
             result_tup = create_dataloader_old(
                 self.datamanager,
                 batch_size=self.batch_size,
