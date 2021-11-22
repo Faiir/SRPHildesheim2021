@@ -3,7 +3,7 @@
     {
       "basic_settings": {
         "oracle_stepsize": 50,
-        "oracle_steps": 10,
+        "oracle_steps": 20,
         "iD": "CIFAR10",
         "OoD": ["FashionMNIST", "MNIST"],
         "grayscale": false,
@@ -14,8 +14,8 @@
         },
         "labelled_size": 1000,
         "pool_size": 30000,
-        "OOD_ratio": 0.5,
-        "epochs": 200,
+        "OOD_ratio": 0.15,
+        "epochs": 100,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -31,6 +31,22 @@
       },
       "exp_settings": [
         {
+          "exp_type": "baseline",
+          "exp_name": "baseline-cifar15-noOOD",
+          "oracle": "baseline",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "baseline_ood",
+          "exp_name": "baseline-cifar15-OOD",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": false
+        },
+        {
           "exp_type": "genodin",
           "exp_name": "genodin-cifar-015",
           "similarity": "C",
@@ -38,29 +54,29 @@
           "do_pertubed_images": true,
           "scaling_factor": "R",
           "model": "GenOdin",
-          "bugged_and_working": false,
+          "bugged_and_working": true,
           "plotsettings": {
             "do_plot": false,
             "density_plot": false,
             "layer_plot": false
           },
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "looc",
           "exp_name": "looc-cifar-015",
-          "similarity": "C",
+          "similarity": "E",
           "oracle": "LOOC",
           "do_pertubed_images": true,
           "scaling_factor": "R",
           "model": "LOOC",
-          "bugged_and_working": false,
+          "bugged_and_working": true,
           "plotsettings": {
             "do_plot": false,
             "density_plot": false,
             "layer_plot": false
           },
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "ddu",
@@ -72,20 +88,13 @@
           "temp": 1.0,
           "perform_experiment": false
         },
-        {
-          "exp_type": "baseline",
-          "exp_name": "funny_name_here",
-          "oracle": "baseline",
-          "model": "base",
-          "plots": false,
-          "perform_experiment": false
-        },
+
         {
           "exp_type": "extra_class",
           "exp_name": "extra_class_hard",
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
-          "model" : "base",
+          "model": "base",
           "perform_experiment": false
         },
         {
@@ -93,7 +102,7 @@
           "exp_name": "extra_class_soft",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
-          "model" : "base",
+          "model": "base",
           "perform_experiment": false
         },
         {
@@ -102,7 +111,7 @@
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         }
       ]
     }
