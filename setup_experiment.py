@@ -46,7 +46,11 @@ def create_log_dirs(log_path):
 
 
 def start_experiment(config, log_path):
-    log_path = os.path.join(log_path, time.strftime("%m-%d-%H-%M", time.localtime()))
+    if log_path != os.path.join("./logs"):
+        log_path = os.path.join(log_path, time.strftime("%m-%d-%H-%M", time.localtime()))
+    
+    print("Logging Results under: ", log_path)
+    
     create_log_dirs(log_path)
 
     writer = SummaryWriter(os.path.join(log_path, "writer_dir"))
