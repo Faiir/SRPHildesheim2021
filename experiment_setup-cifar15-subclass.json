@@ -23,7 +23,7 @@
         "nesterov": false,
         "momentum": 0.9,
         "lr_sheduler": true,
-        "num_classes": 10,
+        "num_classes": 7,
         "validation_split": 0.1,
         "validation_source": "test",
         "criterion": "crossentropy",
