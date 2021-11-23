@@ -112,7 +112,7 @@ def start_experiment(config, log_path):
             current_exp.perform_experiment()
             del current_exp
             gc.collect()
-    final_traing(log_path, config)
+    # final_traing(log_path, config)
 
 
 def main():
