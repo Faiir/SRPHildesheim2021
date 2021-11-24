@@ -309,7 +309,7 @@ class experiment_without_OoD(experiment_base):
             self.batch_size,
             self.validation_split,
             validation_source=self.validation_source,
-            only_iD_pool = True
+            only_iD_pool=True,
         )
         self.train_loader = result_tup[0]
         self.test_loader = result_tup[1]
@@ -384,10 +384,11 @@ class experiment_without_OoD(experiment_base):
 
             print("created new statusmanager")
         self.current_oracle_step = 0
+        self.set_model(
+            self.current_experiment.get("model", "base"),
+        )
         for oracle_s in range(self.oracle_steps):
-            self.set_model(
-                self.current_experiment.get("model", "base"),
-            )
+
             self.create_dataloader()
             self.create_optimizer()
 
@@ -426,7 +427,7 @@ class experiment_without_OoD(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
-                    "Pool_AUROC" : 0
+                    "Pool_AUROC": 0,
                 }
 
                 print(dict_to_add)

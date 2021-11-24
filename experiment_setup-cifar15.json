@@ -3,7 +3,7 @@
     {
       "basic_settings": {
         "oracle_stepsize": 50,
-        "oracle_steps": 10,
+        "oracle_steps": 20,
         "iD": "CIFAR10",
         "OoD": ["FashionMNIST", "MNIST"],
         "grayscale": false,
@@ -12,10 +12,10 @@
           "iD_classes": [],
           "OoD_classes": []
         },
-        "labelled_size": 500,
+        "labelled_size": 1000,
         "pool_size": 30000,
         "OOD_ratio": 0.15,
-        "epochs": 200,
+        "epochs": 100,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -27,7 +27,7 @@
         "validation_split": 0.1,
         "validation_source": "test",
         "criterion": "crossentropy",
-        "verbose": 2
+        "verbose": 1
       },
       "exp_settings": [
         {
@@ -44,7 +44,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "genodin",
@@ -56,11 +56,11 @@
           "model": "GenOdin",
           "bugged_and_working": false,
           "plotsettings": {
-            "do_plot": false,
-            "density_plot": false,
+            "do_plot": true,
+            "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "looc",
@@ -72,11 +72,11 @@
           "model": "LOOC",
           "bugged_and_working": true,
           "plotsettings": {
-            "do_plot": false,
-            "density_plot": false,
+            "do_plot": true,
+            "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "ddu",
@@ -91,7 +91,7 @@
 
         {
           "exp_type": "extra_class",
-          "exp_name": "extra_class_hard",
+          "exp_name": "extra_class_hard015",
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
@@ -99,15 +99,15 @@
         },
         {
           "exp_type": "extra_class",
-          "exp_name": "extra_class_soft",
+          "exp_name": "extra_class_soft015",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "gram",
-          "exp_name": "funny_name_here",
+          "exp_name": "gram-cifar015",
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,

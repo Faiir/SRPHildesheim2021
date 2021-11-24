@@ -390,7 +390,7 @@ class Detector:
                 torch_model.get_deviations(
                     test_PRED, power=POWERS, mins=mins, maxs=maxs
                 )
-                / (+test_confs_PRED[:, np.newaxis])
+                / (test_confs_PRED[:, np.newaxis])
             )
 
             if device != "cuda":

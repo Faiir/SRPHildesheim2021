@@ -46,7 +46,13 @@ def create_log_dirs(log_path):
 
 
 def start_experiment(config, log_path):
-    log_path = os.path.join(log_path, time.strftime("%m-%d-%H-%M", time.localtime()))
+    if log_path == os.path.join("./logs"):
+        log_path = os.path.join(
+            log_path, time.strftime("%m-%d-%H-%M", time.localtime())
+        )
+
+    print("Logging Results under: ", log_path)
+
     create_log_dirs(log_path)
 
     writer = SummaryWriter(os.path.join(log_path, "writer_dir"))
@@ -61,14 +67,17 @@ def start_experiment(config, log_path):
         basic_settings = experiment["basic_settings"]
 
         for exp_setting in experiment["exp_settings"]:
-            if exp_setting.get('perform_experiment',True):
-                print(f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is being performed.\n\n')
+            if exp_setting.get("perform_experiment", True):
+                print(
+                    f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is being performed.\n\n'
+                )
             else:
-                print(f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is not being performed.\n\n')
+                print(
+                    f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is not being performed.\n\n'
+                )
                 continue
 
             exp_type = exp_setting["exp_type"]
-
 
             if exp_type == "baseline":
                 current_exp = experiment_without_OoD(
@@ -103,7 +112,7 @@ def start_experiment(config, log_path):
             current_exp.perform_experiment()
             del current_exp
             gc.collect()
-    final_traing(log_path, config)
+    # final_traing(log_path, config)
 
 
 def main():

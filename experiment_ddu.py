@@ -51,8 +51,10 @@ def centered_cov_torch(x):
     res = 1 / (n - 1) * x.t().mm(x)
     return res
 
+
 def compute_density(logits, class_probs):
     return torch.sum((torch.exp(logits) * class_probs), dim=1)
+
 
 DOUBLE_INFO = torch.finfo(torch.double)
 JITTERS = [0, DOUBLE_INFO.tiny] + [10 ** exp for exp in range(-308, 0, 1)]
@@ -288,10 +290,8 @@ class experiment_ddu(experiment_base):
         dtype,
     ):
         num_samples = len(self.train_loader.dataset)
-        embeddings = torch.empty(
-            (num_samples, num_dim), dtype=dtype, device=self.device
-        )
-        labels = torch.empty(num_samples, dtype=torch.int, device=self.device)
+        embeddings = []
+        labels = []
 
         with torch.no_grad():
             start = 0
@@ -305,11 +305,12 @@ class experiment_ddu(experiment_base):
                 else:
                     out = self.model(data)
                     out = self.model.feature
+                
+                embeddings.append(out)
+                labels.append(label)
 
-                end = start + len(data)
-                embeddings[start:end].copy_(out, non_blocking=True)
-                labels[start:end].copy_(label, non_blocking=True)
-                start = end
+        embeddings = torch.cat(embeddings,axis=0)
+        labels =  torch.cat(labels,axis=0)
         self.embeddings = embeddings
         self.labels = labels
         return embeddings, labels
@@ -366,7 +367,7 @@ class experiment_ddu(experiment_base):
                     for c in range(num_classes)
                 ]
             )
-
+        gmm = None
         with torch.no_grad():
             for jitter_eps in JITTERS:
                 try:
@@ -381,14 +382,11 @@ class experiment_ddu(experiment_base):
                         loc=classwise_mean_features,
                         covariance_matrix=(classwise_cov_features + jitter),
                     )
-                except RuntimeError as e:
-                    if "cholesky" in str(e):
-                        continue
-                except ValueError as e:
-                    if "The parameter covariance_matrix has invalid values" in str(e):
-                        continue
+                    
+                except:
+                    continue
                 break
-
+                
         return gmm, jitter_eps
 
     # overrides set_sampler
@@ -520,9 +518,9 @@ class experiment_ddu(experiment_base):
             self.datamanager.create_merged_data(path=save_path)
             print("created new statusmanager")
         self.current_oracle_step = 0
-
+        self.set_model("DDU")  # hardcoded till we add larger models
         for oracle_s in range(self.oracle_steps):
-            self.set_model("DDU")  # hardcoded till we add larger models
+
             result_tup = self.create_dataloader()
             self.create_optimizer()
 
@@ -559,9 +557,16 @@ class experiment_ddu(experiment_base):
                 densities = compute_density(logits, class_prob)
                 densities = densities.detach().to("cpu").numpy()
 
+                    
                 source_labels = self.datamanager.get_pool_source_labels()
-                iD_Prob = 1-np.exp(-densities)
-                auroc_score = auroc(iD_Prob, source_labels, self.writer, self.current_oracle_step, plot_auc= True)
+                iD_Prob = 1 - np.exp(-densities)
+                auroc_score = auroc(
+                    iD_Prob,
+                    source_labels,
+                    self.writer,
+                    self.current_oracle_step,
+                    plot_auc=True,
+                )
 
                 # samples from unlabelled pool predictions
                 self.sampler(
@@ -581,7 +586,7 @@ class experiment_ddu(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
-                    "Pool_AUROC" : auroc_score
+                    "Pool_AUROC": auroc_score,
                 }
 
                 print(dict_to_add)
@@ -623,7 +628,7 @@ class experiment_ddu(experiment_base):
         self.train_loss_hist = []
 
         for oracle_s in range(self.oracle_steps):
-            self.set_model("DDU")  # hardcoded till we add larger models
+
             result_tup = create_dataloader_old(
                 self.datamanager,
                 batch_size=self.batch_size,
