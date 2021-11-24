@@ -474,6 +474,24 @@ class Data_manager:
             inds_dict[ii] = inds_df[ii]
 
         return dataset_creator(inds_dict, self.datasets_dict)
+    
+    def get_all_status_manager_dataset(self):
+        """get_all_status_manager_dataset [returns the state of the unlabelled pool]"""
+        assert (
+            self.iter is not None
+        ), "Dataset not initialized. Call create_merged_data()"
+
+
+        inds_df = (
+            self.status_manager.groupby("dataset_name", sort=False)["inds"]
+            .agg(list)
+        )
+        inds_dict = OrderedDict()
+        for ii in inds_df.index:
+            inds_dict[ii] = inds_df[ii]
+
+        return dataset_creator(inds_dict, self.datasets_dict)
+
 
     def get_unlabelled_iD_pool_dataset(self):
         """get_unlabelled_pool_data [returns the state of the unlabelled pool]"""
