@@ -5,7 +5,7 @@
         "oracle_stepsize": 150,
         "oracle_steps": 20,
         "iD": "CIFAR10",
-        "OoD": ["CIFAR10_ood"],
+        "OoD": ["CIFAR10_ood", "SVHN"],
         "grayscale": false,
         "subclass": {
           "do_subclass": true,
@@ -13,7 +13,7 @@
           "OoD_classes": [7, 8, 9]
         },
         "labelled_size": 3000,
-        "pool_size": 17000,
+        "pool_size": 25000,
         "OOD_ratio": 0.15,
         "epochs": 100,
         "batch_size": 64,

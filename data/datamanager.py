@@ -143,46 +143,51 @@ class Data_manager:
                 ]
 
             for c, dataset in enumerate(self.OoD_datasets):
-                cls = set(subclass["OoD_classes"])
-                idx_train = [
-                    i
-                    for i, val in enumerate(
-                        self.datasets_dict[dataset + "_train"].targets
+                if dataset == "SVHN":
+                    pass
+                else:
+                    cls = set(subclass["OoD_classes"])
+                    idx_train = [
+                        i
+                        for i, val in enumerate(
+                            self.datasets_dict[dataset + "_train"].targets
+                        )
+                        if val in cls
+                    ]
+                    idx_test = [
+                        i
+                        for i, val in enumerate(
+                            self.datasets_dict[dataset + "_test"].targets
+                        )
+                        if val in cls
+                    ]
+
+                    self.datasets_dict[dataset + "_train"].data = np.take(
+                        self.datasets_dict[dataset + "_train"].data, idx_train, axis=0
                     )
-                    if val in cls
-                ]
-                idx_test = [
-                    i
-                    for i, val in enumerate(
-                        self.datasets_dict[dataset + "_test"].targets
+                    self.datasets_dict[dataset + "_train"].targets = np.take(
+                        self.datasets_dict[dataset + "_train"].targets,
+                        idx_train,
+                        axis=0,
                     )
-                    if val in cls
-                ]
 
-                self.datasets_dict[dataset + "_train"].data = np.take(
-                    self.datasets_dict[dataset + "_train"].data, idx_train, axis=0
-                )
-                self.datasets_dict[dataset + "_train"].targets = np.take(
-                    self.datasets_dict[dataset + "_train"].targets, idx_train, axis=0
-                )
+                    self.datasets_dict[dataset + "_test"].data = np.take(
+                        self.datasets_dict[dataset + "_test"].data, idx_test, axis=0
+                    )
+                    self.datasets_dict[dataset + "_test"].targets = np.take(
+                        self.datasets_dict[dataset + "_test"].targets, idx_test, axis=0
+                    ).tolist()
 
-                self.datasets_dict[dataset + "_test"].data = np.take(
-                    self.datasets_dict[dataset + "_test"].data, idx_test, axis=0
-                )
-                self.datasets_dict[dataset + "_test"].targets = np.take(
-                    self.datasets_dict[dataset + "_test"].targets, idx_test, axis=0
-                ).tolist()
+                    new_labels = [subclass["OoD_classes"].index(i) for i in cls]
+                    self.datasets_dict[dataset + "_train"].targets = [
+                        new_labels[subclass["OoD_classes"].index(i)]
+                        for i in self.datasets_dict[dataset + "_train"].targets
+                    ]
 
-                new_labels = [subclass["OoD_classes"].index(i) for i in cls]
-                self.datasets_dict[dataset + "_train"].targets = [
-                    new_labels[subclass["OoD_classes"].index(i)]
-                    for i in self.datasets_dict[dataset + "_train"].targets
-                ]
-
-                self.datasets_dict[dataset + "_test"].targets = [
-                    new_labels[subclass["OoD_classes"].index(i)]
-                    for i in self.datasets_dict[dataset + "_test"].targets
-                ]
+                    self.datasets_dict[dataset + "_test"].targets = [
+                        new_labels[subclass["OoD_classes"].index(i)]
+                        for i in self.datasets_dict[dataset + "_test"].targets
+                    ]
 
         self.iD_samples_size = 0
         for ii in self.iD_datasets:
