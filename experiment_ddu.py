@@ -306,12 +306,12 @@ class experiment_ddu(experiment_base):
                 else:
                     out = self.model(data)
                     out = self.model.feature
-                
+
                 embeddings.append(out)
                 labels.append(label)
 
-        embeddings = torch.cat(embeddings,axis=0)
-        labels =  torch.cat(labels,axis=0)
+        embeddings = torch.cat(embeddings, axis=0)
+        labels = torch.cat(labels, axis=0)
         self.embeddings = embeddings
         self.labels = labels
         return embeddings, labels
@@ -383,11 +383,11 @@ class experiment_ddu(experiment_base):
                         loc=classwise_mean_features,
                         covariance_matrix=(classwise_cov_features + jitter),
                     )
-                    
+
                 except:
                     continue
                 break
-                
+
         return gmm, jitter_eps
 
     # overrides set_sampler
@@ -492,7 +492,7 @@ class experiment_ddu(experiment_base):
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
 
     def class_probs(self, data_loader):
-        num_classes = 10
+        num_classes = self.num_classes
         class_n = len(data_loader.dataset)
         class_count = torch.zeros(num_classes)
         for data, label in data_loader:
@@ -558,7 +558,6 @@ class experiment_ddu(experiment_base):
                 densities = compute_density(logits, class_prob)
                 densities = densities.detach().to("cpu").numpy()
 
-                    
                 source_labels = self.datamanager.get_pool_source_labels()
                 iD_Prob = 1 - np.exp(-densities)
                 auroc_score = auroc(
