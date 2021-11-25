@@ -590,6 +590,21 @@ class Data_manager:
         self.OoD_extra_class = False
         self.status_manager.loc[self.status_manager["status"] != 1, "status"] = 0
 
+        train_labels = self.status_manager.loc[
+            (self.status_manager["source"].values == 1), "target"
+        ]
+        OoD_class_label = max(train_labels) + 1
+        self.status_manager["target"] = np.where(
+            self.status_manager["source"].values == 1,
+            self.status_manager["target"].values,
+            OoD_class_label,
+        )
+
+        for ii in self.OoD_datasets:
+            for jj in ['_train','_test']:
+                self.datasets_dict[ii+jj].targets = OoD_class_label*np.ones_like(self.datasets_dict[ii+jj].targets)
+
+
         self.config = {
             "Total_overall_examples": len(self.status_manager),
             "Total_base_examples": len(
