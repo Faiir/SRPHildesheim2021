@@ -256,6 +256,7 @@ class ResNet(nn.Module):
         out = self.layer3(out)
         out = F.avg_pool2d(out, out.size()[3])
         out = out.view(out.size(0), -1)
+        out_centroids = out
         if self.similarity is None:
             out = self.linear(out)
         else:
@@ -274,7 +275,7 @@ class ResNet(nn.Module):
             out = self.softmax(out)
 
         if get_test_model:
-            return out, g, h
+            return out, g, h, out_centroids
         else:
             return out
 

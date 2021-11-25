@@ -3,7 +3,7 @@
     {
       "basic_settings": {
         "oracle_stepsize": 50,
-        "oracle_steps": 10,
+        "oracle_steps": 1,
         "iD": "CIFAR10",
         "OoD": ["FashionMNIST", "MNIST"],
         "grayscale": false,
@@ -13,9 +13,9 @@
           "OoD_classes": []
         },
         "labelled_size": 500,
-        "pool_size": 30000,
+        "pool_size": 1000,
         "OOD_ratio": 0.15,
-        "epochs": 200,
+        "epochs": 10,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -76,7 +76,8 @@
             "density_plot": false,
             "layer_plot": false
           },
-          "perform_experiment": false
+          "perform_layer_analysis": true,
+          "perform_experiment": true
         },
         {
           "exp_type": "ddu",
@@ -86,7 +87,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": true
+          "perform_experiment": false
         },
 
         {
@@ -95,7 +96,7 @@
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
@@ -111,7 +112,7 @@
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         }
       ]
     }
