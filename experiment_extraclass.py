@@ -421,6 +421,11 @@ class experiment_extraclass(experiment_base):
             self.create_dataloader()
             self.create_optimizer()
 
+# Keeping it here In case you get the target out of bound error again
+#            for ii in self.datamanager.datasets_dict:
+#                print(f'{ii} : {np.unique(self.datamanager.datasets_dict[ii].targets)}')
+#                print(self.datamanager.datasets_dict[ii].targets)
+
             self.train(
                 self.train_loader,
                 self.val_loader,

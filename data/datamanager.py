@@ -345,6 +345,11 @@ class Data_manager:
             OoD_class_label,
         )
 
+        for ii in self.OoD_datasets:
+            for jj in ['_train','_test']:
+                self.datasets_dict[ii+jj].targets = OoD_class_label*np.ones_like(self.datasets_dict[ii+jj].targets)
+            
+
         self.iter = 0
 
         self.config = {
