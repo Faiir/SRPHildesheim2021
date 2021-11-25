@@ -143,46 +143,51 @@ class Data_manager:
                 ]
 
             for c, dataset in enumerate(self.OoD_datasets):
-                cls = set(subclass["OoD_classes"])
-                idx_train = [
-                    i
-                    for i, val in enumerate(
-                        self.datasets_dict[dataset + "_train"].targets
+                if dataset == "SVHN":
+                    pass
+                else:
+                    cls = set(subclass["OoD_classes"])
+                    idx_train = [
+                        i
+                        for i, val in enumerate(
+                            self.datasets_dict[dataset + "_train"].targets
+                        )
+                        if val in cls
+                    ]
+                    idx_test = [
+                        i
+                        for i, val in enumerate(
+                            self.datasets_dict[dataset + "_test"].targets
+                        )
+                        if val in cls
+                    ]
+
+                    self.datasets_dict[dataset + "_train"].data = np.take(
+                        self.datasets_dict[dataset + "_train"].data, idx_train, axis=0
                     )
-                    if val in cls
-                ]
-                idx_test = [
-                    i
-                    for i, val in enumerate(
-                        self.datasets_dict[dataset + "_test"].targets
+                    self.datasets_dict[dataset + "_train"].targets = np.take(
+                        self.datasets_dict[dataset + "_train"].targets,
+                        idx_train,
+                        axis=0,
+                    ).tolist()
+
+                    self.datasets_dict[dataset + "_test"].data = np.take(
+                        self.datasets_dict[dataset + "_test"].data, idx_test, axis=0
                     )
-                    if val in cls
-                ]
+                    self.datasets_dict[dataset + "_test"].targets = np.take(
+                        self.datasets_dict[dataset + "_test"].targets, idx_test, axis=0
+                    ).tolist()
 
-                self.datasets_dict[dataset + "_train"].data = np.take(
-                    self.datasets_dict[dataset + "_train"].data, idx_train, axis=0
-                )
-                self.datasets_dict[dataset + "_train"].targets = np.take(
-                    self.datasets_dict[dataset + "_train"].targets, idx_train, axis=0
-                )
+                    # new_labels = [subclass["OoD_classes"].index(i) for i in cls]
+                    # self.datasets_dict[dataset + "_train"].targets = [
+                    #     new_labels[subclass["OoD_classes"].index(i)]
+                    #     for i in self.datasets_dict[dataset + "_train"].targets
+                    # ]
 
-                self.datasets_dict[dataset + "_test"].data = np.take(
-                    self.datasets_dict[dataset + "_test"].data, idx_test, axis=0
-                )
-                self.datasets_dict[dataset + "_test"].targets = np.take(
-                    self.datasets_dict[dataset + "_test"].targets, idx_test, axis=0
-                ).tolist()
-
-                new_labels = [subclass["OoD_classes"].index(i) for i in cls]
-                self.datasets_dict[dataset + "_train"].targets = [
-                    new_labels[subclass["OoD_classes"].index(i)]
-                    for i in self.datasets_dict[dataset + "_train"].targets
-                ]
-
-                self.datasets_dict[dataset + "_test"].targets = [
-                    new_labels[subclass["OoD_classes"].index(i)]
-                    for i in self.datasets_dict[dataset + "_test"].targets
-                ]
+                    # self.datasets_dict[dataset + "_test"].targets = [
+                    #     new_labels[subclass["OoD_classes"].index(i)]
+                    #     for i in self.datasets_dict[dataset + "_test"].targets
+                    # ]
 
         self.iD_samples_size = 0
         for ii in self.iD_datasets:
@@ -722,7 +727,7 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
 
     if "SVHN" in datasets_list:
         SVHN_transforms = transforms.Compose(
-            [transforms.ToTensor(), transforms.Resize(32), transforms.RandomCrop(32, 4)]
+            [transforms.ToTensor(), transforms.Resize(32)]
         )
 
         datasets_dict["SVHN_train"] = SVHN(
@@ -778,23 +783,21 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
 
     if "CIFAR10_ood" in datasets_list:
 
-        cifar_train_transform = (
-            transforms.Compose(
-                [
-                    transforms.ToTensor(),
-                    transforms.Normalize(
-                        mean=[0.5071, 0.4865, 0.4409], std=[0.2009, 0.1984, 0.2023]
-                    ),
-                    transforms.RandomHorizontalFlip(),
-                    transforms.RandomCrop(32, 4),
-                ]
-            ),
+        cifar_train_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(32, 4),
+            ]
         )
         cifar_test_transform = transforms.Compose(
             [
                 transforms.ToTensor(),
                 transforms.Normalize(
-                    mean=[0.5071, 0.4865, 0.4409], std=[0.2009, 0.1984, 0.2023]
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
                 ),
             ]
         )

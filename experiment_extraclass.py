@@ -262,6 +262,7 @@ class experiment_extraclass(experiment_base):
             pool_size=self.pool_size,
             OoD_ratio=self.OOD_ratio,
             test_iD_size=None,
+            subclass=self.current_experiment.get("subclass", {"do_subclass": False}),
         )
         print("initialised datamanager")
 
