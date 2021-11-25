@@ -15,7 +15,7 @@
         "labelled_size": 3000,
         "pool_size": 25000,
         "OOD_ratio": 0.15,
-        "epochs": 100,
+        "epochs": 10,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -44,7 +44,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "genodin",
@@ -60,7 +60,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "looc",
@@ -76,7 +76,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "ddu",
@@ -86,7 +86,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": true
+          "perform_experiment": false
         },
 
         {
@@ -95,7 +95,7 @@
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
