@@ -24,6 +24,7 @@ from .model.get_model import get_model
 # project
 from .experiment_base import experiment_base
 from .model.model_files.small_resnet_original import resnet20
+from torch.utils.data import DataLoader, SequentialSampler
 from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot, density_plot
 from .data.datahandler_for_array import create_dataloader
@@ -57,6 +58,7 @@ def _create_log_path_al(log_dir: str = ".", OOD_ratio: float = 0.0) -> None:
 
     if os.path.exists(log_dir) == False:
         os.mkdir(os.path.join(".", "log_dir"))
+
 
     log_path = os.path.join(log_dir, log_file_name)
 
@@ -488,6 +490,7 @@ class experiment_gen_odin(experiment_base):
         self.validation_split = self.current_experiment.get("validation_split", "train")
         self.validation_source = self.current_experiment.get("validation_source", 0.3)
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
+        self.perform_layer_analysis = self.current_experiment.get("perform_layer_analysis", False)
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")
@@ -595,6 +598,45 @@ class experiment_gen_odin(experiment_base):
 
                     self.create_plots("density", pert_preds, gs, hs, targets, oracle_s)
                     print("created density plots")
+                
+                if self.perform_layer_analysis:
+                    centroids_list = []
+                    weighting_factor_list = []
+                    statusmanager_dataset = self.datamanager.get_all_status_manager_dataset()
+                    statusmanager_dataloader = DataLoader(statusmanager_dataset,
+                                                        sampler=SequentialSampler(statusmanager_dataset),
+                                                        batch_size=128,
+                                                        num_workers=2,
+                                                        pin_memory=False,
+                                                        drop_last=False,
+                                                     )
+
+                    for (data, labels) in statusmanager_dataloader:
+                        tuple_data = self.model(
+                                data.to(self.device).float(),
+                                get_test_model=True,
+                                apply_softmax=False,
+                        )
+  
+                        centroids_list.append(tuple_data[3].to("cpu").detach().numpy())
+                        weighting_factor_list.append(tuple_data[1].to("cpu").detach().numpy())
+
+                    centroids_list = np.concatenate(centroids_list,axis=0)
+                    weighting_factor_list = np.concatenate(weighting_factor_list,axis=0)
+                    print(centroids_list.shape)
+                    print(weighting_factor_list.shape)
+                    statusmanager_copy = self.datamanager.status_manager.copy()
+                    centroid_values = [f'centroid_{ii+1}' for ii in range(centroids_list.shape[1])]
+                    statusmanager_copy[centroid_values] = centroids_list
+                    statusmanager_copy['weighting_factor'] = weighting_factor_list 
+
+                    layer_analysis_dir = os.path.join(self.log_path, "layer_analysis_dir")
+                    if os.path.exists(layer_analysis_dir) == False:
+                        os.mkdir(os.path.join(self.log_path, "layer_analysis_dir"))
+                        
+                    layer_analysis_path = os.path.join(self.log_path, "layer_analysis_dir", f"status_manager_at_{self.current_oracle_step-1}.csv")
+                    statusmanager_copy.to_csv(layer_analysis_path)
+                    
                 (
                     test_predictions,
                     test_labels,

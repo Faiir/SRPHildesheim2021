@@ -345,6 +345,11 @@ class Data_manager:
             OoD_class_label,
         )
 
+        for ii in self.OoD_datasets:
+            for jj in ['_train','_test']:
+                self.datasets_dict[ii+jj].targets = OoD_class_label*np.ones_like(self.datasets_dict[ii+jj].targets)
+            
+
         self.iter = 0
 
         self.config = {
@@ -479,6 +484,24 @@ class Data_manager:
             inds_dict[ii] = inds_df[ii]
 
         return dataset_creator(inds_dict, self.datasets_dict)
+    
+    def get_all_status_manager_dataset(self):
+        """get_all_status_manager_dataset [returns the state of the unlabelled pool]"""
+        assert (
+            self.iter is not None
+        ), "Dataset not initialized. Call create_merged_data()"
+
+
+        inds_df = (
+            self.status_manager.groupby("dataset_name", sort=False)["inds"]
+            .agg(list)
+        )
+        inds_dict = OrderedDict()
+        for ii in inds_df.index:
+            inds_dict[ii] = inds_df[ii]
+
+        return dataset_creator(inds_dict, self.datasets_dict)
+
 
     def get_unlabelled_iD_pool_dataset(self):
         """get_unlabelled_pool_data [returns the state of the unlabelled pool]"""
@@ -566,6 +589,21 @@ class Data_manager:
         self.iter = 0
         self.OoD_extra_class = False
         self.status_manager.loc[self.status_manager["status"] != 1, "status"] = 0
+
+        train_labels = self.status_manager.loc[
+            (self.status_manager["source"].values == 1), "target"
+        ]
+        OoD_class_label = max(train_labels) + 1
+        self.status_manager["target"] = np.where(
+            self.status_manager["source"].values == 1,
+            self.status_manager["target"].values,
+            OoD_class_label,
+        )
+
+        for ii in self.OoD_datasets:
+            for jj in ['_train','_test']:
+                self.datasets_dict[ii+jj].targets = OoD_class_label*np.ones_like(self.datasets_dict[ii+jj].targets)
+
 
         self.config = {
             "Total_overall_examples": len(self.status_manager),
