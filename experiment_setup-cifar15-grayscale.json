@@ -56,7 +56,7 @@
           "model": "GenOdin",
           "bugged_and_working": false,
           "plotsettings": {
-            "do_plot": true,
+            "do_plot": false,
             "density_plot": true,
             "layer_plot": false
           },
@@ -72,7 +72,7 @@
           "model": "LOOC",
           "bugged_and_working": true,
           "plotsettings": {
-            "do_plot": true,
+            "do_plot": false,
             "density_plot": true,
             "layer_plot": false
           },
