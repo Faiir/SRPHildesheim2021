@@ -193,11 +193,12 @@ class BasicBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, similarity=None):
+    def __init__(self, block, num_blocks, num_classes=10, similarity=None, perform_layer_analysis=False):
         super(ResNet, self).__init__()
         self.in_planes = 16
         self.similarity = similarity
         self.softmax = nn.Softmax(dim=1)
+        self.perform_layer_analysis = perform_layer_analysis
 
         if self.similarity is None:
             print("INFO ----- ResNet has been initialized without a similarity measure")
@@ -215,24 +216,31 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
 
+        last_layer_dims = 64
+        if self.perform_layer_analysis:
+            print("\n\n\nINFO ---- perform_layer_analysis is turned on, only 2 dimension embeddings would be created")
+            last_layer_dims = 2
+            self.layer4 = nn.Linear(64, 2)
+
+
         if self.similarity is None:
-            self.linear = nn.Linear(64, num_classes)
+            self.linear = nn.Linear(last_layer_dims, num_classes)
         else:
             self.g_activation = nn.Sigmoid()
-            self.g_func = nn.Linear(64, 1)
+            self.g_func = nn.Linear(last_layer_dims, 1)
             self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
             if "I" in self.similarity:
-                self.h_func = nn.Linear(64, num_classes)
+                self.h_func = nn.Linear(last_layer_dims, num_classes)
             elif "E" in self.similarity:
-                self.h_func = euc_dist_layer(64, num_classes)
+                self.h_func = euc_dist_layer(last_layer_dims, num_classes)
             elif "C" in self.similarity:
-                self.h_func = cosine_layer(64, num_classes)
+                self.h_func = cosine_layer(last_layer_dims, num_classes)
 
             if "E_U" in self.similarity:
-                self.h_func = euc_dist_layer_corrected(64, num_classes)
+                self.h_func = euc_dist_layer_corrected(last_layer_dims, num_classes)
             elif "C_H" in self.similarity:
-                self.h_func = cosine_layer_holy(64, num_classes)
+                self.h_func = cosine_layer_holy(last_layer_dims, num_classes)
 
             if "R" in self.similarity:
                 self.scaling_factor = nn.Parameter(torch.Tensor(1, 1))
@@ -256,6 +264,10 @@ class ResNet(nn.Module):
         out = self.layer3(out)
         out = F.avg_pool2d(out, out.size()[3])
         out = out.view(out.size(0), -1)
+
+        if self.perform_layer_analysis:
+            out = self.layer4(out)
+
         out_centroids = out
         if self.similarity is None:
             out = self.linear(out)
@@ -280,8 +292,8 @@ class ResNet(nn.Module):
             return out
 
 
-def resnet20(num_classes, similarity):
-    return ResNet(BasicBlock, [3, 3, 3], num_classes, similarity)
+def resnet20(num_classes, similarity, perform_layer_analysis):
+    return ResNet(BasicBlock, [3, 3, 3], num_classes, similarity, perform_layer_analysis)
 
 
 def resnet32(num_classes, similarity):

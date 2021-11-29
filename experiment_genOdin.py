@@ -307,6 +307,7 @@ class experiment_gen_odin(experiment_base):
                 model_name,
                 num_classes=self.num_classes,
                 similarity=self.similarity,
+                perform_layer_analysis = self.perform_layer_analysis
             )
         else:
             raise NotImplementedError
@@ -636,6 +637,16 @@ class experiment_gen_odin(experiment_base):
                         
                     layer_analysis_path = os.path.join(self.log_path, "layer_analysis_dir", f"status_manager_at_{self.current_oracle_step-1}.csv")
                     statusmanager_copy.to_csv(layer_analysis_path)
+
+                    
+                    for name, param in self.model.named_parameters():
+                        if "h_func" in name:
+                            a = param.data.to("cpu").detach().numpy()
+                            print(a)
+                            print(a.shape)
+                            centeroid_path = os.path.join(self.log_path, "layer_analysis_dir", f"centeroids_{name}_{self.current_oracle_step-1}.csv")
+                            np.savetxt(centeroid_path, 
+                            a[0], delimiter=",")                            
                     
                 (
                     test_predictions,
