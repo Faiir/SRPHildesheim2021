@@ -432,7 +432,7 @@ class experiment_gram(experiment_base):
                     self.pool_loader
                 )
 
-                dector = Detector()
+                dector = Detector(num_classes=self.num_classes)
                 POWERS = range(2, 7)
                 dector.compute_minmaxs(self.model, self.train_loader, POWERS=POWERS)
                 pool_deviations = dector.compute_deviations(

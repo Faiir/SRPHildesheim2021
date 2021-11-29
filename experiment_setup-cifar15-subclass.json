@@ -15,7 +15,7 @@
         "labelled_size": 3000,
         "pool_size": 25000,
         "OOD_ratio": 0.15,
-        "epochs": 100,
+        "epochs": 10,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -56,7 +56,7 @@
           "model": "GenOdin",
           "bugged_and_working": false,
           "plotsettings": {
-            "do_plot": true,
+            "do_plot": false,
             "density_plot": true,
             "layer_plot": false
           },
@@ -72,7 +72,7 @@
           "model": "LOOC",
           "bugged_and_working": true,
           "plotsettings": {
-            "do_plot": true,
+            "do_plot": false,
             "density_plot": true,
             "layer_plot": false
           },
@@ -95,7 +95,7 @@
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
