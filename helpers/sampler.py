@@ -155,7 +155,7 @@ def LOOC_highest_entropy(
         pool_samples_count > number_samples
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
-    entropy = -np.sum(predictions * np.log(predictions + 1e-9), axis=1)
+    entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
     if weights is not None:
         entropy = np.squeeze(weights) * entropy
     inds = np.argsort(entropy)[:number_samples]
