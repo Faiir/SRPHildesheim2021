@@ -120,11 +120,11 @@ def uncertainity_sampling_highest_entropy(
         pool_samples_count > number_samples
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
-    entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
+    entropy = -np.sum(predictions * np.log(predictions + 1e-9), axis=1)
     if weights is not None:
         entropy = np.squeeze(weights) * entropy
-        
-    inds = np.argsort(entropy)[-number_samples:]
+
+    inds = np.argsort(entropy)[:number_samples]
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()
 
@@ -133,6 +133,7 @@ def uncertainity_sampling_highest_entropy(
     )
 
     return None
+
 
 def LOOC_highest_entropy(
     dataset_manager, number_samples, net, predictions=None, weights=None
@@ -154,7 +155,7 @@ def LOOC_highest_entropy(
         pool_samples_count > number_samples
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
-    entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
+    entropy = -np.sum(predictions * np.log(predictions + 1e-9), axis=1)
     if weights is not None:
         entropy = np.squeeze(weights) * entropy
     inds = np.argsort(entropy)[:number_samples]
@@ -231,9 +232,6 @@ def extra_class_sampler(extra_class_thresholding):
 def gen0din_sampler(dataset_manager, number_samples, net, predictions=None):
 
     return None
-
-
-
 
 
 def DDU_sampler(

@@ -63,56 +63,56 @@ def start_experiment(config, log_path):
     with open(config, mode="r", encoding="utf-8") as config_f:
         config = json.load(config_f)
 
-    for experiment in config["experiments"]:
-        basic_settings = experiment["basic_settings"]
+    # for experiment in config["experiments"]:
+    #     basic_settings = experiment["basic_settings"]
 
-        for exp_setting in experiment["exp_settings"]:
-            if exp_setting.get("perform_experiment", True):
-                print(
-                    f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is being performed.\n\n'
-                )
-            else:
-                print(
-                    f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is not being performed.\n\n'
-                )
-                continue
+    #     for exp_setting in experiment["exp_settings"]:
+    #         if exp_setting.get("perform_experiment", True):
+    #             print(
+    #                 f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is being performed.\n\n'
+    #             )
+    #         else:
+    #             print(
+    #                 f'\n\nINFO ---- Experiment {exp_setting["exp_type"]} is not being performed.\n\n'
+    #             )
+    #             continue
 
-            exp_type = exp_setting["exp_type"]
+    #         exp_type = exp_setting["exp_type"]
 
-            if exp_type == "baseline":
-                current_exp = experiment_without_OoD(
-                    basic_settings, exp_setting, log_path, writer
-                )
+    #         if exp_type == "baseline":
+    #             current_exp = experiment_without_OoD(
+    #                 basic_settings, exp_setting, log_path, writer
+    #             )
 
-            elif exp_type == "baseline-ood":
-                current_exp = experiment_active_learning(
-                    basic_settings, exp_setting, log_path, writer
-                )
-            elif exp_type == "extra_class":
-                current_exp = experiment_extraclass(
-                    basic_settings, exp_setting, log_path, writer
-                )
-            elif exp_type == "gram":
-                current_exp = experiment_gram(
-                    basic_settings, exp_setting, log_path, writer
-                )
-            elif exp_type == "looc":
-                current_exp = experiment_gen_odin(
-                    basic_settings, exp_setting, log_path, writer
-                )
-            elif exp_type == "genodin":
-                current_exp = experiment_gen_odin(
-                    basic_settings, exp_setting, log_path, writer
-                )
-            elif exp_type == "ddu":
-                current_exp = experiment_ddu(
-                    basic_settings, exp_setting, log_path, writer
-                )
+    #         elif exp_type == "baseline-ood":
+    #             current_exp = experiment_active_learning(
+    #                 basic_settings, exp_setting, log_path, writer
+    #             )
+    #         elif exp_type == "extra_class":
+    #             current_exp = experiment_extraclass(
+    #                 basic_settings, exp_setting, log_path, writer
+    #             )
+    #         elif exp_type == "gram":
+    #             current_exp = experiment_gram(
+    #                 basic_settings, exp_setting, log_path, writer
+    #             )
+    #         elif exp_type == "looc":
+    #             current_exp = experiment_gen_odin(
+    #                 basic_settings, exp_setting, log_path, writer
+    #             )
+    #         elif exp_type == "genodin":
+    #             current_exp = experiment_gen_odin(
+    #                 basic_settings, exp_setting, log_path, writer
+    #             )
+    #         elif exp_type == "ddu":
+    #             current_exp = experiment_ddu(
+    #                 basic_settings, exp_setting, log_path, writer
+    #             )
 
-            current_exp.perform_experiment()
-            del current_exp
-            gc.collect()
-    # final_traing(log_path, config)
+    #         current_exp.perform_experiment()
+    #         del current_exp
+    #         gc.collect()
+    final_traing(log_path, config)
 
 
 def main():
