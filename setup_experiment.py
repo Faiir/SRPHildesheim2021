@@ -110,13 +110,24 @@ def start_experiment(config, log_path):
                 current_exp = experiment_ddu(
                     basic_settings, exp_setting, log_path, writer
                 )
+            try:
+                current_exp.perform_experiment()
+                del current_exp
+                gc.collect()
+            except Exception as e:
+                name = exp_setting["exp_name"]
+                print("\n\n")
+                print("**********"*12)
+                print(f"Experiment {name} failed with Exception {e}")
+                print("**********"*12)
+                print("\n\n")
 
-            current_exp.perform_experiment()
-            del current_exp
-            gc.collect()
     if final_traing:
         print("performing final training on the datamanagers")
-        final_traing(log_path, config)
+        try:
+            final_traing(log_path, config)
+        except:
+            print("final training failed")
 
 
 def main():

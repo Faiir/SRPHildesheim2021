@@ -674,13 +674,13 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
                 ]
             )
         datasets_dict["CIFAR10_train"] = CIFAR10(
-            root=r"/dataset/CHIFAR10/",
+            root=r"./dataset/CHIFAR10/",
             train=True,
             download=True,
             transform=cifar_train_transform,
         )
         datasets_dict["CIFAR10_test"] = CIFAR10(
-            root=r"/dataset/CHIFAR10/",
+            root=r"./dataset/CHIFAR10/",
             train=False,
             download=True,
             transform=cifar_test_transform,
@@ -700,14 +700,14 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
             ]
         )
         datasets_dict["MNIST_train"] = MNIST(
-            root=r"/dataset/MNIST",
+            root=r"./dataset/MNIST",
             train=True,
             download=True,
             transform=mnist_transforms,
         )
 
         datasets_dict["MNIST_test"] = MNIST(
-            root=r"/dataset/MNIST",
+            root=r"./dataset/MNIST",
             train=False,
             download=True,
             transform=mnist_transforms,
@@ -729,14 +729,14 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
         )
 
         datasets_dict["FashionMNIST_train"] = FashionMNIST(
-            root="/dataset/FashionMNIST",
+            root="./dataset/FashionMNIST",
             train=True,
             download=True,
             transform=fmnist_transforms,
         )
 
         datasets_dict["FashionMNIST_test"] = FashionMNIST(
-            root="/dataset/FashionMNIST",
+            root="./dataset/FashionMNIST",
             train=False,
             download=True,
             transform=fmnist_transforms,
@@ -751,14 +751,14 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
         )
 
         datasets_dict["SVHN_train"] = SVHN(
-            root=r"/dataset/SVHN",
+            root=r"./dataset/SVHN",
             split="train",
             download=True,
             transform=SVHN_transforms,
         )
         datasets_dict["SVHN_train"].targets = datasets_dict["SVHN_train"].labels
         datasets_dict["SVHN_test"] = SVHN(
-            root=r"/dataset/SVHN",
+            root=r"./dataset/SVHN",
             split="test",
             download=True,
             transform=SVHN_transforms,
@@ -770,7 +770,7 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
 
     if "CIFAR100" in datasets_list:
         datasets_dict["CIFAR100_train"] = CIFAR100(
-            root=r"/dataset/CIFAR100",
+            root=r"./dataset/CIFAR100",
             train=True,
             download=True,
             transform=transforms.Compose(
@@ -786,7 +786,7 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
         )
 
         datasets_dict["CIFAR100_test"] = CIFAR100(
-            root=r"/dataset/CIFAR100",
+            root=r"./dataset/CIFAR100",
             train=False,
             download=True,
             transform=transforms.Compose(
