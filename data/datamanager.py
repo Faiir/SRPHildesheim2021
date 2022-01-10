@@ -95,7 +95,7 @@ class Data_manager:
         ), f"Only one dataset can be in-Dist, found {self.iD_datasets}"
 
         list_of_datasets = self.iD_datasets + self.OoD_datasets
-        self.datasets_dict = data_loader(list_of_datasets, grayscale=self.grayscale)
+        self.datasets_dict = downloader_construct_datasetsdict(list_of_datasets, grayscale=self.grayscale)
 
         if subclass["do_subclass"]:
             for c, dataset in enumerate(self.iD_datasets):
@@ -216,8 +216,8 @@ class Data_manager:
 
         assert 0 <= self.OoD_ratio < 1, "Invalid OOD_ratio : {self.OoD_ratio}"
 
-        iD_pool_size = int(self.unlabelled_size * self.OoD_ratio)
-        OoD_pool_size = self.unlabelled_size - iD_pool_size
+        OoD_pool_size  = int(self.unlabelled_size * self.OoD_ratio)
+        iD_pool_size = self.unlabelled_size - OoD_pool_size
 
         assert (
             self.labelled_size + iD_pool_size <= self.iD_samples_size
@@ -625,7 +625,7 @@ def tmp_func(x):
     return x.repeat(3, 1, 1)
 
 
-def data_loader(datasets_list: list, grayscale=False) -> dict:
+def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> dict:
     """
     This function takes in a list of datasets to be used in the experiments
     """

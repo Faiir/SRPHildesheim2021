@@ -167,12 +167,17 @@ def LOOC_highest_entropy(
     if weights is not None:
         entropy = np.squeeze(weights) * entropy
     inds = np.argsort(entropy)[-number_samples:]
+
+    print("entropy", entropy)
+    print("pred_inds", inds)
+    print("entropy in predictions", entropy[inds])
     inds = status_manager[status_manager["status"] == 0].index[inds]
     iteration = 1 + status_manager["status"].max()
 
     status_manager["status"].iloc[inds] = (
         iteration * status_manager["source"].iloc[inds]
     )
+    print("statusmanager inds",inds)
 
     return None
 
@@ -213,7 +218,7 @@ def extra_class_sampler(extra_class_thresholding):
         predictions = predictions[:, :-1]
         predictions = predictions / np.sum(predictions, axis=1, keepdims=True)
 
-        entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
+        entropy = -np.sum(predictions * np.log(predictions + 1e-9), axis=1)
 
         if extra_class_thresholding == "soft":
             entropy = np.squeeze(OoD_class_probablities) * entropy
@@ -227,11 +232,16 @@ def extra_class_sampler(extra_class_thresholding):
             temp_status_manager.sort_values("entropy", inplace=True)
             inds = temp_status_manager.index[-number_samples:]
 
+
+        print("entropy", entropy)
+        print("pred_inds", inds)
+        print("entropy in predictions", entropy[inds])
+
         iteration = 1 + status_manager["status"].max()
         status_manager["status"].iloc[inds] = (
             iteration * status_manager["source"].iloc[inds]
         )
-
+        print("statusmanager inds",inds)
         return None
 
     return extra_class_sampler
