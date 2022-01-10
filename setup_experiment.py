@@ -123,7 +123,7 @@ def start_experiment(config, log_path):
                 print("\n\n")
 
     if final_traing:
-        print("performing final training on the datamanagers")
+        print("performing final training on the data_managers")
         try:
             final_traing(log_path, config)
         except:

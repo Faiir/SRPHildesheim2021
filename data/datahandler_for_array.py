@@ -141,7 +141,7 @@ def create_dataloader(
 def get_ood_dataloader(data_manager, batch_size: int = 16):
     """get_ood_dataloader [Returns OOD dataloader for Outlier exposure experiment]
     Args:
-        data_manager ([object]): [datamanager]
+        data_manager ([object]): [data_manager]
         batch_size (int, optional): [batch size for dataloader]. Defaults to 16.
 
     Returns:
@@ -355,7 +355,7 @@ def get_ood_dataloader(data_manager, batch_size: int = 16):
 # def get_ood_dataloader(data_manager, batch_size: int = 16):
 #     """get_ood_dataloader [Returns OOD dataloader for Outlier exposure experiment]
 #     Args:
-#         data_manager ([object]): [datamanager]
+#         data_manager ([object]): [data_manager]
 #         batch_size (int, optional): [batch size for dataloader]. Defaults to 16.
 
 #     Returns:

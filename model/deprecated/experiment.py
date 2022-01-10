@@ -17,7 +17,7 @@ import json
 
 # data imports
 from .data.datahandler_for_array import create_dataloader
-from .data.datamanager import get_datamanager
+from .data.data_manager import get_data_manager
 
 # train functions
 from .model.train import train, test, get_density_vals
@@ -170,7 +170,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 tag=f"{metric}/{dataset}/{oracle}/tsne{i}", figure=tsne_plot
             )
 
-        data_loader_tuple = create_dataloader(
+        dataloader_tuple = create_dataloader(
             data_manager,
             batch_size=batch_size,
             validation_source=validation_source,
@@ -178,9 +178,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         )
 
         if validation_source is not None:
-            train_loader, test_loader, pool_loader, val_loader = data_loader_tuple
+            train_loader, test_loader, pool_loader, val_loader = dataloader_tuple
         else:
-            train_loader, test_loader, pool_loader = data_loader_tuple
+            train_loader, test_loader, pool_loader = dataloader_tuple
             val_loader = None
 
         if torch.cuda.is_available():
@@ -412,7 +412,7 @@ def start_experiment(config_path, log):
 
             OoD_extra_class = exp.get("OoD_extra_class", False)
 
-            data_manager = get_datamanager(
+            data_manager = get_data_manager(
                 indistribution=in_dist_data,
                 ood=ood_data,
                 OoD_extra_class=OoD_extra_class,

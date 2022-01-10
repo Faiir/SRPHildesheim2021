@@ -27,7 +27,7 @@ from .model.model_files.small_resnet_original import resnet20
 from .helpers.early_stopping import EarlyStopping
 from .helpers.plots import get_tsne_plot, density_plot
 from .data.datahandler_for_array import create_dataloader
-from .data.datamanager import Data_manager
+from .data.data_manager import Data_manager
 from .helpers.measures import accuracy, auroc, f1
 
 
@@ -83,7 +83,7 @@ class experiment_extraclass(experiment_base):
         if self.device == "cuda":
             torch.backends.cudnn.benchmark = True
 
-        self.construct_datamanager()
+        self.construct_data_manager()
 
     # overrides train
     def train(self, train_loader, val_loader, optimizer, criterion, device, **kwargs):
@@ -240,7 +240,7 @@ class experiment_extraclass(experiment_base):
             json.dump(self.current_experiment, f)
 
     def save_al_logs(self) -> None:
-        log_df = self.datamanager.get_logs()
+        log_df = self.data_manager.get_logs()
         al_logs = os.path.join(self.log_path, "log_dir", f"logs-{self.exp_name}.csv")
         with open(al_logs, mode="w", encoding="utf-8") as logfile:
             colums = log_df.columns
@@ -253,9 +253,9 @@ class experiment_extraclass(experiment_base):
                     logfile.write(",")
                 logfile.write("\n")
 
-    # overrides construct_datamanager
-    def construct_datamanager(self) -> None:
-        self.datamanager = Data_manager(
+    # overrides construct_data_manager
+    def construct_data_manager(self) -> None:
+        self.data_manager = Data_manager(
             iD_datasets=[self.iD],
             OoD_datasets=self.OoD,
             labelled_size=self.labelled_size,
@@ -264,7 +264,7 @@ class experiment_extraclass(experiment_base):
             test_iD_size=None,
             subclass=self.current_experiment.get("subclass", {"do_subclass": False}),
         )
-        print("initialised datamanager")
+        print("initialised data_manager")
 
     # overrides set_sampler
     def set_sampler(self, sampler) -> None:
@@ -322,7 +322,7 @@ class experiment_extraclass(experiment_base):
 
     def create_dataloader(self) -> None:
         result_tup = create_dataloader(
-            self.datamanager,
+            self.data_manager,
             self.batch_size,
             self.validation_split,
             validation_source=self.validation_source,
@@ -403,17 +403,17 @@ class experiment_extraclass(experiment_base):
             self.log_path, "status_manager_dir", "intial_statusmanager.csv"
         )
         if os.path.exists(check_path):
-            self.datamanager.status_manager = pd.read_csv(check_path, index_col=0)
-            self.datamanager.reset_pool()
+            self.data_manager.status_manager = pd.read_csv(check_path, index_col=0)
+            self.data_manager.reset_pool()
             print("loaded statusmanager from file")
         else:
-            # self.datamanager.reset_pool()
+            # self.data_manager.reset_pool()
             save_path = os.path.join(self.log_path, "status_manager_dir")
-            self.datamanager.create_merged_data(path=save_path)
+            self.data_manager.create_merged_data(path=save_path)
             print("created new statusmanager")
 
         self.current_oracle_step = 0
-        self.datamanager.OoD_extra_class = True
+        self.data_manager.OoD_extra_class = True
 
         self.set_model(self.current_experiment.get("model", "base"))
         for oracle_s in range(self.oracle_steps):
@@ -422,9 +422,9 @@ class experiment_extraclass(experiment_base):
             self.create_optimizer()
 
 # Keeping it here In case you get the target out of bound error again
-#            for ii in self.datamanager.datasets_dict:
-#                print(f'{ii} : {np.unique(self.datamanager.datasets_dict[ii].targets)}')
-#                print(self.datamanager.datasets_dict[ii].targets)
+#            for ii in self.data_manager.datasets_dict:
+#                print(f'{ii} : {np.unique(self.data_manager.datasets_dict[ii].targets)}')
+#                print(self.data_manager.datasets_dict[ii].targets)
 
             self.train(
                 self.train_loader,
@@ -442,7 +442,7 @@ class experiment_extraclass(experiment_base):
                     pool_labels_list,
                 ) = self.pool_predictions(self.pool_loader)
 
-                source_labels = self.datamanager.get_pool_source_labels()
+                source_labels = self.data_manager.get_pool_source_labels()
                 iD_Prob = 1 - pool_predictions[:, -1]
                 auroc_score = auroc(
                     iD_Prob,
@@ -453,7 +453,7 @@ class experiment_extraclass(experiment_base):
                 )
 
                 self.sampler(
-                    self.datamanager,
+                    self.data_manager,
                     number_samples=self.oracle_stepsize,
                     net=self.model,
                     predictions=pool_predictions,
@@ -479,7 +479,7 @@ class experiment_extraclass(experiment_base):
 
                 #     dict_to_add = {"auroc": auroc_score}
 
-                self.datamanager.add_log(
+                self.data_manager.add_log(
                     writer=self.writer,
                     oracle=self.oracle,
                     dataset=self.iD,
@@ -490,7 +490,7 @@ class experiment_extraclass(experiment_base):
                 )
                 self.save_al_logs()
 
-        self.datamanager.status_manager.to_csv(
+        self.data_manager.status_manager.to_csv(
             os.path.join(
                 self.log_path,
                 "status_manager_dir",

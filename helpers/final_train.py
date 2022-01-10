@@ -5,7 +5,7 @@ from torch import nn, optim
 import torch
 from tqdm import tqdm
 
-from ..data.datamanager import Data_manager
+from ..data.data_manager import Data_manager
 from ..data.datahandler_for_array import create_dataloader
 from ..model.get_model import get_model
 from ..helpers.early_stopping import EarlyStopping
@@ -181,7 +181,7 @@ def final_traing(log_dir, config):
 
     for experiment in config["experiments"]:
         basic_settings = experiment["basic_settings"]
-        # datamanager
+        # data_manager
         iD = basic_settings.get("iD", "Cifar10")
         OoD = basic_settings.get("OoD", ["Fashion_MNIST"])
         labelled_size = basic_settings.get("labelled_size", 3000)
@@ -214,7 +214,7 @@ def final_traing(log_dir, config):
 
         for exp_setting in experiment["exp_settings"]:
             exp_name = exp_setting.get("exp_name", "standard_name")
-            datamanager = Data_manager(
+            data_manager = Data_manager(
                 iD_datasets=[iD],
                 OoD_datasets=OoD,
                 labelled_size=labelled_size,
@@ -223,21 +223,21 @@ def final_traing(log_dir, config):
                 test_iD_size=None,
                 subclass=subclass,
             )
-            # datamanager.create_merged_data() TODO load the statusmanager from the path
+            # data_manager.create_merged_data() TODO load the statusmanager from the path
             check_path = os.path.join(
                 log_dir, "status_manager_dir", f"{exp_name}-result-statusmanager.csv"
             )
             print("loading statusmanager: ", check_path)
             if os.path.exists(check_path):
-                datamanager.status_manager = pd.read_csv(check_path, index_col=0)
-                # self.datamanager.reset_pool()
-                datamanager.iter = 19
+                data_manager.status_manager = pd.read_csv(check_path, index_col=0)
+                # self.data_manager.reset_pool()
+                data_manager.iter = 19
                 print("loaded statusmanager from file")
             else:
                 print("couldn't load statusmanager aborting: f{exp_name}")
                 break
             result_tup = create_dataloader(
-                datamanager, batch_size, 0.1, validation_source="train"
+                data_manager, batch_size, 0.1, validation_source="train"
             )
             train_loader = result_tup[0]
             test_loader = result_tup[1]

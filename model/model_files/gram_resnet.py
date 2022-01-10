@@ -335,7 +335,7 @@ class Detector:
        
         
 
-    def compute_deviations(self, torch_model, data_loader, POWERS=[10]):
+    def compute_deviations(self, torch_model, dataloader, POWERS=[10]):
         assert len(self.mins) > 0, "Run compute_min_max first to generate mins and maxs"
         test_preds = []
         test_confs = []
@@ -347,8 +347,8 @@ class Detector:
             device = "cpu"
 
         data = DataHandler_For_Arrays(
-            X=torch.tensor([ii[0].numpy() for ii in data_loader.dataset]),
-            Y=torch.tensor([ii[1] for ii in data_loader.dataset]),
+            X=torch.tensor([ii[0].numpy() for ii in dataloader.dataset]),
+            Y=torch.tensor([ii[1] for ii in dataloader.dataset]),
         )
 
         for idx in range(0, len(data), 128):

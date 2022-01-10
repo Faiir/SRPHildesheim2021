@@ -63,7 +63,7 @@ debug = False
 
 class Data_manager:
     """
-    Datamanager which is the backbone of the active learning pipeline and keeps track of the images used & samples as well as logs the results.
+    data_manager which is the backbone of the active learning pipeline and keeps track of the images used & samples as well as logs the results.
     Inputs:
         iD_datasets : list of iD datasets
         OoD_datasets : list of OoD datasets

@@ -301,7 +301,7 @@ class Detector:
             torch.cuda.empty_cache()
 
     
-    def compute_deviations(self,torch_model,data_loader,POWERS=[10]):
+    def compute_deviations(self,torch_model,dataloader,POWERS=[10]):
         assert len(self.mins)>0, 'Run compute_min_max first to generate mins and maxs'
         test_preds = []
         test_confs = []
@@ -311,7 +311,7 @@ class Detector:
         else:
             device = "cpu"
 
-        data = data_loader.dataset
+        data = dataloader.dataset
         for idx in range(0,len(data),128):
             batch =  torch.squeeze(data[idx:idx+128][0]).to(device)
             
