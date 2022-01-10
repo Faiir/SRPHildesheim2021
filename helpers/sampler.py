@@ -224,6 +224,7 @@ def extra_class_sampler(extra_class_thresholding):
             entropy = np.squeeze(OoD_class_probablities) * entropy
             inds = np.argsort(entropy)[-number_samples:]
             inds = status_manager[status_manager["status"] == 0].index[inds]
+            print("entropy in predictions", entropy[inds])
         elif extra_class_thresholding == "hard":
             temp_status_manager = status_manager[status_manager["status"] == 0].copy()
             temp_status_manager["OoD"] = inds_OoD
@@ -231,11 +232,12 @@ def extra_class_sampler(extra_class_thresholding):
             temp_status_manager = temp_status_manager[temp_status_manager["OoD"]]
             temp_status_manager.sort_values("entropy", inplace=True)
             inds = temp_status_manager.index[-number_samples:]
+            print("entropy in predictions", temp_status_manager.entropy[inds])
 
 
         print("entropy", entropy)
         print("pred_inds", inds)
-        print("entropy in predictions", entropy[inds])
+        
 
         iteration = 1 + status_manager["status"].max()
         status_manager["status"].iloc[inds] = (
