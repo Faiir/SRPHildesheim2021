@@ -548,10 +548,10 @@ class experiment_gen_odin(experiment_base):
 
         self.current_oracle_step = 0
 
-        self.set_model(self.current_experiment.get("model", "GenOdin"))
+        
         for oracle_s in range(self.oracle_steps):
-            print(self.current_experiment.get("model", "GenOdin"))
-
+            #print(self.current_experiment.get("model", "GenOdin"))
+            self.set_model(self.current_experiment.get("model", "GenOdin"))
             self.create_dataloader()
             self.create_optimizer()
 

@@ -519,9 +519,9 @@ class experiment_ddu(experiment_base):
             self.data_manager.create_merged_data(path=save_path)
             print("created new statusmanager")
         self.current_oracle_step = 0
-        self.set_model("DDU")  # hardcoded till we add larger models
+        
         for oracle_s in range(self.oracle_steps):
-
+            self.set_model("DDU") # hardcoded till we add larger models
             result_tup = self.create_dataloader()
             self.create_optimizer()
 
@@ -615,111 +615,111 @@ class experiment_ddu(experiment_base):
             )
         )
 
-    def perform_old_experiment(self):
-        self.data_manager = get_data_manager_old()
-        self.sampler = DDU_sampler_old
-        self.data_manager.create_merged_data(
-            5000,
-            pool_size=self.pool_size,
-            labelled_size=self.labelled_size,
-            OOD_ratio=self.OOD_ratio,
-        )
-        self.current_oracle_step = 0
-        self.train_loss_hist = []
+    # def perform_old_experiment(self):
+    #     self.data_manager = get_data_manager_old()
+    #     self.sampler = DDU_sampler_old
+    #     self.data_manager.create_merged_data(
+    #         5000,
+    #         pool_size=self.pool_size,
+    #         labelled_size=self.labelled_size,
+    #         OOD_ratio=self.OOD_ratio,
+    #     )
+    #     self.current_oracle_step = 0
+    #     self.train_loss_hist = []
 
-        for oracle_s in range(self.oracle_steps):
+    #     for oracle_s in range(self.oracle_steps):
 
-            result_tup = create_dataloader_old(
-                self.data_manager,
-                batch_size=self.batch_size,
-                validation_source=self.validation_source,
-                validation_split=0.1,
-            )
-            self.train_loader = result_tup[0]
-            self.test_loader = result_tup[1]
-            self.pool_loader = result_tup[2]
-            self.val_loader = result_tup[3]
+    #         result_tup = create_dataloader_old(
+    #             self.data_manager,
+    #             batch_size=self.batch_size,
+    #             validation_source=self.validation_source,
+    #             validation_split=0.1,
+    #         )
+    #         self.train_loader = result_tup[0]
+    #         self.test_loader = result_tup[1]
+    #         self.pool_loader = result_tup[2]
+    #         self.val_loader = result_tup[3]
 
-            self.create_optimizer()
+    #         self.create_optimizer()
 
-            self.train(
-                self.train_loader,
-                self.val_loader,
-                self.optimizer,
-                self.criterion,
-                self.device,
-            )
-            self.test()
+    #         self.train(
+    #             self.train_loader,
+    #             self.val_loader,
+    #             self.optimizer,
+    #             self.criterion,
+    #             self.device,
+    #         )
+    #         self.test()
 
-            self.model.eval()
-            self.embeddings, self.labels = self.get_embeddings(
-                num_dim=256, dtype=torch.double
-            )
+    #         self.model.eval()
+    #         self.embeddings, self.labels = self.get_embeddings(
+    #             num_dim=256, dtype=torch.double
+    #         )
 
-            print("fitting gmm")
-            gaussians_model, jitter_eps = self.gmm_fit(
-                embeddings=self.embeddings,
-                labels=self.labels,
-                num_classes=self.num_classes,
-            )
-            self.gaussians_model = gaussians_model
-            if len(self.pool_loader) > 0:
+    #         print("fitting gmm")
+    #         gaussians_model, jitter_eps = self.gmm_fit(
+    #             embeddings=self.embeddings,
+    #             labels=self.labels,
+    #             num_classes=self.num_classes,
+    #         )
+    #         self.gaussians_model = gaussians_model
+    #         if len(self.pool_loader) > 0:
 
-                pool_predictions, pool_labels_list = self.pool_predictions(
-                    self.pool_loader,
-                )
-                # class_prob = class_probs(train_loader)
-                pool_predictions = torch.from_numpy(pool_predictions).cuda()
-                print("finished pool prediction")
-                logits, labels = self.gmm_evaluate()
+    #             pool_predictions, pool_labels_list = self.pool_predictions(
+    #                 self.pool_loader,
+    #             )
+    #             # class_prob = class_probs(train_loader)
+    #             pool_predictions = torch.from_numpy(pool_predictions).cuda()
+    #             print("finished pool prediction")
+    #             logits, labels = self.gmm_evaluate()
 
-                # logits, labels = (
-                #     logits.detach().to("cpu").numpy(),
-                #     labels.detach().to("cpu").numpy(),
-                # )
-                print("finished gmm evaluation")
-                # samples from unlabelled pool predictions
-                self.sampler(
-                    dataset_manager=self.data_manager,
-                    number_samples=self.oracle_stepsize,
-                    gmm_logits=logits,
-                    class_probs=pool_predictions,
-                    net=None,
-                    predictions=None,
-                )
+    #             # logits, labels = (
+    #             #     logits.detach().to("cpu").numpy(),
+    #             #     labels.detach().to("cpu").numpy(),
+    #             # )
+    #             print("finished gmm evaluation")
+    #             # samples from unlabelled pool predictions
+    #             self.sampler(
+    #                 dataset_manager=self.data_manager,
+    #                 number_samples=self.oracle_stepsize,
+    #                 gmm_logits=logits,
+    #                 class_probs=pool_predictions,
+    #                 net=None,
+    #                 predictions=None,
+    #             )
 
-                test_predictions, test_labels = self.pool_predictions(self.test_loader)
+    #             test_predictions, test_labels = self.pool_predictions(self.test_loader)
 
-                test_accuracy = accuracy(test_labels, test_predictions)
-                # f1_score = f1(test_labels, test_predictions)
+    #             test_accuracy = accuracy(test_labels, test_predictions)
+    #             # f1_score = f1(test_labels, test_predictions)
 
-                dict_to_add = {
-                    "test_loss": self.avg_test_loss,
-                    "train_loss": self.avg_train_loss_hist,
-                    "test_accuracy": test_accuracy,
-                    "train_accuracy": self.avg_train_acc_hist,
-                }
+    #             dict_to_add = {
+    #                 "test_loss": self.avg_test_loss,
+    #                 "train_loss": self.avg_train_loss_hist,
+    #                 "test_accuracy": test_accuracy,
+    #                 "train_accuracy": self.avg_train_acc_hist,
+    #             }
 
-                print(dict_to_add)
-                # if self.metric.lower() == "auroc":
-                #     auroc_score = auroc(self.data_manager, oracle_s)
+    #             print(dict_to_add)
+    #             # if self.metric.lower() == "auroc":
+    #             #     auroc_score = auroc(self.data_manager, oracle_s)
 
-                #     dict_to_add = {"auroc": auroc_score}
+    #             #     dict_to_add = {"auroc": auroc_score}
 
-                self.data_manager.add_log(
-                    writer=self.writer,
-                    oracle=self.oracle,
-                    dataset=self.iD,
-                    metric=self.metric,
-                    log_dict=dict_to_add,
-                )
-                self.save_al_logs()
-                # self.save_logs(self.data_manager, self.log_path)
-        self.current_oracle_step += 1
-        self.data_manager.status_manager.to_csv(
-            os.path.join(
-                self.log_path,
-                "status_manager_dir",
-                f"{self.exp_name}-result-statusmanager.csv",
-            )
-        )
+    #             self.data_manager.add_log(
+    #                 writer=self.writer,
+    #                 oracle=self.oracle,
+    #                 dataset=self.iD,
+    #                 metric=self.metric,
+    #                 log_dict=dict_to_add,
+    #             )
+    #             self.save_al_logs()
+    #             # self.save_logs(self.data_manager, self.log_path)
+    #     self.current_oracle_step += 1
+    #     self.data_manager.status_manager.to_csv(
+    #         os.path.join(
+    #             self.log_path,
+    #             "status_manager_dir",
+    #             f"{self.exp_name}-result-statusmanager.csv",
+    #         )
+    #     )

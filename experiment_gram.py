@@ -410,10 +410,10 @@ class experiment_gram(experiment_base):
 
         self.current_oracle_step = 0
         model_name = self.current_experiment.get("model", "gram_resnet")
-        self.set_model(model_name)
-        for oracle_s in range(self.oracle_steps):
-            print(model_name)
 
+        for oracle_s in range(self.oracle_steps):
+            self.set_model(model_name)
+            print(model_name)
             self.create_dataloader()
             self.create_optimizer()
 

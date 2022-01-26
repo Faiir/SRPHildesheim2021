@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=robust_active_learning_1
-#SBATCH --output=robust_active_learning_1%j.log
-#SBATCH --error=robust_active_learning_1%j.err
+#SBATCH --job-name=test_robust_active_learning_1
+#SBATCH --output=test_robust_active_learning_1%j.log
+#SBATCH --error=test_robust_active_learning_1%j.err
 #SBATCH --mail-user=kraussn@uni-hildesheim.de
-#SBATCH --partition=STUD
-#SBATCH --gres=gpu:1
+#SBATCH --partition=TEST
+#SBATCH --gres=gpu:0
+set -e
+source /home/kraussn/anaconda3/bin/activate /home/kraussn/anaconda3/envs/robustal
 
-cd ~/robust_active_learning          # navigate to the directory if necessary
-source activate pytorchenv
-srun python -m experiment_setup.py -c experiment_setup.json        # python jobs require the srun command to work
+cd /home/kraussn/robust_active_learning/robust_active_learning  # navigate to the directory if necessary
 
+srun /home/kraussn/anaconda3/envs/robustal/bin/python3 -m start_experiment -c experiment_settings.json

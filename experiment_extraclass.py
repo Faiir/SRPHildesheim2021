@@ -415,9 +415,9 @@ class experiment_extraclass(experiment_base):
         self.current_oracle_step = 0
         self.data_manager.OoD_extra_class = True
 
-        self.set_model(self.current_experiment.get("model", "base"))
+        
         for oracle_s in range(self.oracle_steps):
-
+            self.set_model(self.current_experiment.get("model", "base"))
             self.create_dataloader()
             self.create_optimizer()
 

@@ -48,16 +48,6 @@ def create_log_dirs(log_path):
 
 
 def start_experiment(config, log_path):
-    if log_path == os.path.join("./logs"):
-        log_path = os.path.join(
-            log_path, time.strftime("%m-%d-%H-%M", time.localtime())
-        )
-
-    print("Logging Results under: ", log_path)
-
-    create_log_dirs(log_path)
-
-    writer = SummaryWriter(os.path.join(log_path, "writer_dir"))
 
     if torch.cuda.is_available():
         cudnn.benchmark = True
@@ -66,8 +56,15 @@ def start_experiment(config, log_path):
         config = json.load(config_f)
 
     for experiment in config["experiments"]:
-        basic_settings = experiment["basic_settings"]
+        if log_path == os.path.join("./logs"):
+            log_path = os.path.join(
+                log_path, time.strftime("%m-%d-%H-%M", time.localtime())
+            )
+        print("Logging Results under: ", log_path)
+        create_log_dirs(log_path)
+        writer = SummaryWriter(os.path.join(log_path, "writer_dir"))
 
+        basic_settings = experiment["basic_settings"]
         for exp_setting in experiment["exp_settings"]:
             if exp_setting.get("perform_experiment", True):
                 print(
@@ -121,7 +118,7 @@ def start_experiment(config, log_path):
                 print(f"Experiment {name} failed with Exception {e}")
                 print("**********"*12)
                 print("\n\n")
-
+    final_traing = False
     if final_traing:
         print("performing final training on the data_managers")
         try:
