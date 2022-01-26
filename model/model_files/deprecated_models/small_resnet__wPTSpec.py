@@ -61,7 +61,7 @@ class LambdaLayer(nn.Module):
         return self.lambd(x)
 
 
-class euc_dist_layer(nn.Module):
+class looc_layer(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
         super().__init__()
         if torch.cuda.is_available():
@@ -83,7 +83,7 @@ class euc_dist_layer(nn.Module):
         return out
 
 
-class euc_dist_layer_corrected(nn.Module):
+class euclid_dist_layer(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
         super().__init__()
         if torch.cuda.is_available():
@@ -229,12 +229,12 @@ class ResNet(nn.Module):
             if "I" in self.similarity:
                 self.h_func = spectral_norm(nn.Linear(64, num_classes))
             elif "E" in self.similarity:
-                self.h_func = spectral_norm(euc_dist_layer(64, num_classes))
+                self.h_func = spectral_norm(looc_layer(64, num_classes))
             elif "C" in self.similarity:
                 self.h_func = spectral_norm(cosine_layer(64, num_classes))
 
             if "E_U" in self.similarity:
-                self.h_func = spectral_norm(euc_dist_layer_corrected(64, num_classes))
+                self.h_func = spectral_norm(euclid_dist_layer(64, num_classes))
             elif "C_H" in self.similarity:
                 self.h_func = spectral_norm(cosine_layer_holy(64, num_classes))
 
@@ -333,7 +333,7 @@ def test(net):
 # import torch.nn.functional as F
 # from torch.nn.utils.parametrizations import spectral_norm
 # from torch.nn import init
-# from .genOdinModel import euc_dist_layer, cosine_layer
+# from .genOdinModel import looc_layer, cosine_layer
 
 
 # __all__ = [
@@ -465,7 +465,7 @@ def test(net):
 
 #             elif self.similarity == "E":
 #                 self.dropout_3 = nn.Dropout(0)
-#                 self.h_func = euc_dist_layer(num_classes, 64)
+#                 self.h_func = looc_layer(num_classes, 64)
 
 #             elif self.similarity == "C":
 #                 self.dropout_3 = nn.Dropout(p=0)

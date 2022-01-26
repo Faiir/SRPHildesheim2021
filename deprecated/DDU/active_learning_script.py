@@ -32,11 +32,11 @@ from utils.ensemble_utils import ensemble_forward_pass
 models = {"resnet18": resnet18}
 
 
-def class_probs(data_loader):
+def class_probs(dataloader):
     num_classes = 10
-    class_n = len(data_loader.dataset)
+    class_n = len(dataloader.dataset)
     class_count = torch.zeros(num_classes)
-    for data, label in data_loader:
+    for data, label in dataloader:
         class_count += torch.Tensor([torch.sum(label == c) for c in range(num_classes)])
 
     class_prob = class_count / class_n
@@ -47,14 +47,14 @@ def compute_density(logits, class_probs):
     return torch.sum((torch.exp(logits) * class_probs), dim=1)
 
 
-def ambiguous_acquired(data_loader, threshold, model):
+def ambiguous_acquired(dataloader, threshold, model):
     """
     This method is required to identify the ambiguous samples which are acquired.
     """
     model.eval()
     logits = []
     with torch.no_grad():
-        for data, label in data_loader:
+        for data, label in dataloader:
             data = data.to(device)
             label = label.to(device)
 
@@ -65,7 +65,7 @@ def ambiguous_acquired(data_loader, threshold, model):
     entropies = entropy(logits)
 
     return entropies.cpu().numpy().tolist(), (
-        torch.sum(entropies > threshold).item() / len(data_loader.dataset)
+        torch.sum(entropies > threshold).item() / len(dataloader.dataset)
     )
 
 

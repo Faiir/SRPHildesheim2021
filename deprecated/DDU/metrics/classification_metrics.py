@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
 
-def get_logits_labels(model, data_loader, device):
+def get_logits_labels(model, dataloader, device):
     """
     Utility function to get logits and labels.
     """
@@ -20,7 +20,7 @@ def get_logits_labels(model, data_loader, device):
     logits = []
     labels = []
     with torch.no_grad():
-        for data, label in data_loader:
+        for data, label in dataloader:
             data = data.to(device)
             label = label.to(device)
 
@@ -64,15 +64,15 @@ def test_classification_net_logits(logits, labels):
     return test_classification_net_softmax(softmax_prob, labels)
 
 
-def test_classification_net(model, data_loader, device):
+def test_classification_net(model, dataloader, device):
     """
     This function reports classification accuracy and confusion matrix over a dataset.
     """
-    logits, labels = get_logits_labels(model, data_loader, device)
+    logits, labels = get_logits_labels(model, dataloader, device)
     return test_classification_net_logits(logits, labels)
 
 
-def test_classification_net_ensemble(model_ensemble, data_loader, device):
+def test_classification_net_ensemble(model_ensemble, dataloader, device):
     """
     This function reports classification accuracy and confusion matrix over a dataset
     for a deep ensemble.
@@ -82,7 +82,7 @@ def test_classification_net_ensemble(model_ensemble, data_loader, device):
     softmax_prob = []
     labels = []
     with torch.no_grad():
-        for data, label in data_loader:
+        for data, label in dataloader:
             data = data.to(device)
             label = label.to(device)
 

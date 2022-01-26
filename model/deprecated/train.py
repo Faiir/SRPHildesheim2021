@@ -321,7 +321,7 @@ def fgsm_attack(image, epsilon, data_grad):
     return perturbed_image
 
 
-def train_g(net, optimizer, datamanager, epochs=10):
+def train_g(net, optimizer, data_manager, epochs=10):
     """train_g [summary]
 
     [Outlier exposure for g-head - https://arxiv.org/pdf/1812.04606.pdf]
@@ -331,7 +331,7 @@ def train_g(net, optimizer, datamanager, epochs=10):
     net.train()  # enter train mode
     loss_avg = 0.0
 
-    train_loader_in, train_loader_out = get_ood_dataloader(datamanager)
+    train_loader_in, train_loader_out = get_ood_dataloader(data_manager)
 
     for epoch in range(epochs):
         train_in, target_in = next(iter(train_loader_in))

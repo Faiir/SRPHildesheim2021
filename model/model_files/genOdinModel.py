@@ -23,7 +23,7 @@ import torch
 #         return super().backward(ctx, *grad_outputs)
 
 
-class euc_dist_layer(nn.Module):
+class looc_layer(nn.Module):
     def __init__(self, out_classes, dimensions):
         super().__init__()
         if torch.cuda.is_available():
@@ -125,7 +125,7 @@ class genOdinModel(nn.Module):
 
         elif self.similarity == "E":
             self.dropout_3 = nn.Dropout(0)
-            self.h_func = euc_dist_layer(out_classes, self.fc2.out_features)
+            self.h_func = looc_layer(out_classes, self.fc2.out_features)
 
         elif self.similarity == "C":
             self.dropout_3 = nn.Dropout(p=0)

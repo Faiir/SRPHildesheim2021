@@ -59,13 +59,13 @@ debug = False
 
 
 class Data_manager:
-    """[Datamanager which is the backbone of the active learning pipeline]
+    """[data_manager which is the backbone of the active learning pipeline]
 
-    [Datamanager which is the backbone of the active learning pipeline and keeps track of the images used & samples as well as logs the results]
+    [data_manager which is the backbone of the active learning pipeline and keeps track of the images used & samples as well as logs the results]
 
     """
 
-    ## DataManager would either get the extact data (array/tensors) or it'll have a df of filenames
+    ## data_manager would either get the extact data (array/tensors) or it'll have a df of filenames
 
     def __init__(
         self,
@@ -401,11 +401,11 @@ class Data_manager:
         self.status_manager.loc[self.status_manager["status"] != 1, "status"] = 0
 
 
-def get_datamanager(
+def get_data_manager(
     indistribution=["Cifar10"],
     ood=["MNIST", "Fashion_MNIST"],
 ):
-    """get_datamanager [Creates a datamanager instance with the In-/Out-of-Distribution Data]
+    """get_data_manager [Creates a data_manager instance with the In-/Out-of-Distribution Data]
 
     [List based processing of Datasets. Images are resized / croped on 32x32]
 
@@ -414,7 +414,7 @@ def get_datamanager(
         ood (list, optional): [description]. Defaults to ["MNIST", "Fashion_MNIST", "SVHN"].
 
     Returns:
-        [datamager]: [Experiment datamanager for for logging and the active learning cycle]
+        [datamager]: [Experiment data_manager for for logging and the active learning cycle]
     """
 
     # TODO ADD Target transform?
@@ -832,4 +832,4 @@ def get_datamanager(
     return data_manager
 
 
-# get_datamanager(ood=["Fashion_MNIST", "MNIST"])
+# get_data_manager(ood=["Fashion_MNIST", "MNIST"])

@@ -87,8 +87,8 @@ class PerturbDataset(torch.utils.data.Dataset):
         return self.num_points
 
 
-def create_pert_dataloader(datamanager, batchsize):
-    pooldata, pooltarget = datamanager.get_unlabelled_pool_data()
+def create_pert_dataloader(data_manager, batchsize):
+    pooldata, pooltarget = data_manager.get_unlabelled_pool_data()
     pooltarget += 1
 
     p_data = PerturbDataset(pooldata, pooltarget, train_mode=True)

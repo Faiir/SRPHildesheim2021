@@ -61,7 +61,7 @@ class LambdaLayer(nn.Module):
         return self.lambd(x)
 
 
-class euc_dist_layer(nn.Module):
+class looc_layer(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
         super().__init__()
         if torch.cuda.is_available():
@@ -83,7 +83,7 @@ class euc_dist_layer(nn.Module):
         return out
 
 
-class euc_dist_layer_corrected(nn.Module):
+class euclid_dist_layer(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
         super().__init__()
         if torch.cuda.is_available():
@@ -225,12 +225,12 @@ class ResNet(nn.Module):
             if "I" in self.similarity:
                 self.h_func = nn.Linear(64, num_classes)
             elif "E" in self.similarity:
-                self.h_func = euc_dist_layer(64, num_classes)
+                self.h_func = looc_layer(64, num_classes)
             elif "C" in self.similarity:
                 self.h_func = cosine_layer(64, num_classes)
 
             if "E_U" in self.similarity:
-                self.h_func = euc_dist_layer_corrected(64, num_classes)
+                self.h_func = euclid_dist_layer(64, num_classes)
             elif "C_H" in self.similarity:
                 self.h_func = cosine_layer_holy(64, num_classes)
 

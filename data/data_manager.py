@@ -63,7 +63,7 @@ debug = False
 
 class Data_manager:
     """
-    Datamanager which is the backbone of the active learning pipeline and keeps track of the images used & samples as well as logs the results.
+    data_manager which is the backbone of the active learning pipeline and keeps track of the images used & samples as well as logs the results.
     Inputs:
         iD_datasets : list of iD datasets
         OoD_datasets : list of OoD datasets
@@ -823,13 +823,13 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         )
 
         datasets_dict["CIFAR10_ood_train"] = CIFAR10(
-            root=r"/dataset/CHIFAR10/",
+            root=r"./dataset/CHIFAR10/",
             train=True,
             download=True,
             transform=cifar_train_transform,
         )
         datasets_dict["CIFAR10_ood_test"] = CIFAR10(
-            root=r"/dataset/CHIFAR10/",
+            root=r"./dataset/CHIFAR10/",
             train=False,
             download=True,
             transform=cifar_test_transform,
@@ -840,7 +840,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
 
     if "CIFAR100_ood" in datasets_list:
         datasets_dict["CIFAR100_ood_train"] = CIFAR100(
-            root=r"/dataset/CIFAR100",
+            root=r"./dataset/CIFAR100",
             train=True,
             download=True,
             transform=transforms.Compose(
@@ -853,7 +853,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         )
 
         datasets_dict["CIFAR100_ood_test"] = CIFAR100(
-            root=r"/dataset/CIFAR100",
+            root=r"./dataset/CIFAR100",
             train=False,
             download=True,
             transform=transforms.ToTensor(),

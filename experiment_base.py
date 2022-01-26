@@ -39,7 +39,7 @@ class experiment_base(ABC):
         pass
 
     @abstractmethod
-    def construct_datamanager(self) -> NoReturn:
+    def construct_data_manager(self) -> NoReturn:
         pass
 
     @abstractmethod
@@ -56,5 +56,5 @@ class experiment_base(ABC):
 
     @abstractmethod
     def perform_experiment(self):
-        self.datamanager = None
+        self.data_manager = None
         pass
