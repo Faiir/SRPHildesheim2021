@@ -48,7 +48,7 @@ def create_log_dirs(log_path):
 
 
 def start_experiment(config, log_path):
-
+    base_log_path = log_path
     if torch.cuda.is_available():
         cudnn.benchmark = True
 
@@ -56,7 +56,7 @@ def start_experiment(config, log_path):
         config = json.load(config_f)
 
     for experiment in config["experiments"]:
-        if log_path == os.path.join("./logs"):
+        if base_log_path == os.path.join("./logs"):
             log_path = os.path.join(
                 log_path, time.strftime("%m-%d-%H-%M", time.localtime())
             )
@@ -118,6 +118,8 @@ def start_experiment(config, log_path):
                 print(f"Experiment {name} failed with Exception {e}")
                 print("**********"*12)
                 print("\n\n")
+
+        log_path = base_log_path
     final_traing = False
     if final_traing:
         print("performing final training on the data_managers")
