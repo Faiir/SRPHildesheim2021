@@ -655,7 +655,14 @@ class experiment_gen_odin(experiment_base):
 
                             centeroid_path = os.path.join(self.log_path, "layer_analysis_dir", f"centeroids_{name}_{self.current_oracle_step-1}.csv")
                             np.savetxt(centeroid_path, 
-                            a[0], delimiter=",")                            
+                            a[0], delimiter=",")   
+                                            for name, param in self.model.named_parameters():
+                        if "scaling_factor" in name:
+                            a = param.data.to("cpu").detach().numpy()
+
+                            centeroid_path = os.path.join(self.log_path, "layer_analysis_dir", f"scaling_factor_{name}_{self.current_oracle_step-1}.csv")
+                            np.savetxt(centeroid_path, 
+                            a[0], delimiter=",")                             
                     
                 (
                     test_predictions,
