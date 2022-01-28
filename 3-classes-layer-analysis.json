@@ -9,8 +9,8 @@
         "grayscale": false,
         "subclass": {
           "do_subclass": true,
-          "iD_classes": [0, 1, 2, 3],
-          "OoD_classes": [4, 5, 6]
+          "iD_classes": [0, 1, 2],
+          "OoD_classes": [3, 4, 5]
         },
         "labelled_size": 3000,
         "pool_size": 9000,
@@ -23,7 +23,7 @@
         "nesterov": false,
         "momentum": 0.9,
         "lr_sheduler": true,
-        "num_classes": 4,
+        "num_classes": 3,
         "validation_split": 0.1,
         "validation_source": "test",
         "criterion": "crossentropy",
@@ -76,7 +76,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_layer_analysis" : 3,
+          "perform_layer_analysis" : 2,
           "perform_experiment": true
         },
         {

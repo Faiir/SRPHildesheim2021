@@ -219,8 +219,7 @@ class ResNet(nn.Module):
 
         last_layer_dims = 64
         if self.perform_layer_analysis is not None:
-            print("\n\n\nINFO ---- perform_layer_analysis is turned on, only {self.perform_layer_analysis}\
-                                     dimension embeddings would be created")
+            print(f"\n\n\nINFO ---- perform_layer_analysis is turned on, only {self.perform_layer_analysis} dimension embeddings would be created")
             last_layer_dims = self.perform_layer_analysis
             self.layer4 = nn.Linear(64, last_layer_dims)
 

@@ -629,17 +629,18 @@ class experiment_gen_odin(experiment_base):
                     weighting_factor_list = np.concatenate(weighting_factor_list,axis=0)
                     
 
-                    entropy = np.sum(predictions_list * np.log(predictions_list + 1e-9), axis=1)
+                    entropy = -np.sum(predictions_list * np.log(predictions_list + 1e-9), axis=1)
                     probs =  predictions_list/np.sum(predictions_list,axis=1,keepdims=True)
-                    dist_entropy = np.sum(predictions_list * np.log(probs + 1e-9), axis=1)
-                   
+                    dist_entropy = -np.sum(predictions_list * np.log(probs + 1e-9), axis=1)
+                    prob_entropy = -np.sum(probs * np.log(probs + 1e-9), axis=1)
+                    
                     statusmanager_copy = self.data_manager.status_manager.copy()
                     centroid_values = [f'centroid_{ii+1}' for ii in range(centroids_list.shape[1])]
                     statusmanager_copy[centroid_values] = centroids_list
                     statusmanager_copy['weighting_factor'] = weighting_factor_list
                     statusmanager_copy['entropy'] = entropy 
                     statusmanager_copy['dist_entropy'] = dist_entropy 
-
+                    statusmanager_copy['prob_entropy'] = prob_entropy
                     layer_analysis_dir = os.path.join(self.log_path, "layer_analysis_dir")
                     if os.path.exists(layer_analysis_dir) == False:
                         os.mkdir(os.path.join(self.log_path, "layer_analysis_dir"))
