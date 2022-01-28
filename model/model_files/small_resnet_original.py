@@ -218,18 +218,19 @@ class ResNet(nn.Module):
         
 
         last_layer_dims = 64
-        if self.perform_layer_analysis:
-            print("\n\n\nINFO ---- perform_layer_analysis is turned on, only 2 dimension embeddings would be created")
+        if self.perform_layer_analysis is not None:
+            print("\n\n\nINFO ---- perform_layer_analysis is turned on, only {self.perform_layer_analysis}\
+                                     dimension embeddings would be created")
             last_layer_dims = 2
-            self.layer4 = nn.Linear(64, 2)
+            self.layer4 = nn.Linear(64, self.perform_layer_analysis)
 
 
         if self.similarity is None:
             self.linear = nn.Linear(last_layer_dims, num_classes)
         else:
-            self.g_fc = nn.Linear(64, 64)
+            self.g_fc = nn.Linear(last_layer_dims, 64)
             self.g_activation = nn.Sigmoid()
-            self.g_func = nn.Linear(last_layer_dims, 1)
+            self.g_func = nn.Linear(64, 1)
             self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
             if "I" in self.similarity:
