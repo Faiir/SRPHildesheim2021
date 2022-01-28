@@ -107,10 +107,11 @@ def start_experiment(config, log_path):
                 current_exp = experiment_ddu(
                     basic_settings, exp_setting, log_path, writer
                 )
-            try:
-                current_exp.perform_experiment()
-                del current_exp
-                gc.collect()
+            #try:
+            current_exp.perform_experiment()
+            del current_exp
+            gc.collect()
+        """
             except Exception as e:
                 name = exp_setting["exp_name"]
                 print("\n\n")
@@ -118,6 +119,7 @@ def start_experiment(config, log_path):
                 print(f"Experiment {name} failed with Exception {e}")
                 print("**********"*12)
                 print("\n\n")
+        """
 
         log_path = base_log_path
     final_traing = False

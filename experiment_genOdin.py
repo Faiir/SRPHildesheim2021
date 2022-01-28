@@ -262,7 +262,7 @@ class experiment_gen_odin(experiment_base):
             logfile.write("\n")
             for _, row in log_df.iterrows():
                 for c in colums:
-                    logfile.write(str(row[c].item()))
+                    logfile.write(str(row[c]))
                     logfile.write(",")
                 logfile.write("\n")
 

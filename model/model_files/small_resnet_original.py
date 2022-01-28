@@ -215,7 +215,6 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
         
-        self.fc_layer = nn.Linear(64, 64)
 
         if self.similarity is None:
             self.linear = nn.Linear(64, num_classes)
@@ -259,7 +258,6 @@ class ResNet(nn.Module):
         out = self.layer3(out)
         out = F.avg_pool2d(out, out.size()[3])
         out = out.view(out.size(0), -1)
-        out = F.relu(self.fc_layer(out))
         out_centroids = out
         
         if self.similarity is None:
@@ -267,8 +265,11 @@ class ResNet(nn.Module):
         else:
             
             h = self.h_func(out)
-            g = F.relu(self.g_fc(out))
-            g = self.g_func(g)
+            if "E" in self.similarity:
+                g = F.relu(self.g_fc(out))
+                g = self.g_func(g)
+            else:
+                g = self.g_func(out)
             g = self.g_norm(g)
             g = self.g_activation(g)
 

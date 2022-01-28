@@ -583,6 +583,7 @@ class Data_manager:
         log_df = pd.DataFrame.from_dict(self.log, orient="index").set_index("Iteration")
         for key in self.config.keys():
             log_df[key] = self.config[key]
+        
         return log_df
 
     def reset_pool(self):
