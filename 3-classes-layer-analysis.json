@@ -2,7 +2,7 @@
   "experiments": [
     {
       "basic_settings": {
-        "oracle_stepsize": 50,
+        "oracle_stepsize": 100,
         "oracle_steps": 1,
         "iD": "CIFAR10",
         "OoD": ["CIFAR10_ood"],
@@ -76,7 +76,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_layer_analysis" : 2,
+          "perform_layer_analysis" : 3,
           "perform_experiment": true
         },
         {

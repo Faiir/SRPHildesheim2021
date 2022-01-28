@@ -221,8 +221,8 @@ class ResNet(nn.Module):
         if self.perform_layer_analysis is not None:
             print("\n\n\nINFO ---- perform_layer_analysis is turned on, only {self.perform_layer_analysis}\
                                      dimension embeddings would be created")
-            last_layer_dims = 2
-            self.layer4 = nn.Linear(64, self.perform_layer_analysis)
+            last_layer_dims = self.perform_layer_analysis
+            self.layer4 = nn.Linear(64, last_layer_dims)
 
 
         if self.similarity is None:
