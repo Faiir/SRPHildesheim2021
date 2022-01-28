@@ -20,7 +20,7 @@ Reference:
 
 from .spectral_normalization.spectral_norm_conv_inplace import spectral_norm_conv
 from .spectral_normalization.spectral_norm_fc import spectral_norm_fc
-from .genOdinModel import cosine_layer, euc_dist_layer
+from .genOdinModel import cosine_layer, looc_layer
 import math
 
 
@@ -205,7 +205,7 @@ class ResNet(nn.Module):
 
             elif self.similarity == "E":
                 self.dropout_3 = nn.Dropout(0)
-                self.h_func = euc_dist_layer(num_classes, self.fc1.out_features)
+                self.h_func = looc_layer(num_classes, self.fc1.out_features)
 
             elif self.similarity == "C":
                 self.dropout_3 = nn.Dropout(p=0)

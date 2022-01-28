@@ -61,7 +61,7 @@ class LambdaLayer(nn.Module):
         return self.lambd(x)
 
 
-class euc_dist_layer(nn.Module):
+class looc_layer(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
         super().__init__()
         if torch.cuda.is_available():
@@ -83,7 +83,7 @@ class euc_dist_layer(nn.Module):
         return out
 
 
-class euc_dist_layer_corrected(nn.Module):
+class euclid_dist_layer(nn.Module):
     def __init__(self, in_dimensions, out_dimensions):
         super().__init__()
         if torch.cuda.is_available():
@@ -215,6 +215,7 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
+        
 
         last_layer_dims = 64
         if self.perform_layer_analysis:
@@ -226,6 +227,7 @@ class ResNet(nn.Module):
         if self.similarity is None:
             self.linear = nn.Linear(last_layer_dims, num_classes)
         else:
+            self.g_fc = nn.Linear(64, 64)
             self.g_activation = nn.Sigmoid()
             self.g_func = nn.Linear(last_layer_dims, 1)
             self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
@@ -233,12 +235,16 @@ class ResNet(nn.Module):
             if "I" in self.similarity:
                 self.h_func = nn.Linear(last_layer_dims, num_classes)
             elif "E" in self.similarity:
-                self.h_func = euc_dist_layer(last_layer_dims, num_classes)
+
+                self.h_func = looc_layer(last_layer_dims, num_classes)
+
             elif "C" in self.similarity:
                 self.h_func = cosine_layer(last_layer_dims, num_classes)
 
             if "E_U" in self.similarity:
-                self.h_func = euc_dist_layer_corrected(last_layer_dims, num_classes)
+
+                self.h_func = euclid_dist_layer(last_layer_dims, num_classes)
+
             elif "C_H" in self.similarity:
                 self.h_func = cosine_layer_holy(last_layer_dims, num_classes)
 
@@ -269,11 +275,17 @@ class ResNet(nn.Module):
             out = self.layer4(out)
 
         out_centroids = out
+        
         if self.similarity is None:
             out = self.linear(out)
         else:
+            
             h = self.h_func(out)
-            g = self.g_func(out)
+            if "E" in self.similarity:
+                g = F.relu(self.g_fc(out))
+                g = self.g_func(g)
+            else:
+                g = self.g_func(out)
             g = self.g_norm(g)
             g = self.g_activation(g)
 

@@ -5,7 +5,7 @@ from torch import nn, optim
 import torch
 from tqdm import tqdm
 
-from ..data.datamanager import Data_manager
+from ..data.data_manager import Data_manager
 from ..data.datahandler_for_array import create_dataloader
 from ..model.get_model import get_model
 from ..helpers.early_stopping import EarlyStopping
@@ -22,7 +22,6 @@ def verbosity(message, verbose, epoch):
 
 
 def train(
-    self,
     train_loader,
     val_loader,
     optimizer,
@@ -182,7 +181,7 @@ def final_traing(log_dir, config):
 
     for experiment in config["experiments"]:
         basic_settings = experiment["basic_settings"]
-        # datamanager
+        # data_manager
         iD = basic_settings.get("iD", "Cifar10")
         OoD = basic_settings.get("OoD", ["Fashion_MNIST"])
         labelled_size = basic_settings.get("labelled_size", 3000)
@@ -205,40 +204,49 @@ def final_traing(log_dir, config):
         verbose = basic_settings.get("verbose", 1)
         criterion = nn.CrossEntropyLoss()
         with open(
-            os.path.join(log_dir, "final_result.csv"),"w",encoding="utf-8"
+            os.path.join(log_dir, "final_result.csv"), "w", encoding="utf-8"
         ) as result_file:
             result_file.write(
                 f"Experiment_name,Starting_size,Train_size,OOD_ratio,Train_Acc,Train_Loss,Val_Acc,Val_Loss,Test_Acc,Test_Loss\n"
             )
+
+        subclass = basic_settings.get("subclass", {"do_subclass": False})
+
         for exp_setting in experiment["exp_settings"]:
             exp_name = exp_setting.get("exp_name", "standard_name")
-            datamanager = Data_manager(
+            data_manager = Data_manager(
                 iD_datasets=[iD],
                 OoD_datasets=OoD,
                 labelled_size=labelled_size,
                 pool_size=pool_size,
                 OoD_ratio=OOD_ratio,
                 test_iD_size=None,
+                subclass=subclass,
             )
-            # datamanager.create_merged_data() TODO load the statusmanager from the path
+            # data_manager.create_merged_data() TODO load the statusmanager from the path
             check_path = os.path.join(
                 log_dir, "status_manager_dir", f"{exp_name}-result-statusmanager.csv"
             )
+            print("loading statusmanager: ", check_path)
             if os.path.exists(check_path):
-                datamanager.status_manager = pd.read_csv(check_path, index_col=0)
+                data_manager.status_manager = pd.read_csv(check_path, index_col=0)
+                # self.data_manager.reset_pool()
+                data_manager.iter = 19
                 print("loaded statusmanager from file")
             else:
                 print("couldn't load statusmanager aborting: f{exp_name}")
                 break
             result_tup = create_dataloader(
-                datamanager, batch_size, 0.1, validation_source="train"
+                data_manager, batch_size, 0.1, validation_source="train"
             )
             train_loader = result_tup[0]
             test_loader = result_tup[1]
             val_loader = result_tup[3]
 
-            model = get_model("base", num_classes=num_classes)
+            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+            model = get_model("base", num_classes=num_classes)
+            model.to(device)
             optimizer = optim.SGD(
                 model.parameters(),
                 weight_decay=weight_decay,
@@ -246,19 +254,18 @@ def final_traing(log_dir, config):
                 momentum=momentum,
                 nesterov=nesterov,
             )
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
             if device == "cuda":
                 torch.backends.cudnn.benchmark = True
 
             model, avg_train_loss, avg_train_acc, avg_val_loss, avg_val_acc = train(
-                train_loader,
-                val_loader,
-                optimizer,
-                criterion,
-                device,
-                epochs,
-                model,
+                train_loader=train_loader,
+                val_loader=val_loader,
+                optimizer=optimizer,
+                criterion=criterion,
+                device=device,
+                epochs=epochs,
+                model=model,
                 verbose=verbose,
             )
             avg_test_acc, avg_test_loss = test(model, test_loader, device, criterion)
@@ -277,7 +284,7 @@ def final_traing(log_dir, config):
             )
 
             with open(
-                os.path.join(log_dir, "final_result.csv"),"w", encoding="utf-8"
+                os.path.join(log_dir, "final_result.csv"), "w", encoding="utf-8"
             ) as result_file:
                 result_file.write(
                     f"{exp_name},{labelled_size},{len(train_loader)},{OOD_ratio},{avg_train_acc},{avg_train_loss},{avg_val_acc},{avg_val_loss},{avg_test_acc},{avg_test_loss}\n"

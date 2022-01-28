@@ -63,7 +63,7 @@ debug = False
 
 class Data_manager:
     """
-    Datamanager which is the backbone of the active learning pipeline and keeps track of the images used & samples as well as logs the results.
+    data_manager which is the backbone of the active learning pipeline and keeps track of the images used & samples as well as logs the results.
     Inputs:
         iD_datasets : list of iD datasets
         OoD_datasets : list of OoD datasets
@@ -95,7 +95,7 @@ class Data_manager:
         ), f"Only one dataset can be in-Dist, found {self.iD_datasets}"
 
         list_of_datasets = self.iD_datasets + self.OoD_datasets
-        self.datasets_dict = data_loader(list_of_datasets, grayscale=self.grayscale)
+        self.datasets_dict = downloader_construct_datasetsdict(list_of_datasets, grayscale=self.grayscale)
 
         if subclass["do_subclass"]:
             for c, dataset in enumerate(self.iD_datasets):
@@ -216,8 +216,8 @@ class Data_manager:
 
         assert 0 <= self.OoD_ratio < 1, "Invalid OOD_ratio : {self.OoD_ratio}"
 
-        iD_pool_size = int(self.unlabelled_size * self.OoD_ratio)
-        OoD_pool_size = self.unlabelled_size - iD_pool_size
+        OoD_pool_size  = int(self.unlabelled_size * self.OoD_ratio)
+        iD_pool_size = self.unlabelled_size - OoD_pool_size
 
         assert (
             self.labelled_size + iD_pool_size <= self.iD_samples_size
@@ -575,13 +575,15 @@ class Data_manager:
                     f"{exp_name}/{oracle}/ood_ratio-{ood_ratio}", log_dict, self.iter
                 )
             current_iter_log.update(log_dict)
-
+        
+        current_iter_log["Exp_Name"] = exp_name
         self.log[self.iter] = current_iter_log
 
     def get_logs(self) -> pd.DataFrame:
         log_df = pd.DataFrame.from_dict(self.log, orient="index").set_index("Iteration")
         for key in self.config.keys():
             log_df[key] = self.config[key]
+        
         return log_df
 
     def reset_pool(self):
@@ -625,7 +627,7 @@ def tmp_func(x):
     return x.repeat(3, 1, 1)
 
 
-def data_loader(datasets_list: list, grayscale=False) -> dict:
+def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> dict:
     """
     This function takes in a list of datasets to be used in the experiments
     """
@@ -674,13 +676,13 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
                 ]
             )
         datasets_dict["CIFAR10_train"] = CIFAR10(
-            root=r"/dataset/CHIFAR10/",
+            root=r"./dataset/CHIFAR10/",
             train=True,
             download=True,
             transform=cifar_train_transform,
         )
         datasets_dict["CIFAR10_test"] = CIFAR10(
-            root=r"/dataset/CHIFAR10/",
+            root=r"./dataset/CHIFAR10/",
             train=False,
             download=True,
             transform=cifar_test_transform,
@@ -700,14 +702,14 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
             ]
         )
         datasets_dict["MNIST_train"] = MNIST(
-            root=r"/dataset/MNIST",
+            root=r"./dataset/MNIST",
             train=True,
             download=True,
             transform=mnist_transforms,
         )
 
         datasets_dict["MNIST_test"] = MNIST(
-            root=r"/dataset/MNIST",
+            root=r"./dataset/MNIST",
             train=False,
             download=True,
             transform=mnist_transforms,
@@ -729,14 +731,14 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
         )
 
         datasets_dict["FashionMNIST_train"] = FashionMNIST(
-            root="/dataset/FashionMNIST",
+            root="./dataset/FashionMNIST",
             train=True,
             download=True,
             transform=fmnist_transforms,
         )
 
         datasets_dict["FashionMNIST_test"] = FashionMNIST(
-            root="/dataset/FashionMNIST",
+            root="./dataset/FashionMNIST",
             train=False,
             download=True,
             transform=fmnist_transforms,
@@ -751,14 +753,14 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
         )
 
         datasets_dict["SVHN_train"] = SVHN(
-            root=r"/dataset/SVHN",
+            root=r"./dataset/SVHN",
             split="train",
             download=True,
             transform=SVHN_transforms,
         )
         datasets_dict["SVHN_train"].targets = datasets_dict["SVHN_train"].labels
         datasets_dict["SVHN_test"] = SVHN(
-            root=r"/dataset/SVHN",
+            root=r"./dataset/SVHN",
             split="test",
             download=True,
             transform=SVHN_transforms,
@@ -770,7 +772,7 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
 
     if "CIFAR100" in datasets_list:
         datasets_dict["CIFAR100_train"] = CIFAR100(
-            root=r"/dataset/CIFAR100",
+            root=r"./dataset/CIFAR100",
             train=True,
             download=True,
             transform=transforms.Compose(
@@ -786,7 +788,7 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
         )
 
         datasets_dict["CIFAR100_test"] = CIFAR100(
-            root=r"/dataset/CIFAR100",
+            root=r"./dataset/CIFAR100",
             train=False,
             download=True,
             transform=transforms.Compose(
@@ -823,13 +825,13 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
         )
 
         datasets_dict["CIFAR10_ood_train"] = CIFAR10(
-            root=r"/dataset/CHIFAR10/",
+            root=r"./dataset/CHIFAR10/",
             train=True,
             download=True,
             transform=cifar_train_transform,
         )
         datasets_dict["CIFAR10_ood_test"] = CIFAR10(
-            root=r"/dataset/CHIFAR10/",
+            root=r"./dataset/CHIFAR10/",
             train=False,
             download=True,
             transform=cifar_test_transform,
@@ -840,7 +842,7 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
 
     if "CIFAR100_ood" in datasets_list:
         datasets_dict["CIFAR100_ood_train"] = CIFAR100(
-            root=r"/dataset/CIFAR100",
+            root=r"./dataset/CIFAR100",
             train=True,
             download=True,
             transform=transforms.Compose(
@@ -853,7 +855,7 @@ def data_loader(datasets_list: list, grayscale=False) -> dict:
         )
 
         datasets_dict["CIFAR100_ood_test"] = CIFAR100(
-            root=r"/dataset/CIFAR100",
+            root=r"./dataset/CIFAR100",
             train=False,
             download=True,
             transform=transforms.ToTensor(),

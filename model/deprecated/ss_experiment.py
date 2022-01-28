@@ -22,7 +22,7 @@ from project.model.get_model import add_rot_heads
 from project.selfsupervision.pertubed_dataset import create_pert_dataloader
 
 from project.model.get_model import get_model, save_model
-from project.data.datamanager import get_datamanager
+from project.data.data_manager import get_data_manager
 
 """ 
 Code From: https://github.com/hendrycks/ss-ood
@@ -140,7 +140,7 @@ def train_ss(
 
 
 def ss_experiment(
-    datamanager,
+    data_manager,
     batchsize,
     epochs=50,
     lr=0.001,
@@ -160,7 +160,7 @@ def ss_experiment(
     if torch.cuda.is_available():
         resnet20.cuda()
 
-    ss_loader = create_pert_dataloader(datamanager, batchsize)
+    ss_loader = create_pert_dataloader(data_manager, batchsize)
 
     optimizer = torch.optim.SGD(
         resnet20.parameters(),
@@ -218,15 +218,15 @@ if __name__ == "__main__":
     parser.add_argument("--trainsize", type=int, default=2000, help="train_size")
     opt = parser.parse_args()
 
-    datamanager = get_datamanager([opt.in_dist], ood=opt.oo_dist)
-    datamanager.create_merged_data(
+    data_manager = get_data_manager([opt.in_dist], ood=opt.oo_dist)
+    data_manager.create_merged_data(
         test_size=opt.trainsize,
         pool_size=opt.poolsize,
         labelled_size=opt.trainsize,
         OOD_ratio=opt.oodratio,
     )
     ss_experiment(
-        datamanager,
+        data_manager,
         opt.batchsize,
         opt.epochs,
         opt.lr,

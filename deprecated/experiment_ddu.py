@@ -15,7 +15,7 @@ import gc
 
 # data imports
 from .data.datahandler_for_array import create_dataloader
-from .data.datamanager import get_datamanager
+from .data.data_manager import get_data_manager
 
 # train functions
 from .model.train import train, test
@@ -103,7 +103,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, checkpoin
 
     for i in tqdm(range(oracle_steps)):
 
-        data_loader_tuple = create_dataloader(
+        dataloader_tuple = create_dataloader(
             data_manager,
             batch_size=batch_size,
             validation_source=validation_source,
@@ -111,9 +111,9 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, checkpoin
         )
 
         if validation_source is not None:
-            train_loader, test_loader, pool_loader, val_loader = data_loader_tuple
+            train_loader, test_loader, pool_loader, val_loader = dataloader_tuple
         else:
-            train_loader, test_loader, pool_loader = data_loader_tuple
+            train_loader, test_loader, pool_loader = dataloader_tuple
             val_loader = None
 
         if torch.cuda.is_available():
@@ -271,7 +271,7 @@ def start_experiment(config_path, log):
 
             del data_manager
             gc.collect()
-            data_manager = get_datamanager(indistribution=in_dist_data, ood=ood_data)
+            data_manager = get_data_manager(indistribution=in_dist_data, ood=ood_data)
 
             metric = exp["metric"]
 
