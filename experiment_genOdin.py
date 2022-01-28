@@ -307,6 +307,7 @@ class experiment_gen_odin(experiment_base):
                 model_name,
                 num_classes=self.num_classes,
                 similarity=self.similarity,
+                perform_layer_analysis = self.perform_layer_analysis
             )
         else:
             raise NotImplementedError
@@ -602,7 +603,8 @@ class experiment_gen_odin(experiment_base):
                 if self.perform_layer_analysis:
                     centroids_list = []
                     weighting_factor_list = []
-                    statusmanager_dataset = self.data_manager.get_all_status_manager_dataset()
+                    predictions_list = []
+                    statusmanager_dataset = self.datamanager.get_all_status_manager_dataset()
                     statusmanager_dataloader = DataLoader(statusmanager_dataset,
                                                         sampler=SequentialSampler(statusmanager_dataset),
                                                         batch_size=128,
@@ -612,23 +614,29 @@ class experiment_gen_odin(experiment_base):
                                                      )
 
                     for (data, labels) in statusmanager_dataloader:
+                        
                         tuple_data = self.model(
                                 data.to(self.device).float(),
                                 get_test_model=True,
                                 apply_softmax=False,
                         )
-  
+                        predictions_list.append(tuple_data[0].to("cpu").detach().numpy())
                         centroids_list.append(tuple_data[3].to("cpu").detach().numpy())
                         weighting_factor_list.append(tuple_data[1].to("cpu").detach().numpy())
 
+                    predictions_list = np.concatenate(predictions_list,axis=0)
                     centroids_list = np.concatenate(centroids_list,axis=0)
                     weighting_factor_list = np.concatenate(weighting_factor_list,axis=0)
                     print(centroids_list.shape)
                     print(weighting_factor_list.shape)
-                    statusmanager_copy = self.data_manager.status_manager.copy()
+
+                    entropy = np.sum(predictions_list * np.log(predictions_list + 1e-9), axis=1)
+                   
+                    statusmanager_copy = self.datamanager.status_manager.copy()
                     centroid_values = [f'centroid_{ii+1}' for ii in range(centroids_list.shape[1])]
                     statusmanager_copy[centroid_values] = centroids_list
-                    statusmanager_copy['weighting_factor'] = weighting_factor_list 
+                    statusmanager_copy['weighting_factor'] = weighting_factor_list
+                    statusmanager_copy['entropy'] = entropy 
 
                     layer_analysis_dir = os.path.join(self.log_path, "layer_analysis_dir")
                     if os.path.exists(layer_analysis_dir) == False:
@@ -636,6 +644,16 @@ class experiment_gen_odin(experiment_base):
                         
                     layer_analysis_path = os.path.join(self.log_path, "layer_analysis_dir", f"status_manager_at_{self.current_oracle_step-1}.csv")
                     statusmanager_copy.to_csv(layer_analysis_path)
+
+                    
+                    for name, param in self.model.named_parameters():
+                        if "h_func" in name:
+                            a = param.data.to("cpu").detach().numpy()
+                            print(a)
+                            print(a.shape)
+                            centeroid_path = os.path.join(self.log_path, "layer_analysis_dir", f"centeroids_{name}_{self.current_oracle_step-1}.csv")
+                            np.savetxt(centeroid_path, 
+                            a[0], delimiter=",")                            
                     
                 (
                     test_predictions,
