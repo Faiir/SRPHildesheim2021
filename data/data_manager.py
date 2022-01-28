@@ -575,7 +575,8 @@ class Data_manager:
                     f"{exp_name}/{oracle}/ood_ratio-{ood_ratio}", log_dict, self.iter
                 )
             current_iter_log.update(log_dict)
-
+        
+        current_iter_log["Exp_Name"] = exp_name
         self.log[self.iter] = current_iter_log
 
     def get_logs(self) -> pd.DataFrame:
