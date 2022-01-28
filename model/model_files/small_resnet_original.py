@@ -193,7 +193,7 @@ class BasicBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, similarity=None, perform_layer_analysis=False):
+    def __init__(self, block, num_blocks, num_classes=10, similarity=None, perform_layer_analysis=None):
         super(ResNet, self).__init__()
         self.in_planes = 16
         self.similarity = similarity
@@ -305,7 +305,7 @@ class ResNet(nn.Module):
             return out
 
 
-def resnet20(num_classes, similarity, perform_layer_analysis):
+def resnet20(num_classes, similarity, perform_layer_analysis=None):
     return ResNet(BasicBlock, [3, 3, 3], num_classes, similarity, perform_layer_analysis)
 
 

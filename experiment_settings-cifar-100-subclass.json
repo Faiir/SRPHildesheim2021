@@ -3,7 +3,7 @@
     {
       "basic_settings": {
         "oracle_stepsize": 100,
-        "oracle_steps": 20,
+        "oracle_steps": 1,
         "iD": "CIFAR100",
         "OoD": ["CIFAR100_ood", "SVHN"],
         "grayscale": false,
