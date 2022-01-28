@@ -2,8 +2,8 @@
   "experiments": [
     {
       "basic_settings": {
-        "oracle_stepsize": 150,
-        "oracle_steps": 20,
+        "oracle_stepsize": 300,
+        "oracle_steps": 10,
         "iD": "CIFAR100",
         "OoD": ["CIFAR100_ood", "SVHN"],
         "grayscale": false,
@@ -23,8 +23,8 @@
         },
         "labelled_size": 3000,
         "pool_size": 25000,
-        "OOD_ratio": 0.15,
-        "epochs": 5,
+        "OOD_ratio": 0.85,
+        "epochs": 80,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -53,7 +53,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "genodin",
