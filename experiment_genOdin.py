@@ -491,7 +491,7 @@ class experiment_gen_odin(experiment_base):
         self.validation_split = self.current_experiment.get("validation_split", "train")
         self.validation_source = self.current_experiment.get("validation_source", 0.3)
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
-        self.perform_layer_analysis = self.current_experiment.get("perform_layer_analysis", False)
+        self.perform_layer_analysis = self.current_experiment.get("perform_layer_analysis", None)
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")

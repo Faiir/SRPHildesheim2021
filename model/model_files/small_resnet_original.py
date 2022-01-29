@@ -200,6 +200,7 @@ class ResNet(nn.Module):
         self.softmax = nn.Softmax(dim=1)
         self.perform_layer_analysis = perform_layer_analysis
 
+
         if self.similarity is None:
             print("INFO ----- ResNet has been initialized without a similarity measure")
             self.has_weighing_factor = False
