@@ -515,7 +515,7 @@ class experiment_gen_odin(experiment_base):
         if scaling_factor != "G":
             self.similarity += "R"
 
-        self.set_sampler(self.current_experiment.get("oracles", "highest-entropy"))
+        self.set_sampler(self.current_experiment.get("oracle", "highest-entropy"))
 
         self.bugged_and_working = self.current_experiment.get(
             "bugged_and_working", None
@@ -607,7 +607,7 @@ class experiment_gen_odin(experiment_base):
                     statusmanager_dataset = self.data_manager.get_all_status_manager_dataset()
                     statusmanager_dataloader = DataLoader(statusmanager_dataset,
                                                         sampler=SequentialSampler(statusmanager_dataset),
-                                                        batch_size=128,
+                                                        batch_size=self.batch_size,
                                                         num_workers=2,
                                                         pin_memory=False,
                                                         drop_last=False,
@@ -630,7 +630,8 @@ class experiment_gen_odin(experiment_base):
                     
 
                     entropy = -np.sum(predictions_list * np.log(predictions_list + 1e-9), axis=1)
-                    probs =  predictions_list/np.sum(predictions_list,axis=1,keepdims=True)
+                    probs = np.exp(predictions_list)
+                    probs =  probs/np.sum(probs,axis=1,keepdims=True)
                     dist_entropy = -np.sum(predictions_list * np.log(probs + 1e-9), axis=1)
                     prob_entropy = -np.sum(probs * np.log(probs + 1e-9), axis=1)
                     
@@ -656,7 +657,6 @@ class experiment_gen_odin(experiment_base):
                             centeroid_path = os.path.join(self.log_path, "layer_analysis_dir", f"centeroids_{name}_{self.current_oracle_step-1}.csv")
                             np.savetxt(centeroid_path, 
                             a[0], delimiter=",")   
-                                            for name, param in self.model.named_parameters():
                         if "scaling_factor" in name:
                             a = param.data.to("cpu").detach().numpy()
 

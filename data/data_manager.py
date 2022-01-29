@@ -491,9 +491,9 @@ class Data_manager:
             self.iter is not None
         ), "Dataset not initialized. Call create_merged_data()"
 
-
+        mask = self.status_manager.index
         inds_df = (
-            self.status_manager.groupby("dataset_name", sort=False)["inds"]
+            self.status_manager.iloc[mask].groupby("dataset_name", sort=False)["inds"]
             .agg(list)
         )
         inds_dict = OrderedDict()
