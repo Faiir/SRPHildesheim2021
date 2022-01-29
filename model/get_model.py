@@ -61,7 +61,7 @@ def get_model(
         return resnet20(
             num_classes=kwargs.get("num_classes", 10),
             similarity=kwargs.get("similarity", "ER"),
-            perform_layer_analysis = kwargs.get("perform_layer_analysis", False)
+            perform_layer_analysis = kwargs.get("perform_layer_analysis", None)
         )
     elif model_name == "DDU":
         return resnet_ddu(

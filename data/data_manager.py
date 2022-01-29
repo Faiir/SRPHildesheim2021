@@ -367,7 +367,7 @@ class Data_manager:
 
         self.log = {}
 
-        self.status_manager.sort_values(["dataset_name","inds"], inplace=True)
+        self.status_manager.sort_values(["dataset_name"], inplace=True)
         self.status_manager.reset_index(drop=True, inplace=True)
 
         if path is not None:

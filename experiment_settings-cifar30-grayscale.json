@@ -3,7 +3,7 @@
     {
       "basic_settings": {
         "oracle_stepsize": 50,
-        "oracle_steps": 20,
+        "oracle_steps": 2,
         "iD": "CIFAR10",
         "OoD": ["FashionMNIST", "MNIST"],
         "grayscale": true,
@@ -13,7 +13,7 @@
           "OoD_classes": []
         },
         "labelled_size": 1000,
-        "pool_size": 30000,
+        "pool_size": 3000,
         "OOD_ratio": 0.3,
         "epochs": 100,
         "batch_size": 64,
