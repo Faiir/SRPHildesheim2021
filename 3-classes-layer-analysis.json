@@ -2,20 +2,20 @@
   "experiments": [
     {
       "basic_settings": {
-        "oracle_stepsize": 10,
+        "oracle_stepsize": 100,
         "oracle_steps": 5,
         "iD": "CIFAR10",
-        "OoD": ["CIFAR10_ood"],
+        "OoD": ["Z_CIFAR10_ood"],
         "grayscale": false,
         "subclass": {
           "do_subclass": true,
           "iD_classes": [0, 1, 2],
           "OoD_classes": [3, 4, 5]
         },
-        "labelled_size": 100,
-        "pool_size": 500,
+        "labelled_size": 1000,
+        "pool_size": 3000,
         "OOD_ratio": 0.5,
-        "epochs": 100,
+        "epochs": 50,
         "batch_size": 50,
         "weight_decay": 1e-4,
         "metric": "accuracy",

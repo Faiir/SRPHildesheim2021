@@ -86,7 +86,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": true
+          "perform_experiment": false
         },
 
         {
@@ -95,7 +95,7 @@
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
@@ -103,7 +103,7 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "gram",
@@ -111,7 +111,7 @@
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         }
       ]
     }

@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
+from scipy.special import softmax
 
 from .model.get_model import get_model
 
@@ -629,8 +630,8 @@ class experiment_gen_odin(experiment_base):
                     weighting_factor_list = np.concatenate(weighting_factor_list,axis=0)
                     
 
-                    entropy = -np.sum(predictions_list * np.log(predictions_list + 1e-9), axis=1)
-                    probs = np.exp(predictions_list)
+                    entropy = np.sum(predictions_list * np.log(predictions_list + 1e-9), axis=1)
+                    probs = softmax(predictions_list,axis=1)
                     probs =  probs/np.sum(probs,axis=1,keepdims=True)
                     dist_entropy = -np.sum(predictions_list * np.log(probs + 1e-9), axis=1)
                     prob_entropy = -np.sum(probs * np.log(probs + 1e-9), axis=1)

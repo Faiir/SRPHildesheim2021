@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from scipy.special import softmax
 
 
 def random_sample(dataset_manager, number_samples, net, predictions=None, weights=None):
@@ -165,7 +166,7 @@ def LOOC_highest_entropy(
         pool_samples_count > number_samples
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
-    entropy = -np.sum(predictions * np.log(predictions + 1e-9), axis=1)
+    entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
     
 
     status_manager[f'entropy_sampler_{iteration}'] = 0
@@ -176,7 +177,7 @@ def LOOC_highest_entropy(
     status_manager[f'weights_sampler_{iteration}'] = 0
     status_manager[f'weights_sampler_{iteration}'].iloc[pool_inds] = np.squeeze(weights)
     
-    probs = np.exp(predictions)
+    probs = softmax(predictions,axis=1)
     probs =  probs/np.sum(probs,axis=1,keepdims=True)
     prob_entropy = -np.sum(probs * np.log(probs + 1e-9), axis=1)
 
