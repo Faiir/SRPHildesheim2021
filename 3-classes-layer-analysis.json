@@ -5,7 +5,7 @@
         "oracle_stepsize": 100,
         "oracle_steps": 5,
         "iD": "CIFAR10",
-        "OoD": ["Z_CIFAR10_ood"],
+        "OoD": ["CIFAR10_ood"],
         "grayscale": false,
         "subclass": {
           "do_subclass": true,

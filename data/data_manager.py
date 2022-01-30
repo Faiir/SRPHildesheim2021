@@ -803,7 +803,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         print("INFO ----- Dataset Loaded : CIFAR100")
         datasets_list.remove("CIFAR100")
 
-    if "Z_CIFAR10_ood" in datasets_list:
+    if "CIFAR10_ood" in datasets_list:
 
         cifar_train_transform = transforms.Compose(
             [
@@ -824,13 +824,13 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
             ]
         )
 
-        datasets_dict["Z_CIFAR10_ood_train"] = CIFAR10(
+        datasets_dict["CIFAR10_ood_train"] = CIFAR10(
             root=r"./dataset/CHIFAR10/",
             train=True,
             download=True,
             transform=cifar_train_transform,
         )
-        datasets_dict["Z_CIFAR10_ood_test"] = CIFAR10(
+        datasets_dict["CIFAR10_ood_test"] = CIFAR10(
             root=r"./dataset/CHIFAR10/",
             train=False,
             download=True,
@@ -838,7 +838,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         )
 
         print("INFO ----- Dataset Loaded : CIFAR10_ood")
-        datasets_list.remove("Z_CIFAR10_ood")
+        datasets_list.remove("CIFAR10_ood")
 
     if "CIFAR100_ood" in datasets_list:
         datasets_dict["CIFAR100_ood_train"] = CIFAR100(
