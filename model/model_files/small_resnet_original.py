@@ -228,8 +228,9 @@ class ResNet(nn.Module):
         if self.similarity is None:
             self.linear = nn.Linear(last_layer_dims, num_classes)
         else:
+            self.g_fc = nn.Linear(last_layer_dims, 64)
             self.g_activation = nn.Sigmoid()
-            self.g_func = nn.Linear(last_layer_dims, 1)
+            self.g_func = nn.Linear(64, 1)
             self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
             if "I" in self.similarity:
@@ -279,9 +280,12 @@ class ResNet(nn.Module):
         if self.similarity is None:
             out = self.linear(out)
         else:
-            
             h = self.h_func(out)
-            g = self.g_func(out)
+            if "E" in self.similarity:
+                g = F.relu(self.g_fc(out))
+                g = self.g_func(g)
+            else:
+                g = self.g_func(out)
             g = self.g_norm(g)
             g = self.g_activation(g)
 
