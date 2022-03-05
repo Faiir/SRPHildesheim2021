@@ -248,7 +248,7 @@ class experiment_gram(experiment_base):
             logfile.write("\n")
             for _, row in log_df.iterrows():
                 for c in colums:
-                    logfile.write(str(row[c].item()))
+                    logfile.write(str(row[c]))
                     logfile.write(",")
                 logfile.write("\n")
 
@@ -452,11 +452,11 @@ class experiment_gram(experiment_base):
 
                 pool_weighting_list = pool_weighting_list / pool_weighting_list.max()
                 pool_weighting_list = 1 - pool_weighting_list
-                print(
-                    "pool_weighting_list",
-                    pool_weighting_list.min(),
-                    pool_weighting_list.max(),
-                )
+                # print(
+                #     "pool_weighting_list",
+                #     pool_weighting_list.min(),
+                #     pool_weighting_list.max(),
+                # )
                 source_labels = self.data_manager.get_pool_source_labels()
                 iD_Prob = pool_weighting_list
                 auroc_score = auroc(
@@ -492,7 +492,7 @@ class experiment_gram(experiment_base):
                     "Pool_AUROC": auroc_score,
                 }
 
-                print(dict_to_add)
+                # print(dict_to_add)
                 # if self.metric.lower() == "auroc":
                 #     auroc_score = auroc(self.data_manager, oracle_s)
 

@@ -249,7 +249,7 @@ class experiment_extraclass(experiment_base):
             logfile.write("\n")
             for _, row in log_df.iterrows():
                 for c in colums:
-                    logfile.write(str(row[c].item()))
+                    logfile.write(str(row[c]))
                     logfile.write(",")
                 logfile.write("\n")
 
@@ -415,16 +415,15 @@ class experiment_extraclass(experiment_base):
         self.current_oracle_step = 0
         self.data_manager.OoD_extra_class = True
 
-        
         for oracle_s in range(self.oracle_steps):
             self.set_model(self.current_experiment.get("model", "base"))
             self.create_dataloader()
             self.create_optimizer()
 
-# Keeping it here In case you get the target out of bound error again
-#            for ii in self.data_manager.datasets_dict:
-#                print(f'{ii} : {np.unique(self.data_manager.datasets_dict[ii].targets)}')
-#                print(self.data_manager.datasets_dict[ii].targets)
+            # Keeping it here In case you get the target out of bound error again
+            #            for ii in self.data_manager.datasets_dict:
+            #                print(f'{ii} : {np.unique(self.data_manager.datasets_dict[ii].targets)}')
+            #                print(self.data_manager.datasets_dict[ii].targets)
 
             self.train(
                 self.train_loader,

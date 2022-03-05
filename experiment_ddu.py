@@ -268,7 +268,7 @@ class experiment_ddu(experiment_base):
             logfile.write("\n")
             for _, row in log_df.iterrows():
                 for c in colums:
-                    logfile.write(str(row[c].item()))
+                    logfile.write(str(row[c]))
                     logfile.write(",")
                 logfile.write("\n")
 
@@ -519,9 +519,9 @@ class experiment_ddu(experiment_base):
             self.data_manager.create_merged_data(path=save_path)
             print("created new statusmanager")
         self.current_oracle_step = 0
-        
+
         for oracle_s in range(self.oracle_steps):
-            self.set_model("DDU") # hardcoded till we add larger models
+            self.set_model("DDU")  # hardcoded till we add larger models
             result_tup = self.create_dataloader()
             self.create_optimizer()
 

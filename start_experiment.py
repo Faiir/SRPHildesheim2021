@@ -2,7 +2,9 @@ import argparse
 import gc
 import sys
 import os
+import ssl
 
+ssl._create_default_https_context = ssl._create_unverified_context
 import torch
 
 PACKAGE_PARENT = ".."
@@ -114,9 +116,9 @@ def start_experiment(config, log_path):
             except Exception as e:
                 name = exp_setting["exp_name"]
                 print("\n\n")
-                print("**********"*12)
+                print("**********" * 12)
                 print(f"Experiment {name} failed with Exception {e}")
-                print("**********"*12)
+                print("**********" * 12)
                 print("\n\n")
 
         log_path = base_log_path
