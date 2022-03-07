@@ -770,8 +770,8 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         print("INFO ----- Dataset Loaded : SVHN")
         datasets_list.remove("A_SVHN")
 
-    if "A_CIFAR100" in datasets_list:
-        datasets_dict["A_CIFAR100_train"] = CIFAR100(
+    if "CIFAR100" in datasets_list:
+        datasets_dict["CIFAR100_train"] = CIFAR100(
             root=r"./dataset/CIFAR100",
             train=True,
             download=True,
@@ -787,7 +787,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
             ),
         )
 
-        datasets_dict["A_CIFAR100_test"] = CIFAR100(
+        datasets_dict["CIFAR100_test"] = CIFAR100(
             root=r"./dataset/CIFAR100",
             train=False,
             download=True,
@@ -801,7 +801,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
             ),
         )
         print("INFO ----- Dataset Loaded : CIFAR100")
-        datasets_list.remove("A_CIFAR100")
+        datasets_list.remove("CIFAR100")
 
     if "A_CIFAR10_ood" in datasets_list:
 
