@@ -95,7 +95,9 @@ class Data_manager:
         ), f"Only one dataset can be in-Dist, found {self.iD_datasets}"
 
         list_of_datasets = self.iD_datasets + self.OoD_datasets
-        self.datasets_dict = downloader_construct_datasetsdict(list_of_datasets, grayscale=self.grayscale)
+        self.datasets_dict = downloader_construct_datasetsdict(
+            list_of_datasets, grayscale=self.grayscale
+        )
 
         if subclass["do_subclass"]:
             for c, dataset in enumerate(self.iD_datasets):
@@ -216,7 +218,7 @@ class Data_manager:
 
         assert 0 <= self.OoD_ratio < 1, "Invalid OOD_ratio : {self.OoD_ratio}"
 
-        OoD_pool_size  = int(self.unlabelled_size * self.OoD_ratio)
+        OoD_pool_size = int(self.unlabelled_size * self.OoD_ratio)
         iD_pool_size = self.unlabelled_size - OoD_pool_size
 
         assert (
@@ -346,9 +348,10 @@ class Data_manager:
         )
 
         for ii in self.OoD_datasets:
-            for jj in ['_train','_test']:
-                self.datasets_dict[ii+jj].targets = OoD_class_label*np.ones_like(self.datasets_dict[ii+jj].targets)
-            
+            for jj in ["_train", "_test"]:
+                self.datasets_dict[ii + jj].targets = OoD_class_label * np.ones_like(
+                    self.datasets_dict[ii + jj].targets
+                )
 
         self.iter = 0
 
@@ -484,24 +487,21 @@ class Data_manager:
             inds_dict[ii] = inds_df[ii]
 
         return dataset_creator(inds_dict, self.datasets_dict)
-    
+
     def get_all_status_manager_dataset(self):
         """get_all_status_manager_dataset [returns the state of the unlabelled pool]"""
         assert (
             self.iter is not None
         ), "Dataset not initialized. Call create_merged_data()"
 
-
-        inds_df = (
-            self.status_manager.groupby("dataset_name", sort=False)["inds"]
-            .agg(list)
+        inds_df = self.status_manager.groupby("dataset_name", sort=False)["inds"].agg(
+            list
         )
         inds_dict = OrderedDict()
         for ii in inds_df.index:
             inds_dict[ii] = inds_df[ii]
 
         return dataset_creator(inds_dict, self.datasets_dict)
-
 
     def get_unlabelled_iD_pool_dataset(self):
         """get_unlabelled_pool_data [returns the state of the unlabelled pool]"""
@@ -575,7 +575,7 @@ class Data_manager:
                     f"{exp_name}/{oracle}/ood_ratio-{ood_ratio}", log_dict, self.iter
                 )
             current_iter_log.update(log_dict)
-        
+
         current_iter_log["Exp_Name"] = exp_name
         self.log[self.iter] = current_iter_log
 
@@ -602,9 +602,10 @@ class Data_manager:
         )
 
         for ii in self.OoD_datasets:
-            for jj in ['_train','_test']:
-                self.datasets_dict[ii+jj].targets = OoD_class_label*np.ones_like(self.datasets_dict[ii+jj].targets)
-
+            for jj in ["_train", "_test"]:
+                self.datasets_dict[ii + jj].targets = OoD_class_label * np.ones_like(
+                    self.datasets_dict[ii + jj].targets
+                )
 
         self.config = {
             "Total_overall_examples": len(self.status_manager),
@@ -690,7 +691,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         print("INFO ----- Dataset Loaded : CIFAR10")
         datasets_list.remove("CIFAR10")
 
-    if "MNIST" in datasets_list:
+    if "A_MNIST" in datasets_list:
         mnist_transforms = transforms.Compose(
             [
                 transforms.Pad(2),
@@ -700,14 +701,14 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
                 transforms.RandomCrop(32, 4),
             ]
         )
-        datasets_dict["MNIST_train"] = MNIST(
+        datasets_dict["A_MNIST_train"] = MNIST(
             root=r"./dataset/MNIST",
             train=True,
             download=True,
             transform=mnist_transforms,
         )
 
-        datasets_dict["MNIST_test"] = MNIST(
+        datasets_dict["A_MNIST_test"] = MNIST(
             root=r"./dataset/MNIST",
             train=False,
             download=True,
@@ -715,9 +716,9 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         )
 
         print("INFO ----- Dataset Loaded : MNIST")
-        datasets_list.remove("MNIST")
+        datasets_list.remove("A_MNIST")
 
-    if "FashionMNIST" in datasets_list:
+    if "A_FashionMNIST" in datasets_list:
         fmnist_transforms = transforms.Compose(
             [
                 transforms.Pad(2),
@@ -729,14 +730,14 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
             ]
         )
 
-        datasets_dict["FashionMNIST_train"] = FashionMNIST(
+        datasets_dict["A_FashionMNIST_train"] = FashionMNIST(
             root="./dataset/FashionMNIST",
             train=True,
             download=True,
             transform=fmnist_transforms,
         )
 
-        datasets_dict["FashionMNIST_test"] = FashionMNIST(
+        datasets_dict["A_FashionMNIST_test"] = FashionMNIST(
             root="./dataset/FashionMNIST",
             train=False,
             download=True,
@@ -744,33 +745,33 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         )
 
         print("INFO ----- Dataset Loaded : FashionMNIST")
-        datasets_list.remove("FashionMNIST")
+        datasets_list.remove("A_FashionMNIST")
 
-    if "SVHN" in datasets_list:
+    if "A_SVHN" in datasets_list:
         SVHN_transforms = transforms.Compose(
             [transforms.ToTensor(), transforms.Resize(32)]
         )
 
-        datasets_dict["SVHN_train"] = SVHN(
+        datasets_dict["A_SVHN_train"] = SVHN(
             root=r"./dataset/SVHN",
             split="train",
             download=True,
             transform=SVHN_transforms,
         )
-        datasets_dict["SVHN_train"].targets = datasets_dict["SVHN_train"].labels
-        datasets_dict["SVHN_test"] = SVHN(
+        datasets_dict["A_SVHN_train"].targets = datasets_dict["A_SVHN_train"].labels
+        datasets_dict["A_SVHN_test"] = SVHN(
             root=r"./dataset/SVHN",
             split="test",
             download=True,
             transform=SVHN_transforms,
         )
 
-        datasets_dict["SVHN_test"].targets = datasets_dict["SVHN_test"].labels
+        datasets_dict["A_SVHN_test"].targets = datasets_dict["A_SVHN_test"].labels
         print("INFO ----- Dataset Loaded : SVHN")
-        datasets_list.remove("SVHN")
+        datasets_list.remove("A_SVHN")
 
-    if "CIFAR100" in datasets_list:
-        datasets_dict["CIFAR100_train"] = CIFAR100(
+    if "A_CIFAR100" in datasets_list:
+        datasets_dict["A_CIFAR100_train"] = CIFAR100(
             root=r"./dataset/CIFAR100",
             train=True,
             download=True,
@@ -786,7 +787,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
             ),
         )
 
-        datasets_dict["CIFAR100_test"] = CIFAR100(
+        datasets_dict["A_CIFAR100_test"] = CIFAR100(
             root=r"./dataset/CIFAR100",
             train=False,
             download=True,
@@ -800,9 +801,9 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
             ),
         )
         print("INFO ----- Dataset Loaded : CIFAR100")
-        datasets_list.remove("CIFAR100")
+        datasets_list.remove("A_CIFAR100")
 
-    if "CIFAR10_ood" in datasets_list:
+    if "A_CIFAR10_ood" in datasets_list:
 
         cifar_train_transform = transforms.Compose(
             [
@@ -823,13 +824,13 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
             ]
         )
 
-        datasets_dict["CIFAR10_ood_train"] = CIFAR10(
+        datasets_dict["A_CIFAR10_ood_train"] = CIFAR10(
             root=r"./dataset/CHIFAR10/",
             train=True,
             download=True,
             transform=cifar_train_transform,
         )
-        datasets_dict["CIFAR10_ood_test"] = CIFAR10(
+        datasets_dict["A_CIFAR10_ood_test"] = CIFAR10(
             root=r"./dataset/CHIFAR10/",
             train=False,
             download=True,
@@ -837,10 +838,10 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         )
 
         print("INFO ----- Dataset Loaded : CIFAR10_ood")
-        datasets_list.remove("CIFAR10_ood")
+        datasets_list.remove("A_CIFAR10_ood")
 
-    if "CIFAR100_ood" in datasets_list:
-        datasets_dict["CIFAR100_ood_train"] = CIFAR100(
+    if "A_CIFAR100_ood" in datasets_list:
+        datasets_dict["A_CIFAR100_ood_train"] = CIFAR100(
             root=r"./dataset/CIFAR100",
             train=True,
             download=True,
@@ -853,7 +854,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
             ),
         )
 
-        datasets_dict["CIFAR100_ood_test"] = CIFAR100(
+        datasets_dict["A_CIFAR100_ood_test"] = CIFAR100(
             root=r"./dataset/CIFAR100",
             train=False,
             download=True,
@@ -861,7 +862,7 @@ def downloader_construct_datasetsdict(datasets_list: list, grayscale=False) -> d
         )
 
         print("INFO ----- Dataset Loaded : CIFAR100_ood")
-        datasets_list.remove("CIFAR100_ood")
+        datasets_list.remove("A_CIFAR100_ood")
 
     assert (
         len(datasets_list) == 0

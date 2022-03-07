@@ -1,6 +1,6 @@
 import time
 from collections import defaultdict
-from tqdm import tqdm
+
 import torch
 from torchsummary import summary
 import numpy as np

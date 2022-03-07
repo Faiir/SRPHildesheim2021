@@ -3,7 +3,7 @@ import pandas as pd
 
 from torch import nn, optim
 import torch
-from tqdm import tqdm
+
 
 from ..data.data_manager import Data_manager
 from ..data.datahandler_for_array import create_dataloader
@@ -74,7 +74,7 @@ def train(
     patience = kwargs.get("patience", int(epochs * 0.1))
     early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
-    for epoch in tqdm(range(1, epochs + 1)):
+    for epoch in range(1, epochs + 1):
         if verbose > 0:
             print(f"\nEpoch: {epoch}")
 

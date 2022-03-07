@@ -5,7 +5,7 @@
         "oracle_stepsize": 150,
         "oracle_steps": 20,
         "iD": "CIFAR100",
-        "OoD": ["CIFAR100_ood", "SVHN"],
+        "OoD": ["A_CIFAR100_ood", "A_SVHN"],
         "grayscale": false,
         "subclass": {
           "do_subclass": true,
@@ -24,7 +24,7 @@
         "labelled_size": 3000,
         "pool_size": 25000,
         "OOD_ratio": 0.15,
-        "epochs": 5,
+        "epochs": 50,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -129,7 +129,7 @@
         "oracle_stepsize": 50,
         "oracle_steps": 20,
         "iD": "CIFAR10",
-        "OoD": ["FashionMNIST", "MNIST"],
+        "OoD": ["A_FashionMNIST", "A_MNIST"],
         "grayscale": true,
         "subclass": {
           "do_subclass": false,
@@ -139,7 +139,7 @@
         "labelled_size": 1000,
         "pool_size": 30000,
         "OOD_ratio": 0.3,
-        "epochs": 100,
+        "epochs": 50,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -244,7 +244,7 @@
         "oracle_stepsize": 150,
         "oracle_steps": 20,
         "iD": "CIFAR10",
-        "OoD": ["CIFAR10_ood", "SVHN"],
+        "OoD": ["A_CIFAR10_ood", "A_SVHN"],
         "grayscale": false,
         "subclass": {
           "do_subclass": true,
@@ -254,7 +254,7 @@
         "labelled_size": 3000,
         "pool_size": 25000,
         "OOD_ratio": 0.15,
-        "epochs": 5,
+        "epochs": 50,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -275,7 +275,7 @@
           "oracle": "baseline",
           "model": "base",
           "plots": false,
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "baseline-ood",
@@ -283,7 +283,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "genodin",
@@ -299,7 +299,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "looc",
@@ -315,7 +315,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "ddu",
@@ -325,7 +325,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": false
+          "perform_experiment": true
         },
 
         {
@@ -334,7 +334,7 @@
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "extra_class",
@@ -342,7 +342,7 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "gram",

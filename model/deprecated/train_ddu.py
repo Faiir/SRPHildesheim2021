@@ -1,6 +1,6 @@
 import time
 from collections import defaultdict
-from tqdm import tqdm
+
 import torch
 from torchsummary import summary
 import numpy as np
@@ -99,7 +99,7 @@ def train(net, train_loader, optimizer, criterion, device, epochs=5, **kwargs):
     else:
         validation = False
 
-    for epoch in tqdm(range(1, epochs + 1)):
+    for epoch in range(1, epochs + 1):
         if verbose > 0:
             print(f"\nEpoch: {epoch}")
 
@@ -228,7 +228,7 @@ def get_density_vals(pool_loader, val_loader, trained_net, do_pertubed_images):
         best_eps = 0
         scores = []
         trained_net.eval()
-        for eps in tqdm(epsi_list):
+        for eps in epsi_list:
             preds = 0
             for batch_idx, (data, target) in enumerate(val_loader):
                 trained_net.zero_grad(set_to_none=True)

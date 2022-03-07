@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from torch.utils.tensorboard.writer import SummaryWriter
-from tqdm import tqdm
+
 
 # torch
 import torch
@@ -130,7 +130,7 @@ class experiment_active_learning(experiment_base):
         patience = kwargs.get("patience", int(self.epochs * 0.1))
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
-        for epoch in tqdm(range(1, self.epochs + 1)):
+        for epoch in range(1, self.epochs + 1):
             if self.verbose > 0:
                 print(f"\nEpoch: {epoch}")
 
@@ -144,7 +144,10 @@ class experiment_active_learning(experiment_base):
                     optimizer.zero_grad(set_to_none=True)
                     yhat = self.model(data).to(device)
                     loss = criterion(yhat, target)
-                    train_loss += loss.item()
+                    try:
+                        train_loss += loss.item()
+                    except:
+                        print("loss item skipped loss")
                     train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
 
                     loss.backward()

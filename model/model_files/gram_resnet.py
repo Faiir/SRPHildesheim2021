@@ -1,5 +1,5 @@
 import sys
-from tqdm import tqdm
+
 
 import random
 import math
@@ -210,7 +210,7 @@ def get_gram_resnet(num_classes):
             else:
                 device = "cpu"
 
-            for i in tqdm(range(0, len(data), 128)):
+            for i in range(0, len(data), 128):
                 batch = torch.stack(data[i : i + 128]).to(device)
                 feat_list = self.gram_feature_list(batch)
                 batch_deviations = []
@@ -332,8 +332,6 @@ class Detector:
             self.mins[PRED] = cpu(mins)
             self.maxs[PRED] = cpu(maxs)
             torch.cuda.empty_cache()
-       
-        
 
     def compute_deviations(self, torch_model, dataloader, POWERS=[10]):
         assert len(self.mins) > 0, "Run compute_min_max first to generate mins and maxs"
@@ -367,7 +365,7 @@ class Detector:
         test_confs = np.array(test_confs)
 
         for PRED in self.classes:
-            test_indices = np.where(np.array(test_preds) == PRED)[0]            
+            test_indices = np.where(np.array(test_preds) == PRED)[0]
             if len(test_indices) == 0:
                 continue
             else:
@@ -386,12 +384,9 @@ class Detector:
                 mins = self.mins[PRED]
                 maxs = self.maxs[PRED]
 
-            test_deviations = (
-                torch_model.get_deviations(
-                    test_PRED, power=POWERS, mins=mins, maxs=maxs
-                )
-                / (test_confs_PRED[:, np.newaxis])
-            )
+            test_deviations = torch_model.get_deviations(
+                test_PRED, power=POWERS, mins=mins, maxs=maxs
+            ) / (test_confs_PRED[:, np.newaxis])
 
             if device != "cuda":
                 self.mins[PRED] = cpu(mins)

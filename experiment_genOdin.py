@@ -10,7 +10,7 @@ from numpy.random import sample
 import pandas as pd
 from scipy.sparse import construct
 from torch.utils.tensorboard.writer import SummaryWriter
-from tqdm import tqdm
+
 
 # torch
 import torch
@@ -58,7 +58,6 @@ def _create_log_path_al(log_dir: str = ".", OOD_ratio: float = 0.0) -> None:
 
     if os.path.exists(log_dir) == False:
         os.mkdir(os.path.join(".", "log_dir"))
-
 
     log_path = os.path.join(log_dir, log_file_name)
 
@@ -143,7 +142,7 @@ class experiment_gen_odin(experiment_base):
         patience = kwargs.get("patience", int(self.epochs * 0.1))
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
-        for epoch in tqdm(range(1, self.epochs + 1)):
+        for epoch in range(1, self.epochs + 1):
             if self.verbose > 0:
                 print(f"\nEpoch: {epoch}")
 
@@ -157,7 +156,10 @@ class experiment_gen_odin(experiment_base):
                     optimizer.zero_grad(set_to_none=True)
                     yhat = self.model(data).to(device)
                     loss = criterion(yhat, target)
-                    train_loss += loss.item()
+                    try:
+                        train_loss += loss.item()
+                    except:
+                        print("loss item skipped loss")
                     train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
 
                     loss.backward()
@@ -410,7 +412,7 @@ class experiment_gen_odin(experiment_base):
         best_eps = 0
         scores = []
         self.model.eval()
-        for eps in tqdm(epsi_list):
+        for eps in epsi_list:
             preds = 0
             for batch_idx, (data, target) in enumerate(val_loader):
                 self.model.zero_grad(set_to_none=True)
@@ -490,7 +492,9 @@ class experiment_gen_odin(experiment_base):
         self.validation_split = self.current_experiment.get("validation_split", "train")
         self.validation_source = self.current_experiment.get("validation_source", 0.3)
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
-        self.perform_layer_analysis = self.current_experiment.get("perform_layer_analysis", False)
+        self.perform_layer_analysis = self.current_experiment.get(
+            "perform_layer_analysis", False
+        )
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")
@@ -548,9 +552,8 @@ class experiment_gen_odin(experiment_base):
 
         self.current_oracle_step = 0
 
-        
         for oracle_s in range(self.oracle_steps):
-            #print(self.current_experiment.get("model", "GenOdin"))
+            # print(self.current_experiment.get("model", "GenOdin"))
             self.set_model(self.current_experiment.get("model", "GenOdin"))
             self.create_dataloader()
             self.create_optimizer()
@@ -598,45 +601,60 @@ class experiment_gen_odin(experiment_base):
 
                     self.create_plots("density", pert_preds, gs, hs, targets, oracle_s)
                     print("created density plots")
-                
+
                 if self.perform_layer_analysis:
                     centroids_list = []
                     weighting_factor_list = []
-                    statusmanager_dataset = self.data_manager.get_all_status_manager_dataset()
-                    statusmanager_dataloader = DataLoader(statusmanager_dataset,
-                                                        sampler=SequentialSampler(statusmanager_dataset),
-                                                        batch_size=128,
-                                                        num_workers=2,
-                                                        pin_memory=False,
-                                                        drop_last=False,
-                                                     )
+                    statusmanager_dataset = (
+                        self.data_manager.get_all_status_manager_dataset()
+                    )
+                    statusmanager_dataloader = DataLoader(
+                        statusmanager_dataset,
+                        sampler=SequentialSampler(statusmanager_dataset),
+                        batch_size=128,
+                        num_workers=2,
+                        pin_memory=False,
+                        drop_last=False,
+                    )
 
                     for (data, labels) in statusmanager_dataloader:
                         tuple_data = self.model(
-                                data.to(self.device).float(),
-                                get_test_model=True,
-                                apply_softmax=False,
+                            data.to(self.device).float(),
+                            get_test_model=True,
+                            apply_softmax=False,
                         )
-  
-                        centroids_list.append(tuple_data[3].to("cpu").detach().numpy())
-                        weighting_factor_list.append(tuple_data[1].to("cpu").detach().numpy())
 
-                    centroids_list = np.concatenate(centroids_list,axis=0)
-                    weighting_factor_list = np.concatenate(weighting_factor_list,axis=0)
+                        centroids_list.append(tuple_data[3].to("cpu").detach().numpy())
+                        weighting_factor_list.append(
+                            tuple_data[1].to("cpu").detach().numpy()
+                        )
+
+                    centroids_list = np.concatenate(centroids_list, axis=0)
+                    weighting_factor_list = np.concatenate(
+                        weighting_factor_list, axis=0
+                    )
                     print(centroids_list.shape)
                     print(weighting_factor_list.shape)
                     statusmanager_copy = self.data_manager.status_manager.copy()
-                    centroid_values = [f'centroid_{ii+1}' for ii in range(centroids_list.shape[1])]
+                    centroid_values = [
+                        f"centroid_{ii+1}" for ii in range(centroids_list.shape[1])
+                    ]
                     statusmanager_copy[centroid_values] = centroids_list
-                    statusmanager_copy['weighting_factor'] = weighting_factor_list 
+                    statusmanager_copy["weighting_factor"] = weighting_factor_list
 
-                    layer_analysis_dir = os.path.join(self.log_path, "layer_analysis_dir")
+                    layer_analysis_dir = os.path.join(
+                        self.log_path, "layer_analysis_dir"
+                    )
                     if os.path.exists(layer_analysis_dir) == False:
                         os.mkdir(os.path.join(self.log_path, "layer_analysis_dir"))
-                        
-                    layer_analysis_path = os.path.join(self.log_path, "layer_analysis_dir", f"status_manager_at_{self.current_oracle_step-1}.csv")
+
+                    layer_analysis_path = os.path.join(
+                        self.log_path,
+                        "layer_analysis_dir",
+                        f"status_manager_at_{self.current_oracle_step-1}.csv",
+                    )
                     statusmanager_copy.to_csv(layer_analysis_path)
-                    
+
                 (
                     test_predictions,
                     test_labels,
