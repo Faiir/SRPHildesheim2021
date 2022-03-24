@@ -193,13 +193,14 @@ class BasicBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, similarity=None, perform_layer_analysis=None):
+    def __init__(self, block, num_blocks, num_classes=10, similarity=None, perform_layer_analysis=None, complex_g_func=False):
         super(ResNet, self).__init__()
         self.in_planes = 16
         self.similarity = similarity
         self.softmax = nn.Softmax(dim=1)
         self.perform_layer_analysis = perform_layer_analysis
-
+        self.complex_g_func = complex_g_func
+        
 
         if self.similarity is None:
             print("INFO ----- ResNet has been initialized without a similarity measure")
@@ -209,6 +210,8 @@ class ResNet(nn.Module):
                 f"INFO ----- ResNet has been initialized with a similarity measure : {self.similarity}"
             )
             self.has_weighing_factor = True
+            if self.complex_g_func:
+                print("INFO ----- ResNet has been initailzed with complex_g_func")
 
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
 
@@ -220,7 +223,7 @@ class ResNet(nn.Module):
 
         last_layer_dims = 64
         if self.perform_layer_analysis is not None:
-            print(f"\n\n\nINFO ---- perform_layer_analysis is turned on, only {self.perform_layer_analysis} dimension embeddings would be created")
+            print(f"INFO ---- perform_layer_analysis is turned on, only {self.perform_layer_analysis} dimension embeddings would be created\n\n")
             last_layer_dims = self.perform_layer_analysis
             self.layer4 = nn.Linear(64, last_layer_dims)
 
@@ -228,22 +231,23 @@ class ResNet(nn.Module):
         if self.similarity is None:
             self.linear = nn.Linear(last_layer_dims, num_classes)
         else:
-            self.g_fc = nn.Linear(last_layer_dims, 64)
+            if self.complex_g_func:
+                self.g_fc = nn.Linear(last_layer_dims, 64)
+                self.g_func = nn.Linear(64, 1)
+            else:
+                self.g_func = nn.Linear(last_layer_dims, 1)
             self.g_activation = nn.Sigmoid()
-            self.g_func = nn.Linear(64, 1)
             self.g_norm = nn.BatchNorm1d(self.g_func.out_features)
 
             if "I" in self.similarity:
                 self.h_func = nn.Linear(last_layer_dims, num_classes)
             elif "E" in self.similarity:
-
                 self.h_func = looc_layer(last_layer_dims, num_classes)
 
             elif "C" in self.similarity:
                 self.h_func = cosine_layer(last_layer_dims, num_classes)
 
             if "E_U" in self.similarity:
-
                 self.h_func = euclid_dist_layer(last_layer_dims, num_classes)
 
             elif "C_H" in self.similarity:
@@ -282,7 +286,10 @@ class ResNet(nn.Module):
         else:
             h = self.h_func(out)
             if "E" in self.similarity:
-                g = F.relu(self.g_fc(out))
+                if self.complex_g_func:
+                    g = F.relu(self.g_fc(out))
+                else:
+                    g = out
                 g = self.g_func(g)
             else:
                 g = self.g_func(out)
@@ -304,8 +311,8 @@ class ResNet(nn.Module):
             return out
 
 
-def resnet20(num_classes, similarity, perform_layer_analysis=None):
-    return ResNet(BasicBlock, [3, 3, 3], num_classes, similarity, perform_layer_analysis)
+def resnet20(num_classes, similarity, perform_layer_analysis=None, complex_g_func = False):
+    return ResNet(BasicBlock, [3, 3, 3], num_classes, similarity, perform_layer_analysis, complex_g_func)
 
 
 def resnet32(num_classes, similarity):

@@ -58,11 +58,7 @@ def get_model(
             similarity=kwargs.get("similarity", "CR"),
         )
     elif model_name == "LOOC":
-        return resnet20(
-            num_classes=kwargs.get("num_classes", 10),
-            similarity=kwargs.get("similarity", "ER"),
-            perform_layer_analysis = kwargs.get("perform_layer_analysis", None)
-        )
+        return resnet20(**kwargs)
     elif model_name == "DDU":
         return resnet_ddu(
             num_classes=kwargs.get("num_classes", 10),

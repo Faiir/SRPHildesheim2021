@@ -169,29 +169,11 @@ def LOOC_highest_entropy(
     entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
     
 
-    status_manager[f'entropy_sampler_{iteration}'] = 0
-    status_manager[f'entropy_sampler_{iteration}'].iloc[pool_inds] = entropy
     if weights is not None:
         entropy = np.squeeze(weights) * entropy
 
-    status_manager[f'weights_sampler_{iteration}'] = 0
-    status_manager[f'weights_sampler_{iteration}'].iloc[pool_inds] = np.squeeze(weights)
-    
-    probs = softmax(predictions,axis=1)
-    probs =  probs/np.sum(probs,axis=1,keepdims=True)
-    prob_entropy = -np.sum(probs * np.log(probs + 1e-9), axis=1)
-
-    status_manager[f'prob_entropy_sampler_{iteration}'] = 0
-    status_manager[f'prob_entropy_sampler_{iteration}'].iloc[pool_inds] = prob_entropy
-
-    status_manager[f'w_entropy_sampler_{iteration}'] = 0
-    status_manager[f'w_entropy_sampler_{iteration}'].iloc[pool_inds] = entropy
     
     inds = np.argsort(entropy)[-number_samples:]
-
-#    print("entropy", entropy)
-#    print("pred_inds", inds)
-#    print("entropy in predictions", entropy[inds])
     inds = status_manager[status_manager["status"] == 0].index[inds]
     
 
@@ -199,7 +181,6 @@ def LOOC_highest_entropy(
         iteration * status_manager["source"].iloc[inds]
     )
     
-#    print("statusmanager inds",inds)
 
     return None
 
