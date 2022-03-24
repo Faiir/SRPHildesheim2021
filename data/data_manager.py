@@ -485,13 +485,13 @@ class Data_manager:
 
         return dataset_creator(inds_dict, self.datasets_dict)
     
-    def get_all_status_manager_dataset(self):
+    def get_labelled_dataset(self):
         """get_all_status_manager_dataset [returns the state of the unlabelled pool]"""
         assert (
             self.iter is not None
         ), "Dataset not initialized. Call create_merged_data()"
 
-        mask = self.status_manager.index
+        mask = self.status_manager[self.status_manager["status"] != 0].index
         inds_df = (
             self.status_manager.iloc[mask].groupby("dataset_name", sort=False)["inds"]
             .agg(list)

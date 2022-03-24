@@ -618,6 +618,44 @@ class experiment_gen_odin(experiment_base):
                     statusmanager_copy.loc[inds,'entropy'] = entropy 
                     statusmanager_copy.loc[inds,'dist_entropy'] = dist_entropy 
                     statusmanager_copy.loc[inds,'prob_entropy'] = prob_entropy
+
+                    labelled_pool_dataset = self.data_manager.get_labelled_dataset()
+                    labelled_pool_loader = DataLoader(
+                                            labelled_pool_dataset,
+                                            sampler=SequentialSampler(labelled_pool_dataset),
+                                            batch_size=self.batch_size,
+                                            num_workers=2,
+                                            drop_last=False,
+                                        )
+
+                    (
+                    labelled_pool_predictions,
+                    labelled_pool_labels_list,
+                    labelled_pool_weighting_list,
+                    labelled_pool_centroids
+                    ) = self.pool_predictions(labelled_pool_loader)
+
+                    predictions_list = labelled_pool_predictions
+                    centroids_list = labelled_pool_centroids
+                    weighting_factor_list = labelled_pool_weighting_list
+                    
+
+                    entropy = np.sum(predictions_list * np.log(predictions_list + 1e-9), axis=1)
+                    probs = softmax(predictions_list,axis=1)
+                    probs =  probs/np.sum(probs,axis=1,keepdims=True)
+                    dist_entropy = -np.sum(predictions_list * np.log(probs + 1e-9), axis=1)
+                    prob_entropy = -np.sum(probs * np.log(probs + 1e-9), axis=1)
+
+                    inds = statusmanager_copy[statusmanager_copy["status"] != 0].index
+                    statusmanager_copy.loc[inds,centroid_values] = centroids_list
+                    statusmanager_copy.loc[inds,'weighting_factor'] = weighting_factor_list[:,0]
+                    statusmanager_copy.loc[inds,'entropy'] = entropy 
+                    statusmanager_copy.loc[inds,'dist_entropy'] = dist_entropy 
+                    statusmanager_copy.loc[inds,'prob_entropy'] = prob_entropy
+
+
+
+
                     layer_analysis_dir = os.path.join(self.log_path, "layer_analysis_dir")
                     if os.path.exists(layer_analysis_dir) == False:
                         os.mkdir(os.path.join(self.log_path, "layer_analysis_dir"))

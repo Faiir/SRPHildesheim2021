@@ -2,8 +2,8 @@
   "experiments": [
     {
       "basic_settings": {
-        "oracle_stepsize": 50,
-        "oracle_steps": 2,
+        "oracle_stepsize": 20,
+        "oracle_steps": 1,
         "iD": "CIFAR10",
         "OoD": ["CIFAR10_ood"],
         "grayscale": false,
@@ -13,7 +13,7 @@
           "OoD_classes": [2, 6, 7]
         },
         "labelled_size": 300,
-        "pool_size": 900,
+        "pool_size": 1200,
         "OOD_ratio": 0.5,
         "epochs": 10,
         "batch_size": 50,
