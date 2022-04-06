@@ -5,7 +5,7 @@
         "oracle_stepsize": 150,
         "oracle_steps": 20,
         "iD": "CIFAR10",
-        "OoD": ["A_CIFAR100_ood", "SVHN"],
+        "OoD": ["A_CIFAR100_ood", "A_SVHN"],
         "grayscale": false,
         "subclass": {
           "do_subclass": false,
@@ -88,6 +88,14 @@
           "temp": 1.0,
           "perform_experiment": true
         },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-030",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
 
         {
           "exp_type": "extra_class",
@@ -103,14 +111,6 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-030",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false,
           "perform_experiment": true
         }
       ]
@@ -243,7 +243,7 @@
         "oracle_stepsize": 50,
         "oracle_steps": 20,
         "iD": "CIFAR10",
-        "OoD": ["A_FMNIST", "A_MNIST"],
+        "OoD": ["A_FashionMNIST", "A_MNIST"],
         "grayscale": true,
         "subclass": {
           "do_subclass": false,
