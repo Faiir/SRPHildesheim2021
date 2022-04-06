@@ -2,7 +2,7 @@
   "experiments": [
     {
       "basic_settings": {
-        "oracle_stepsize": 20,
+        "oracle_stepsize": 200,
         "oracle_steps": 5,
         "iD": "CIFAR10",
         "OoD": ["CIFAR10_ood", "SVHN"],
@@ -12,10 +12,10 @@
           "iD_classes": [0, 1, 2, 3, 4, 5, 6],
           "OoD_classes": [7, 8, 9]
         },
-        "labelled_size": 300,
-        "pool_size": 3000,
+        "labelled_size": 3000,
+        "pool_size": 12000,
         "OOD_ratio": 0.3,
-        "epochs": 25,
+        "epochs": 100,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -36,7 +36,7 @@
           "oracle": "baseline",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "baseline-ood",
@@ -44,7 +44,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "genodin",
@@ -60,7 +60,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "looc",
@@ -76,7 +76,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "ddu",
@@ -86,7 +86,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": true
+          "perform_experiment": false
         },
 
         {
@@ -95,7 +95,7 @@
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
@@ -103,7 +103,7 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "gram",
