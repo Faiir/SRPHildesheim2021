@@ -166,6 +166,7 @@ def LOOC_highest_entropy(
     iteration = 1 + np.abs(status_manager["status"]).max()
     pool_inds = status_manager[status_manager["status"] == 0].index
     pool_samples_count = len(status_manager[status_manager["status"] == 0].index)
+    
     predictions_inds_random = np.arange(pool_samples_count)
     np.random.shuffle(predictions_inds_random)
     predictions = predictions[predictions_inds_random]
