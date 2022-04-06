@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from scipy.special import softmax
 
 
 def random_sample(dataset_manager, number_samples, net, predictions=None, weights=None):
@@ -24,7 +25,7 @@ def random_sample(dataset_manager, number_samples, net, predictions=None, weight
         replace=False,
         size=number_samples,
     )
-    iteration = 1 + status_manager["status"].max()
+    iteration = 1 + np.abs(status_manager["status"]).max()
 
     status_manager["status"].iloc[inds] = (
         iteration * status_manager["source"].iloc[inds]
@@ -58,7 +59,7 @@ def uncertainity_sampling_least_confident(
         predictions = weights * predictions
     inds = np.argsort(np.max(predictions, axis=1))[-number_samples:]
     inds = status_manager[status_manager["status"] == 0].index[inds]
-    iteration = 1 + status_manager["status"].max()
+    iteration = 1 + np.abs(status_manager["status"]).max()
 
     status_manager["status"].iloc[inds] = (
         iteration * status_manager["source"].iloc[inds]
@@ -82,6 +83,9 @@ def baseline_sampler(
     status_manager = dataset_manager.status_manager
     mask = (status_manager["status"] == 0) & (status_manager["source"] == 1)
     pool_samples_count = len(status_manager[mask])
+    predictions_inds_random = np.arange(pool_samples_count)
+    np.random.shuffle(predictions_inds_random)
+    predictions = predictions[predictions_inds_random]
 
     assert pool_samples_count > 0, "No sample left in pool to label"
     assert (
@@ -89,15 +93,15 @@ def baseline_sampler(
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
     entropy = -np.sum(predictions * np.log(predictions + 1e-9), axis=1)
-    inds = np.argsort(entropy)[:number_samples]
-
+    inds = np.argsort(entropy)[-number_samples:]
+    inds = predictions_inds_random[inds]
     # entropy = np.sum(predictions * np.log(predictions + 1e-9), axis=1)
     # inds = np.argsort(entropy)[-number_samples:]
     inds = status_manager[mask].index[inds]
-    iteration = 1 + status_manager["status"].max()
+    iteration = 1 + np.abs(status_manager["status"]).max()
 
-    status_manager["status"].iloc[inds] = (
-        iteration * status_manager["source"].iloc[inds]
+    status_manager["status"].loc[inds] = (
+        iteration * status_manager["source"].loc[inds]
     )
 
     return None
@@ -117,6 +121,9 @@ def uncertainity_sampling_highest_entropy(
 
     status_manager = dataset_manager.status_manager
     pool_samples_count = len(status_manager[status_manager["status"] == 0])
+    predictions_inds_random = np.arange(pool_samples_count)
+    np.random.shuffle(predictions_inds_random)
+    predictions = predictions[predictions_inds_random]
 
     assert pool_samples_count > 0, "No sample left in pool to label"
     assert (
@@ -128,16 +135,16 @@ def uncertainity_sampling_highest_entropy(
         entropy = np.squeeze(weights) * entropy
 
     inds = np.argsort(entropy)[-number_samples:]
-    
-    # print("entropy", entropy)
-    # print("pred_inds", inds)
-    # print("entropy in predictions", entropy[inds])
+    inds = predictions_inds_random[inds]
+#    print("entropy", entropy)
+#    print("pred_inds", inds)
+#    print("entropy in predictions", entropy[inds])
     inds = status_manager[status_manager["status"] == 0].index[inds]
-    #print("statusmanager inds",inds)
-    iteration = 1 + status_manager["status"].max()
+#    print("statusmanager inds",inds)
+    iteration = 1 + np.abs(status_manager["status"]).max()
 
-    status_manager["status"].iloc[inds] = (
-        iteration * status_manager["source"].iloc[inds]
+    status_manager["status"].loc[inds] = (
+        iteration * status_manager["source"].loc[inds]
     )
 
     return None
@@ -156,28 +163,36 @@ def LOOC_highest_entropy(
     """
 
     status_manager = dataset_manager.status_manager
-    pool_samples_count = len(status_manager[status_manager["status"] == 0])
+    iteration = 1 + np.abs(status_manager["status"]).max()
+    pool_inds = status_manager[status_manager["status"] == 0].index
+    pool_samples_count = len(status_manager[status_manager["status"] == 0].index)
+    
+    predictions_inds_random = np.arange(pool_samples_count)
+    np.random.shuffle(predictions_inds_random)
+    predictions = predictions[predictions_inds_random]
 
     assert pool_samples_count > 0, "No sample left in pool to label"
     assert (
         pool_samples_count > number_samples
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
-    entropy = -np.sum(predictions * np.log(predictions + 1e-9), axis=1)
+    entropy =  np.sum(predictions * np.log(predictions + 1e-9), axis=1)
+    
+
     if weights is not None:
         entropy = np.squeeze(weights) * entropy
+
+    
     inds = np.argsort(entropy)[-number_samples:]
+    inds = predictions_inds_random[inds]
 
-    # print("entropy", entropy)
-    # print("pred_inds", inds)
-    # print("entropy in predictions", entropy[inds])
     inds = status_manager[status_manager["status"] == 0].index[inds]
-    iteration = 1 + status_manager["status"].max()
+    
 
-    status_manager["status"].iloc[inds] = (
-        iteration * status_manager["source"].iloc[inds]
+    status_manager["status"].loc[inds] = (
+        iteration * status_manager["source"].loc[inds]
     )
-    #print("statusmanager inds",inds)
+    
 
     return None
 
@@ -224,7 +239,7 @@ def extra_class_sampler(extra_class_thresholding):
             entropy = np.squeeze(OoD_class_probablities) * entropy
             inds = np.argsort(entropy)[-number_samples:]
             inds = status_manager[status_manager["status"] == 0].index[inds]
-            #print("entropy in predictions", entropy[inds])
+#            print("entropy in predictions", entropy[inds])
         elif extra_class_thresholding == "hard":
             temp_status_manager = status_manager[status_manager["status"] == 0].copy()
             temp_status_manager["OoD"] = inds_OoD
@@ -232,18 +247,18 @@ def extra_class_sampler(extra_class_thresholding):
             temp_status_manager = temp_status_manager[temp_status_manager["OoD"]]
             temp_status_manager.sort_values("entropy", inplace=True)
             inds = temp_status_manager.index[-number_samples:]
-            #print("entropy in predictions", temp_status_manager.entropy[inds])
+#            print("entropy in predictions", temp_status_manager.entropy[inds])
 
 
-        #print("entropy", entropy)
-        #print("pred_inds", inds)
+#        print("entropy", entropy)
+#        print("pred_inds", inds)
         
 
-        iteration = 1 + status_manager["status"].max()
-        status_manager["status"].iloc[inds] = (
-            iteration * status_manager["source"].iloc[inds]
+        iteration = 1 + np.abs(status_manager["status"]).max()
+        status_manager["status"].loc[inds] = (
+            iteration * status_manager["source"].loc[inds]
         )
-        #print("statusmanager inds",inds)
+#        print("statusmanager inds",inds)
         return None
 
     return extra_class_sampler
@@ -262,6 +277,9 @@ def DDU_sampler(
 
     status_manager = dataset_manager.status_manager
     pool_samples_count = len(status_manager[status_manager["status"] == 0])
+    predictions_inds_random = np.arange(pool_samples_count)
+    np.random.shuffle(predictions_inds_random)
+    densities = densities[predictions_inds_random]
 
     assert pool_samples_count > 0, "No sample left in pool to label"
     assert (
@@ -269,10 +287,11 @@ def DDU_sampler(
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
     inds = np.argsort(densities)[-number_samples:]
+    inds = predictions_inds_random[inds]
     inds = status_manager[status_manager["status"] == 0].index[inds]
-    iteration = 1 + status_manager["status"].max()
-    status_manager["status"].iloc[inds] = (
-        iteration * status_manager["source"].iloc[inds]
+    iteration = 1 + np.abs(status_manager["status"]).max()
+    status_manager["status"].loc[inds] = (
+        iteration * status_manager["source"].loc[inds]
     )
 
     return None

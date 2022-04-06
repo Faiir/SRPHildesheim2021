@@ -2,12 +2,12 @@
   "experiments": [
     {
       "basic_settings": {
-        "oracle_stepsize": 50,
-        "oracle_steps": 20,
+        "oracle_stepsize": 20,
+        "oracle_steps": 5,
         "iD": "Cifar10",
         "OoD": ["Fashion_MNIST", "MNIST"],
-        "labelled_size": 1000,
-        "pool_size": 30000,
+        "labelled_size": 100,
+        "pool_size": 3000,
         "OOD_ratio": 0.15,
         "epochs": 100,
         "batch_size": 128,
@@ -27,52 +27,86 @@
       "exp_settings": [
         {
           "exp_type": "baseline",
-          "exp_name": "funny_name_here",
+          "exp_name": "baseline-cifar-15-noOOD-subclass",
+          "oracle": "baseline",
+          "model": "base",
           "plots": false,
-          "oracle": "highest-entropy"
+          "perform_experiment": true
         },
         {
           "exp_type": "baseline-ood",
-          "exp_name": "funny_name_here2",
+          "exp_name": "baseline-cifar-15-OOD-subclass",
           "oracle": "highest-entropy",
-          "plots": false
-        },
-        {
-          "exp_type": "extra_class",
-          "exp_name": "funny_name_here",
-          "extra_class-type": "hard / soft",
-          "extra_class_thresholding": 0.1,
-          "oracle": "highest-entropy",
-          "plots": false
-        },
-        {
-          "exp_type": "gram",
-          "exp_name": "funny_name_here",
-          "oracle": "highest-entropy",
-          "plots": false
-        },
-        {
-          "exp_type": "looc",
-          "exp_name": "funny_name_here",
-          "scaling_factor": "G / R",
-          "oracle": "highest-entropy",
-          "bugged_and_working": true,
-          "do_pertubed_images": true,
+          "model": "base",
           "plots": false,
-          "plotsettings": {
-            "density_plot": true,
-            "layer_plot": true
-          }
+          "perform_experiment": true
         },
         {
           "exp_type": "genodin",
-          "exp_name": "funny_name_here",
+          "exp_name": "genodin-cifar-15-subclass",
           "similarity": "C",
           "oracle": "highest-entropy",
-          "scaling_factor": "G / R",
-          "bugged_and_working": false,
           "do_pertubed_images": true,
-          "plots": false
+          "scaling_factor": "R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": true,
+            "layer_plot": false
+          },
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "looc",
+          "exp_name": "looc-cifar-15-subclass",
+          "similarity": "E",
+          "oracle": "LOOC",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "LOOC",
+          "bugged_and_working": true,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": true,
+            "layer_plot": false
+          },
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "ddu",
+          "exp_name": "ddu-cifar-15-subclass",
+          "plots": false,
+          "model": "DDU",
+          "oracle": "ddu-sampler",
+          "spectral_normalization": true,
+          "temp": 1.0,
+          "perform_experiment": true
+        },
+
+        {
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_hard-15-subclass",
+          "extra_class_thresholding": "hard",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_soft-15-subclass",
+          "extra_class_thresholding": "soft",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-15-subclass",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
         }
       ]
     }

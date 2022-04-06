@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
+from scipy.special import softmax
 
 from .model.get_model import get_model
 
@@ -309,6 +310,8 @@ class experiment_gen_odin(experiment_base):
                 model_name,
                 num_classes=self.num_classes,
                 similarity=self.similarity,
+                perform_layer_analysis = self.perform_layer_analysis,
+                complex_g_func = self.complex_g_func
             )
         else:
             raise NotImplementedError
@@ -335,6 +338,7 @@ class experiment_gen_odin(experiment_base):
         yhat = []
         labels_list = []
         weighting_factor_list = []
+        centroids_list = []
         for (data, labels) in pool_loader:
             if self.bugged_and_working:
                 tuple_data = self.model(
@@ -352,13 +356,15 @@ class experiment_gen_odin(experiment_base):
             pred = tuple_data[0]
             weighting_factor = tuple_data[1]
             weighting_factor_list.append(weighting_factor.to("cpu").detach().numpy())
-
+            centroids_list.append(tuple_data[3].to("cpu").detach().numpy())
             yhat.append(pred.to("cpu").detach().numpy())
             labels_list.append(labels)
         predictions = np.concatenate(yhat)
         labels_list = np.concatenate(labels_list)
+        centroids_list = np.concatenate(centroids_list,axis=0)
         weighting_factor_list = np.concatenate(weighting_factor_list)
-        return predictions, labels_list, weighting_factor_list
+        
+        return predictions, labels_list, weighting_factor_list,centroids_list
 
     def create_dataloader(self) -> None:
         result_tup = create_dataloader(
@@ -492,9 +498,7 @@ class experiment_gen_odin(experiment_base):
         self.validation_split = self.current_experiment.get("validation_split", "train")
         self.validation_source = self.current_experiment.get("validation_source", 0.3)
         self.oracle = self.current_experiment.get("oracle", "highest-entropy")
-        self.perform_layer_analysis = self.current_experiment.get(
-            "perform_layer_analysis", False
-        )
+        self.perform_layer_analysis = self.current_experiment.get("perform_layer_analysis", None)
         # self.criterion = self.current_experiment.get("criterion", "crossentropy")
         self.create_criterion()
         self.metric = self.current_experiment.get("metric", "accuracy")
@@ -515,10 +519,12 @@ class experiment_gen_odin(experiment_base):
         # _create_log_path_al(self.OOD_ratio)
         self.similarity = self.current_experiment.get("similarity", "E")
         scaling_factor = self.current_experiment.get("scaling_factor", "G")
+        self.complex_g_func = self.current_experiment.get("complex_g_func", False)
+
         if scaling_factor != "G":
             self.similarity += "R"
 
-        self.set_sampler(self.current_experiment.get("oracles", "highest-entropy"))
+        self.set_sampler(self.current_experiment.get("oracle", "highest-entropy"))
 
         self.bugged_and_working = self.current_experiment.get(
             "bugged_and_working", None
@@ -573,6 +579,7 @@ class experiment_gen_odin(experiment_base):
                     pool_predictions,
                     pool_labels_list,
                     pool_weighting_list,
+                    pool_centroids
                 ) = self.pool_predictions(self.pool_loader)
 
                 source_labels = self.data_manager.get_pool_source_labels()
@@ -584,6 +591,93 @@ class experiment_gen_odin(experiment_base):
                     self.current_oracle_step,
                     plot_auc=True,
                 )
+
+                if self.perform_layer_analysis:
+                    predictions_list = pool_predictions
+                    centroids_list = pool_centroids
+                    weighting_factor_list = pool_weighting_list
+                    
+
+                    entropy = np.sum(predictions_list * np.log(predictions_list + 1e-9), axis=1)
+                    probs = softmax(predictions_list,axis=1)
+                    probs =  probs/np.sum(probs,axis=1,keepdims=True)
+                    dist_entropy = -np.sum(predictions_list * np.log(probs + 1e-9), axis=1)
+                    prob_entropy = -np.sum(probs * np.log(probs + 1e-9), axis=1)
+                    
+                    statusmanager_copy = self.data_manager.status_manager.copy()
+                    centroid_values = [f'centroid_{ii+1}' for ii in range(centroids_list.shape[1])]
+
+                    statusmanager_copy[centroid_values] = None
+                    statusmanager_copy['weighting_factor'] = None
+                    statusmanager_copy['entropy'] = None 
+                    statusmanager_copy['dist_entropy'] = None 
+                    statusmanager_copy['prob_entropy'] = None
+
+                    inds = statusmanager_copy[statusmanager_copy["status"] == 0].index
+                    statusmanager_copy.loc[inds,centroid_values] = centroids_list
+                    statusmanager_copy.loc[inds,'weighting_factor'] = weighting_factor_list[:,0]
+                    statusmanager_copy.loc[inds,'entropy'] = entropy 
+                    statusmanager_copy.loc[inds,'dist_entropy'] = dist_entropy 
+                    statusmanager_copy.loc[inds,'prob_entropy'] = prob_entropy
+
+                    labelled_pool_dataset = self.data_manager.get_labelled_dataset()
+                    labelled_pool_loader = DataLoader(
+                                            labelled_pool_dataset,
+                                            sampler=SequentialSampler(labelled_pool_dataset),
+                                            batch_size=self.batch_size,
+                                            num_workers=2,
+                                            drop_last=False,
+                                        )
+
+                    (
+                    labelled_pool_predictions,
+                    labelled_pool_labels_list,
+                    labelled_pool_weighting_list,
+                    labelled_pool_centroids
+                    ) = self.pool_predictions(labelled_pool_loader)
+
+                    predictions_list = labelled_pool_predictions
+                    centroids_list = labelled_pool_centroids
+                    weighting_factor_list = labelled_pool_weighting_list
+                    
+
+                    entropy = np.sum(predictions_list * np.log(predictions_list + 1e-9), axis=1)
+                    probs = softmax(predictions_list,axis=1)
+                    probs =  probs/np.sum(probs,axis=1,keepdims=True)
+                    dist_entropy = -np.sum(predictions_list * np.log(probs + 1e-9), axis=1)
+                    prob_entropy = -np.sum(probs * np.log(probs + 1e-9), axis=1)
+
+                    inds = statusmanager_copy[statusmanager_copy["status"] != 0].index
+                    statusmanager_copy.loc[inds,centroid_values] = centroids_list
+                    statusmanager_copy.loc[inds,'weighting_factor'] = weighting_factor_list[:,0]
+                    statusmanager_copy.loc[inds,'entropy'] = entropy 
+                    statusmanager_copy.loc[inds,'dist_entropy'] = dist_entropy 
+                    statusmanager_copy.loc[inds,'prob_entropy'] = prob_entropy
+
+
+
+
+                    layer_analysis_dir = os.path.join(self.log_path, "layer_analysis_dir")
+                    if os.path.exists(layer_analysis_dir) == False:
+                        os.mkdir(os.path.join(self.log_path, "layer_analysis_dir"))
+                        
+                    layer_analysis_path = os.path.join(self.log_path, "layer_analysis_dir", f"status_manager_at_{self.current_oracle_step-1}.csv")
+                    statusmanager_copy.to_csv(layer_analysis_path)
+
+                    
+                    for name, param in self.model.named_parameters():
+                        if "h_func" in name:
+                            a = param.data.to("cpu").detach().numpy()
+
+                            centeroid_path = os.path.join(self.log_path, "layer_analysis_dir", f"centeroids_{name}_{self.current_oracle_step-1}.csv")
+                            np.savetxt(centeroid_path, 
+                            a[0], delimiter=",")   
+                        if "scaling_factor" in name:
+                            a = param.data.to("cpu").detach().numpy()
+
+                            centeroid_path = os.path.join(self.log_path, "layer_analysis_dir", f"scaling_factor_{name}_{self.current_oracle_step-1}.csv")
+                            np.savetxt(centeroid_path, 
+                            a[0], delimiter=",")   
 
                 self.sampler(
                     self.data_manager,
@@ -601,99 +695,3 @@ class experiment_gen_odin(experiment_base):
 
                     self.create_plots("density", pert_preds, gs, hs, targets, oracle_s)
                     print("created density plots")
-
-                if self.perform_layer_analysis:
-                    centroids_list = []
-                    weighting_factor_list = []
-                    statusmanager_dataset = (
-                        self.data_manager.get_all_status_manager_dataset()
-                    )
-                    statusmanager_dataloader = DataLoader(
-                        statusmanager_dataset,
-                        sampler=SequentialSampler(statusmanager_dataset),
-                        batch_size=128,
-                        num_workers=2,
-                        pin_memory=False,
-                        drop_last=False,
-                    )
-
-                    for (data, labels) in statusmanager_dataloader:
-                        tuple_data = self.model(
-                            data.to(self.device).float(),
-                            get_test_model=True,
-                            apply_softmax=False,
-                        )
-
-                        centroids_list.append(tuple_data[3].to("cpu").detach().numpy())
-                        weighting_factor_list.append(
-                            tuple_data[1].to("cpu").detach().numpy()
-                        )
-
-                    centroids_list = np.concatenate(centroids_list, axis=0)
-                    weighting_factor_list = np.concatenate(
-                        weighting_factor_list, axis=0
-                    )
-                    print(centroids_list.shape)
-                    print(weighting_factor_list.shape)
-                    statusmanager_copy = self.data_manager.status_manager.copy()
-                    centroid_values = [
-                        f"centroid_{ii+1}" for ii in range(centroids_list.shape[1])
-                    ]
-                    statusmanager_copy[centroid_values] = centroids_list
-                    statusmanager_copy["weighting_factor"] = weighting_factor_list
-
-                    layer_analysis_dir = os.path.join(
-                        self.log_path, "layer_analysis_dir"
-                    )
-                    if os.path.exists(layer_analysis_dir) == False:
-                        os.mkdir(os.path.join(self.log_path, "layer_analysis_dir"))
-
-                    layer_analysis_path = os.path.join(
-                        self.log_path,
-                        "layer_analysis_dir",
-                        f"status_manager_at_{self.current_oracle_step-1}.csv",
-                    )
-                    statusmanager_copy.to_csv(layer_analysis_path)
-
-                (
-                    test_predictions,
-                    test_labels,
-                    weighting_factor_list,
-                ) = self.pool_predictions(self.test_loader)
-
-                test_accuracy = accuracy(test_labels, test_predictions)
-                f1_score = f1(test_labels, test_predictions)
-
-                dict_to_add = {
-                    "test_loss": self.avg_test_loss,
-                    "train_loss": self.avg_train_loss_hist,
-                    "test_accuracy": test_accuracy,
-                    "train_accuracy": self.avg_train_acc_hist,
-                    "f1": f1_score,
-                    "Pool_AUROC": auroc_score,
-                }
-
-                print(dict_to_add)
-                # if self.metric.lower() == "auroc":
-                #     auroc_score = auroc(self.data_manager, oracle_s)
-
-                #     dict_to_add = {"auroc": auroc_score}
-
-                self.data_manager.add_log(
-                    writer=self.writer,
-                    oracle=self.oracle,
-                    dataset=self.iD,
-                    metric=self.metric,
-                    log_dict=dict_to_add,
-                    ood_ratio=self.OOD_ratio,
-                    exp_name=self.exp_name,
-                )
-                self.save_al_logs()
-
-        self.data_manager.status_manager.to_csv(
-            os.path.join(
-                self.log_path,
-                "status_manager_dir",
-                f"{self.exp_name}-result-statusmanager.csv",
-            )
-        )

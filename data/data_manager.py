@@ -94,17 +94,8 @@ class Data_manager:
             len(self.iD_datasets) == 1
         ), f"Only one dataset can be in-Dist, found {self.iD_datasets}"
 
-        list_of_datasets = self.iD_datasets + self.OoD_datasets
-        self.datasets_dict = downloader_construct_datasetsdict(
-            list_of_datasets, grayscale=self.grayscale
-        )
-
-        if subclass["do_subclass"]:
-            for c, dataset in enumerate(self.iD_datasets):
-
                 cls = set(subclass["iD_classes"])
                 idx_train = [
-                    i
                     for i, val in enumerate(
                         self.datasets_dict[dataset + "_train"].targets
                     )
@@ -487,15 +478,17 @@ class Data_manager:
             inds_dict[ii] = inds_df[ii]
 
         return dataset_creator(inds_dict, self.datasets_dict)
-
-    def get_all_status_manager_dataset(self):
+    
+    def get_labelled_dataset(self):
         """get_all_status_manager_dataset [returns the state of the unlabelled pool]"""
         assert (
             self.iter is not None
         ), "Dataset not initialized. Call create_merged_data()"
 
-        inds_df = self.status_manager.groupby("dataset_name", sort=False)["inds"].agg(
-            list
+        mask = self.status_manager[self.status_manager["status"] != 0].index
+        inds_df = (
+            self.status_manager.iloc[mask].groupby("dataset_name", sort=False)["inds"]
+            .agg(list)
         )
         inds_dict = OrderedDict()
         for ii in inds_df.index:
@@ -583,6 +576,7 @@ class Data_manager:
         log_df = pd.DataFrame.from_dict(self.log, orient="index").set_index("Iteration")
         for key in self.config.keys():
             log_df[key] = self.config[key]
+        
         return log_df
 
     def reset_pool(self):
