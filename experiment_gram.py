@@ -462,13 +462,13 @@ class experiment_gram(experiment_base):
                 # )
                 source_labels = self.data_manager.get_pool_source_labels()
                 iD_Prob = pool_weighting_list
-                auroc_score = auroc(
-                    iD_Prob,
-                    source_labels,
-                    self.writer,
-                    self.current_oracle_step,
-                    plot_auc=True,
-                )
+                # auroc_score = auroc(
+                #     iD_Prob,
+                #     source_labels,
+                #     self.writer,
+                #     self.current_oracle_step,
+                #     plot_auc=True,
+                # )
 
                 self.sampler(
                     self.data_manager,
@@ -492,7 +492,7 @@ class experiment_gram(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
-                    "Pool_AUROC": auroc_score,
+                    # "Pool_AUROC": auroc_score,
                 }
 
                 # print(dict_to_add)

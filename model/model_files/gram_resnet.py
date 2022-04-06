@@ -368,11 +368,6 @@ class Detector:
             test_indices = np.where(np.array(test_preds) == PRED)[0]
             if len(test_indices) == 0:
                 continue
-            else:
-                if indices_list is None:
-                    indices_list = test_indices
-                else:
-                    indices_list = np.concatenate([indices_list, test_indices], axis=0)
 
             test_PRED = [data[i][0] for i in test_indices]
             test_confs_PRED = np.array([test_confs[i] for i in test_indices])
@@ -380,9 +375,18 @@ class Detector:
             if device == "cuda":
                 mins = cuda(self.mins[PRED])
                 maxs = cuda(self.maxs[PRED])
+                # print(type(mins), len(mins))
             else:
                 mins = self.mins[PRED]
                 maxs = self.maxs[PRED]
+                # print(type(mins), len(mins))
+            if len(mins) == 0:
+                continue
+            else:
+                if indices_list is None:
+                    indices_list = test_indices
+                else:
+                    indices_list = np.concatenate([indices_list, test_indices], axis=0)
 
             test_deviations = torch_model.get_deviations(
                 test_PRED, power=POWERS, mins=mins, maxs=maxs
