@@ -14,8 +14,8 @@
         },
         "labelled_size": 3000,
         "pool_size": 50000,
-        "OOD_ratio": 0.3,
-        "epochs": 100,
+        "OOD_ratio": 0.7,
+        "epochs": 50,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -32,7 +32,7 @@
       "exp_settings": [
         {
           "exp_type": "baseline",
-          "exp_name": "baseline-cifar-030-noOOD",
+          "exp_name": "baseline-cifar-070-noOOD",
           "oracle": "baseline",
           "model": "base",
           "plots": false,
@@ -40,7 +40,7 @@
         },
         {
           "exp_type": "baseline-ood",
-          "exp_name": "baseline-cifar-030-OOD",
+          "exp_name": "baseline-cifar-070-OOD",
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
@@ -48,7 +48,7 @@
         },
         {
           "exp_type": "genodin",
-          "exp_name": "genodin-cifar-030",
+          "exp_name": "genodin-cifar-070",
           "similarity": "C",
           "oracle": "highest-entropy",
           "do_pertubed_images": true,
@@ -64,7 +64,7 @@
         },
         {
           "exp_type": "looc",
-          "exp_name": "looc-cifar-030",
+          "exp_name": "looc-cifar-070",
           "similarity": "E",
           "oracle": "LOOC",
           "do_pertubed_images": true,
@@ -80,7 +80,7 @@
         },
         {
           "exp_type": "ddu",
-          "exp_name": "ddu-cifar-030",
+          "exp_name": "ddu-cifar-070",
           "plots": false,
           "model": "DDU",
           "oracle": "ddu-sampler",
@@ -91,7 +91,7 @@
 
         {
           "exp_type": "extra_class",
-          "exp_name": "extra_class_hard-030",
+          "exp_name": "extra_class_hard-070",
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
@@ -99,7 +99,7 @@
         },
         {
           "exp_type": "extra_class",
-          "exp_name": "extra_class_soft-030",
+          "exp_name": "extra_class_soft-070",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
@@ -107,7 +107,7 @@
         },
         {
           "exp_type": "gram",
-          "exp_name": "gram-cifar-030",
+          "exp_name": "gram-cifar-070",
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
@@ -138,7 +138,7 @@
         },
         "labelled_size": 3000,
         "pool_size": 50000,
-        "OOD_ratio": 0.3,
+        "OOD_ratio": 0.7,
         "epochs": 50,
         "batch_size": 64,
         "weight_decay": 1e-4,
@@ -156,7 +156,7 @@
       "exp_settings": [
         {
           "exp_type": "baseline",
-          "exp_name": "baseline-cifar-100-030-noOOD-subclass",
+          "exp_name": "baseline-cifar-100-070-noOOD-subclass",
           "oracle": "baseline",
           "model": "base",
           "plots": false,
@@ -164,7 +164,7 @@
         },
         {
           "exp_type": "baseline-ood",
-          "exp_name": "baseline-cifar-100-030-OOD-subclass",
+          "exp_name": "baseline-cifar-100-070-OOD-subclass",
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
@@ -172,7 +172,7 @@
         },
         {
           "exp_type": "genodin",
-          "exp_name": "genodin-cifar-100-030-subclass",
+          "exp_name": "genodin-cifar-100-070-subclass",
           "similarity": "C",
           "oracle": "highest-entropy",
           "do_pertubed_images": true,
@@ -188,7 +188,7 @@
         },
         {
           "exp_type": "looc",
-          "exp_name": "looc-cifar-100-030-subclass",
+          "exp_name": "looc-cifar-100-070-subclass",
           "similarity": "E",
           "oracle": "LOOC",
           "do_pertubed_images": true,
@@ -204,7 +204,7 @@
         },
         {
           "exp_type": "ddu",
-          "exp_name": "ddu-cifar-100-030-subclass",
+          "exp_name": "ddu-cifar-100-070-subclass",
           "plots": false,
           "model": "DDU",
           "oracle": "ddu-sampler",
@@ -214,7 +214,7 @@
         },
         {
           "exp_type": "gram",
-          "exp_name": "gram-cifar-030-subclass",
+          "exp_name": "gram-cifar-070-subclass",
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
@@ -222,7 +222,7 @@
         },
         {
           "exp_type": "extra_class",
-          "exp_name": "extra_class_hard-030-subclass",
+          "exp_name": "extra_class_hard-070-subclass",
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
@@ -230,7 +230,7 @@
         },
         {
           "exp_type": "extra_class",
-          "exp_name": "extra_class_soft-100-030-subclass",
+          "exp_name": "extra_class_soft-100-070-subclass",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
@@ -252,8 +252,8 @@
         },
         "labelled_size": 1000,
         "pool_size": 50000,
-        "OOD_ratio": 0.3,
-        "epochs": 100,
+        "OOD_ratio": 0.7,
+        "epochs": 50,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -270,7 +270,7 @@
       "exp_settings": [
         {
           "exp_type": "baseline",
-          "exp_name": "baseline-cifar-grayscale-030-noOOD",
+          "exp_name": "baseline-cifar-grayscale-070-noOOD",
           "oracle": "baseline",
           "model": "base",
           "plots": false,
@@ -278,7 +278,7 @@
         },
         {
           "exp_type": "baseline-ood",
-          "exp_name": "baseline-cifar-grayscale-030-OOD",
+          "exp_name": "baseline-cifar-grayscale-070-OOD",
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
@@ -286,7 +286,7 @@
         },
         {
           "exp_type": "genodin",
-          "exp_name": "genodin-cifar-grayscale-030",
+          "exp_name": "genodin-cifar-grayscale-070",
           "similarity": "C",
           "oracle": "highest-entropy",
           "do_pertubed_images": true,
@@ -302,7 +302,7 @@
         },
         {
           "exp_type": "looc",
-          "exp_name": "looc-cifar-grayscale-030",
+          "exp_name": "looc-cifar-grayscale-070",
           "similarity": "E",
           "oracle": "LOOC",
           "do_pertubed_images": true,
@@ -318,7 +318,7 @@
         },
         {
           "exp_type": "ddu",
-          "exp_name": "ddu-cifar-grayscale-030",
+          "exp_name": "ddu-cifar-grayscale-070",
           "plots": false,
           "model": "DDU",
           "oracle": "ddu-sampler",
@@ -329,7 +329,7 @@
 
         {
           "exp_type": "extra_class",
-          "exp_name": "cifar-grayscale-extra_class_hard-030",
+          "exp_name": "cifar-grayscale-extra_class_hard-070",
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
@@ -337,7 +337,7 @@
         },
         {
           "exp_type": "extra_class",
-          "exp_name": "cifar-grayscale-extra_class_soft-030",
+          "exp_name": "cifar-grayscale-extra_class_soft-070",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
@@ -345,7 +345,7 @@
         },
         {
           "exp_type": "gram",
-          "exp_name": "gram-cifar-grayscale-030",
+          "exp_name": "gram-cifar-grayscale-070",
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
