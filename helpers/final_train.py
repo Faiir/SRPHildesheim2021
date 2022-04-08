@@ -160,7 +160,7 @@ def train(
 
 # overrides test
 @torch.no_grad()
-def test(self, model, test_loader, device, criterion):
+def test(model, test_loader, device, criterion):
     """test [computes loss of the test set]
 
     [extended_summary]
@@ -200,7 +200,7 @@ def final_training(log_dirs, config):
         pool_size = basic_settings.get("pool_size", 20000)
         OOD_ratio = basic_settings.get("OOD_ratio", 0.0)
         # training settings
-        epochs = basic_settings.get("epochs", 200)
+        epochs = 200  # basic_settings.get("epochs", 200)
         batch_size = basic_settings.get("batch_size", 128)
         weight_decay = basic_settings.get("weight_decay", 1e-4)
 
@@ -235,6 +235,8 @@ def final_training(log_dirs, config):
                 test_iD_size=None,
                 subclass=subclass,
             )
+            if not exp_setting.get("perform_experiment", True):
+                continue
             # data_manager.create_merged_data() TODO load the statusmanager from the path
             check_path = os.path.join(
                 log_dir, "status_manager_dir", f"{exp_name}-result-statusmanager.csv"

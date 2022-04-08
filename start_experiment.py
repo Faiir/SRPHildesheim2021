@@ -66,10 +66,17 @@ def start_experiment(config, log_path):
         create_log_dirs(log_path)
         try:
             if final_training_sett == True:
-                with open("./log_dirs.json", mode="w", encoding="utf-8") as log_json:
+                with open(
+                    os.path.join(os.getcwd(), "log_dirs.json"),
+                    mode="r+",
+                    encoding="utf-8",
+                ) as log_json:
                     final_training_logs = json.load(log_json)
                     final_training_logs["log_dirs"].append(log_path)
-                    json.dump(final_training_logs)
+                    log_json.seek(0)  # rewind
+                    json.dump(final_training_logs, log_json)
+                    print("added logdir")
+                    log_json.truncate()
         except:
             pass
         writer = SummaryWriter(os.path.join(log_path, "writer_dir"))
@@ -135,7 +142,11 @@ def start_experiment(config, log_path):
     if final_training_sett:
         print("performing final training on the data_managers")
         try:
-            with open("./log_dirs.json", mode="w", encoding="utf-8") as log_json:
+            with open(
+                os.path.join(os.getcwd(), "log_dirs.json"),
+                mode="r+",
+                encoding="utf-8",
+            ) as log_json:
                 final_training_logs = json.load(log_json)
             final_training(final_training_logs["log_dirs"], config)
         except:
