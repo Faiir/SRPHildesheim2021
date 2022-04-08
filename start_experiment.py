@@ -135,7 +135,9 @@ def start_experiment(config, log_path):
     if final_training_sett:
         print("performing final training on the data_managers")
         try:
-            final_training(log_path, config)
+            with open("./log_dirs.json", mode="w", encoding="utf-8") as log_json:
+                final_training_logs = json.load(log_json)
+            final_training(final_training_logs["log_dirs"], config)
         except:
             print("final training failed")
 
