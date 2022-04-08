@@ -1,14 +1,27 @@
+import argparse
+import json
 import os
+import sys
 import pandas as pd
 
 from torch import nn, optim
 import torch
+import ssl
+
+ssl._create_default_https_context = ssl._create_unverified_context
+import torch
+
+PACKAGE_PARENT = ".."
+SCRIPT_DIR = os.path.dirname(
+    os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__)))
+)
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 
-from ..data.data_manager import Data_manager
-from ..data.datahandler_for_array import create_dataloader
-from ..model.get_model import get_model
-from ..helpers.early_stopping import EarlyStopping
+from robust_active_learning.data.data_manager import Data_manager
+from robust_active_learning.data.datahandler_for_array import create_dataloader
+from robust_active_learning.model.get_model import get_model
+from robust_active_learning.helpers.early_stopping import EarlyStopping
 from torchsummary import summary
 
 
@@ -175,11 +188,10 @@ def test(self, model, test_loader, device, criterion):
     return avg_test_acc, avg_test_loss
 
 
-def final_traing(log_dir, config):
-    status_manager_dir = os.path.join(log_dir, "status_manager_dir")
-    result_dir = os.path.join(log_dir, "results")
-
-    for experiment in config["experiments"]:
+def final_training(log_dirs, config):
+    for c, experiment in enumerate(config["experiments"]):
+        log_dir = log_dirs[c]
+        print("using logs from: ", log_dir)
         basic_settings = experiment["basic_settings"]
         # data_manager
         iD = basic_settings.get("iD", "Cifar10")
@@ -188,7 +200,7 @@ def final_traing(log_dir, config):
         pool_size = basic_settings.get("pool_size", 20000)
         OOD_ratio = basic_settings.get("OOD_ratio", 0.0)
         # training settings
-        epochs = basic_settings.get("epochs", 100)
+        epochs = basic_settings.get("epochs", 200)
         batch_size = basic_settings.get("batch_size", 128)
         weight_decay = basic_settings.get("weight_decay", 1e-4)
 
@@ -289,3 +301,42 @@ def final_traing(log_dir, config):
                 result_file.write(
                     f"{exp_name},{labelled_size},{len(train_loader)},{OOD_ratio},{avg_train_acc},{avg_train_loss},{avg_val_acc},{avg_val_loss},{avg_test_acc},{avg_test_loss}\n"
                 )
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Preare run of AL with OoD experiment",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="Path to the config file for the experiment",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "-l",
+        "--log",
+        help="Log-instructions in json",
+        type=str,
+        default=os.path.join("./log_dirs"),
+    )
+
+    args = parser.parse_args()
+    if args.config is None:
+        args.config = os.path.join(".\experiment_settings.json")
+    if args.log is None:
+        args.config = os.path.join(".\log_dirs.json")
+    config = args.config
+    log_dir_info = args.log
+    with open(config, mode="r", encoding="utf-8") as config_f:
+        config = json.load(config_f)
+    with open(log_dir_info, mode="r", encoding="utf-8") as config_f:
+        log_dirs_json = json.load(config_f)
+
+    final_training(log_dirs_json["log_dirs"], config)
+
+
+if __name__ == "__main__":
+    main()

@@ -23,12 +23,12 @@ from robust_active_learning.experiment_genOdin import experiment_gen_odin
 from robust_active_learning.experiment_gram import experiment_gram
 from robust_active_learning.experiment_extraclass import experiment_extraclass
 from robust_active_learning.experiment_without_OoD import experiment_without_OoD
-from robust_active_learning.helpers.final_train import final_traing
+from robust_active_learning.helpers.final_train import final_training
 
 # import shutil
 import time
 
-final_training = False
+final_training_sett = False
 
 
 def create_log_dirs(log_path):
@@ -64,6 +64,14 @@ def start_experiment(config, log_path):
             )
         print("Logging Results under: ", log_path)
         create_log_dirs(log_path)
+        try:
+            if final_training_sett == True:
+                with open("./log_dirs.json", mode="w", encoding="utf-8") as log_json:
+                    final_training_logs = json.load(log_json)
+                    final_training_logs["log_dirs"].append(log_path)
+                    json.dump(final_training_logs)
+        except:
+            pass
         writer = SummaryWriter(os.path.join(log_path, "writer_dir"))
 
         basic_settings = experiment["basic_settings"]
@@ -123,11 +131,11 @@ def start_experiment(config, log_path):
                 print("\n\n")
 
         log_path = base_log_path
-    final_traing = False
-    if final_traing:
+    # final_training_sett = False
+    if final_training_sett:
         print("performing final training on the data_managers")
         try:
-            final_traing(log_path, config)
+            final_training(log_path, config)
         except:
             print("final training failed")
 
@@ -160,7 +168,7 @@ def main():
     args = parser.parse_args()
 
     if args.config is None:
-        args.config = os.path.join(".\exp-config.json")
+        args.config = os.path.join(".\experiment_settings.json")
 
     start_experiment(args.config, args.log)
 
