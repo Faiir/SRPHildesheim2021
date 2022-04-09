@@ -229,7 +229,7 @@ def final_training(log_dirs, config):
             os.path.join(log_dir, "final_result.csv"), "w", encoding="utf-8"
         ) as result_file:
             result_file.write(
-                "exp_name,labelled_size,trainsize,OOD_ratio,avg_train_acc,avg_train_loss,avg_test_acc,avg_test_loss\n"
+                "exp_name,trainsize,OOD_ratio,avg_train_acc,avg_train_loss,avg_test_acc,avg_test_loss\n"
             )
         for exp_setting in experiment["exp_settings"]:
             exp_name = exp_setting.get("exp_name", "standard_name")
@@ -295,7 +295,6 @@ def final_training(log_dirs, config):
 
             print(
                 f"""Experiment: {exp_name},
-                    Starting Size:{labelled_size},
                     Final_trainingset size: {len(train_loader)},
                     OOD_ratio: {OOD_ratio},
                     Train-Accuracy: {avg_train_acc},
@@ -308,7 +307,7 @@ def final_training(log_dirs, config):
                 os.path.join(log_dir, "final_result.csv"), "a", encoding="utf-8"
             ) as result_file:
                 result_file.write(
-                    f"{exp_name},{labelled_size},{len(train_loader.dataset)},{OOD_ratio},{avg_train_acc},{avg_train_loss},{avg_test_acc},{avg_test_loss}\n"
+                    f"{exp_name},{len(train_loader.dataset)},{OOD_ratio},{avg_train_acc},{avg_train_loss},{avg_test_acc},{avg_test_loss}\n"
                 )
 
 
