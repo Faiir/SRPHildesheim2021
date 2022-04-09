@@ -23,7 +23,7 @@ from robust_active_learning.experiment_genOdin import experiment_gen_odin
 from robust_active_learning.experiment_gram import experiment_gram
 from robust_active_learning.experiment_extraclass import experiment_extraclass
 from robust_active_learning.experiment_without_OoD import experiment_without_OoD
-from robust_active_learning.helpers.final_train import final_training
+from robust_active_learning.final_train import final_training
 
 # import shutil
 import time

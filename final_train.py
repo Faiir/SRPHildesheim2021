@@ -21,7 +21,8 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from robust_active_learning.data.data_manager import Data_manager
 from robust_active_learning.data.datahandler_for_array import create_dataloader
 from robust_active_learning.model.get_model import get_model
-from robust_active_learning.helpers.early_stopping import EarlyStopping
+
+# from robust_active_learning.helpers.early_stopping import EarlyStopping
 from torchsummary import summary
 
 
@@ -79,13 +80,13 @@ def train(
         verbose=True,
     )
 
-    validation = True
+    validation = False
     if kwargs.get("patience", None) is None:
         print(
             f"INFO ------ Early Stopping Patience not specified using {int(epochs * 0.1)}"
         )
     patience = kwargs.get("patience", int(epochs * 0.1))
-    early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
+    # early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
     for epoch in range(1, epochs + 1):
         if verbose > 0:
@@ -113,41 +114,42 @@ def train(
         avg_train_acc = train_acc / len(train_loader.dataset)
 
         if epoch % 1 == 0:
-            if validation:
-                val_loss = 0
-                val_acc = 0
-                model.eval()  # prep model for evaluation
-                with torch.no_grad():
-                    for vdata, vtarget in val_loader:
-                        vdata, vtarget = (
-                            vdata.to(device).float(),
-                            vtarget.to(device).long(),
-                        )
-                        voutput = model(vdata)
-                        vloss = criterion(voutput, vtarget)
-                        val_loss += vloss.item()
-                        val_acc += torch.sum(
-                            torch.argmax(voutput, dim=1) == vtarget
-                        ).item()
+            pass
+            # if validation:
+            #     val_loss = 0
+            #     val_acc = 0
+            #     model.eval()  # prep model for evaluation
+            #     with torch.no_grad():
+            #         for vdata, vtarget in val_loader:
+            #             vdata, vtarget = (
+            #                 vdata.to(device).float(),
+            #                 vtarget.to(device).long(),
+            #             )
+            #             voutput = model(vdata)
+            #             vloss = criterion(voutput, vtarget)
+            #             val_loss += vloss.item()
+            #             val_acc += torch.sum(
+            #                 torch.argmax(voutput, dim=1) == vtarget
+            #             ).item()
 
-                avg_val_loss = val_loss / len(val_loader)
-                avg_val_acc = val_acc / len(val_loader.dataset)
+            #     avg_val_loss = val_loss / len(val_loader)
+            #     avg_val_acc = val_acc / len(val_loader.dataset)
 
-                early_stopping(avg_val_loss, model)
-                if kwargs.get("lr_sheduler", True):
-                    lr_sheduler.step(avg_val_loss)
+            #     early_stopping(avg_val_loss, model)
+            #     if kwargs.get("lr_sheduler", True):
+            #         lr_sheduler.step(avg_val_loss)
 
-                verbosity(
-                    f"Val_loss: {avg_val_loss:.4f} Val_acc : {100*avg_val_acc:.2f}",
-                    verbose,
-                    epoch,
-                )
+            #     verbosity(
+            #         f"Val_loss: {avg_val_loss:.4f} Val_acc : {100*avg_val_acc:.2f}",
+            #         verbose,
+            #         epoch,
+            #     )
 
-                if early_stopping.early_stop:
-                    print(
-                        f"Early stopping epoch {epoch} , avg train_loss {avg_train_loss}, avg val loss {avg_val_loss}"
-                    )
-                    break
+            #     if early_stopping.early_stop:
+            #         print(
+            #             f"Early stopping epoch {epoch} , avg train_loss {avg_train_loss}, avg val loss {avg_val_loss}"
+            #         )
+            #         break
 
         verbosity(
             f"Train_loss: {avg_train_loss:.4f} Train_acc : {100*avg_train_acc:.2f}",
@@ -155,7 +157,7 @@ def train(
             epoch,
         )
 
-    return model, avg_train_loss, avg_train_acc, avg_val_loss, avg_val_acc
+    return model, avg_train_loss, avg_train_acc
 
 
 # overrides test
@@ -200,7 +202,7 @@ def final_training(log_dirs, config):
         pool_size = basic_settings.get("pool_size", 20000)
         OOD_ratio = basic_settings.get("OOD_ratio", 0.0)
         # training settings
-        epochs = 200  # basic_settings.get("epochs", 200)
+        epochs = 1  # 130  # basic_settings.get("epochs", 200)
         batch_size = basic_settings.get("batch_size", 128)
         weight_decay = basic_settings.get("weight_decay", 1e-4)
 
@@ -223,7 +225,12 @@ def final_training(log_dirs, config):
             )
 
         subclass = basic_settings.get("subclass", {"do_subclass": False})
-
+        with open(
+            os.path.join(log_dir, "final_result.csv"), "w", encoding="utf-8"
+        ) as result_file:
+            result_file.write(
+                "exp_name,labelled_size,trainsize,OOD_ratio,avg_train_acc,avg_train_loss,avg_test_acc,avg_test_loss\n"
+            )
         for exp_setting in experiment["exp_settings"]:
             exp_name = exp_setting.get("exp_name", "standard_name")
             data_manager = Data_manager(
@@ -237,6 +244,8 @@ def final_training(log_dirs, config):
             )
             if not exp_setting.get("perform_experiment", True):
                 continue
+            else:
+                print("performing final training for: ", exp_name)
             # data_manager.create_merged_data() TODO load the statusmanager from the path
             check_path = os.path.join(
                 log_dir, "status_manager_dir", f"{exp_name}-result-statusmanager.csv"
@@ -251,11 +260,11 @@ def final_training(log_dirs, config):
                 print("couldn't load statusmanager aborting: f{exp_name}")
                 break
             result_tup = create_dataloader(
-                data_manager, batch_size, 0.1, validation_source="train"
+                data_manager, batch_size, 0.1, validation_source=None
             )
             train_loader = result_tup[0]
             test_loader = result_tup[1]
-            val_loader = result_tup[3]
+            # val_loader = result_tup[3]
 
             device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -272,9 +281,9 @@ def final_training(log_dirs, config):
             if device == "cuda":
                 torch.backends.cudnn.benchmark = True
 
-            model, avg_train_loss, avg_train_acc, avg_val_loss, avg_val_acc = train(
+            model, avg_train_loss, avg_train_acc = train(
                 train_loader=train_loader,
-                val_loader=val_loader,
+                val_loader=None,
                 optimizer=optimizer,
                 criterion=criterion,
                 device=device,
@@ -285,23 +294,21 @@ def final_training(log_dirs, config):
             avg_test_acc, avg_test_loss = test(model, test_loader, device, criterion)
 
             print(
-                f"""Experiment: {exp_name}\n
-                    Starting Size:{labelled_size}\n,
-                    Final_trainingset size: {len(train_loader)}\n,
-                    OOD_ratio: {OOD_ratio}\n
-                    Train-Accuracy: {avg_train_acc}
-                    Train-Loss: {avg_train_loss}
-                    Validation-Accuracy: {avg_val_acc}\n,
-                    Validation-Loss{avg_val_loss},
+                f"""Experiment: {exp_name},
+                    Starting Size:{labelled_size},
+                    Final_trainingset size: {len(train_loader)},
+                    OOD_ratio: {OOD_ratio},
+                    Train-Accuracy: {avg_train_acc},
+                    Train-Loss: {avg_train_loss},
                     Test-Accuracy: {avg_test_acc},
                     Test-Loss: {avg_test_loss}"""
             )
 
             with open(
-                os.path.join(log_dir, "final_result.csv"), "w", encoding="utf-8"
+                os.path.join(log_dir, "final_result.csv"), "a", encoding="utf-8"
             ) as result_file:
                 result_file.write(
-                    f"{exp_name},{labelled_size},{len(train_loader)},{OOD_ratio},{avg_train_acc},{avg_train_loss},{avg_val_acc},{avg_val_loss},{avg_test_acc},{avg_test_loss}\n"
+                    f"{exp_name},{labelled_size},{len(train_loader.dataset)},{OOD_ratio},{avg_train_acc},{avg_train_loss},{avg_test_acc},{avg_test_loss}\n"
                 )
 
 
