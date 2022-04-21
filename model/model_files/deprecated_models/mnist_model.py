@@ -16,13 +16,14 @@ class Net(nn.Module):
 
         self.activation = activation
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=False):
         x = self.pool(self.activation(self.conv1(x)))
         x = self.pool(self.activation(self.conv2(x)))
-        
+
         x = x.reshape(-1, 12 * 5 * 5)
         x = self.activation(self.fc1(x))
         x = self.activation(self.fc2(x))
         x = self.fc3(x)
-        x = F.softmax(x, dim=-1)
+        if apply_softmax:
+            x = F.softmax(x, dim=-1)
         return x
