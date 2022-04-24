@@ -22,6 +22,9 @@ from robust_active_learning.experiment_ddu import experiment_ddu
 from robust_active_learning.experiment_genOdin import experiment_gen_odin
 from robust_active_learning.experiment_gram import experiment_gram
 from robust_active_learning.experiment_extraclass import experiment_extraclass
+from robust_active_learning.experiment_maximum_discrepancy import (
+    experiment_maximum_discrepancy,
+)
 from robust_active_learning.experiment_without_OoD import experiment_without_OoD
 from robust_active_learning.final_train import final_training
 
@@ -124,6 +127,11 @@ def start_experiment(config, log_path):
                 current_exp = experiment_ddu(
                     basic_settings, exp_setting, log_path, writer
                 )
+            elif exp_type == "max_disc":
+                current_exp = experiment_maximum_discrepancy(
+                    basic_settings, exp_setting, log_path, writer
+                )
+
             try:
                 current_exp.perform_experiment()
                 current_exp

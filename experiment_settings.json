@@ -36,7 +36,7 @@
           "oracle": "baseline",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "baseline-ood",
@@ -44,7 +44,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "genodin",
@@ -60,7 +60,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "looc",
@@ -76,7 +76,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "ddu",
@@ -86,7 +86,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "gram",
@@ -94,7 +94,7 @@
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
 
         {
@@ -103,13 +103,20 @@
           "extra_class_thresholding": "hard",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
           "exp_name": "extra_class_soft-030",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
+          "model": "base",
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-030",
+          "oracle": "maximum_discrepancy",
           "model": "base",
           "perform_experiment": true
         }
