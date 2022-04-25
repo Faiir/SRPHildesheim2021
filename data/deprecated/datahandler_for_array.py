@@ -61,7 +61,7 @@ def create_dataloader(
     test_X, test_y = torch.from_numpy(test_X), torch.from_numpy(test_y)
     pool_X, pool_y = torch.from_numpy(pool_X), torch.from_numpy(pool_y)
 
-    transform_train = transform = transforms.Compose(
+    transform_train = transforms.Compose(
         [
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, 4),

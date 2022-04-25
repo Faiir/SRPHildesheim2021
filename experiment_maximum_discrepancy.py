@@ -283,7 +283,7 @@ class experiment_maximum_discrepancy(experiment_base):
             self.test_loader
         )  # return avg testloss
 
-    def finetune(self, trainloader, poolloader, num_epochs=5, sheduler=None):
+    def finetune(self, trainloader, poolloader, num_epochs=10, sheduler=None):
         best_roc = 0.0
         print("Fine-tuning-discrepancy-loss")
         for epoch in range(num_epochs):
@@ -291,6 +291,13 @@ class experiment_maximum_discrepancy(experiment_base):
             self.model.train()
             pool_loder_iterator = iter(poolloader)
             # maybe iterate over entire pool?
+            optimizer = optim.SGD(
+                self.model.parameters(),
+                weight_decay=self.weight_decay,
+                lr=self.lr,
+                momentum=self.momentum,
+                nesterov=self.nesterov,
+            )
             for batch_idx, (data, target) in enumerate(trainloader):
                 unsup_data, _ = next(
                     pool_loder_iterator
@@ -300,7 +307,7 @@ class experiment_maximum_discrepancy(experiment_base):
                     data.to(self.device).float(),
                     target.to(self.device).long(),
                 )
-                self.optimizer.zero_grad()
+                optimizer.zero_grad()
                 out_1, out_2 = self.model(data)
                 out_1 = out_1.to(self.device)
                 out_2 = out_2.to(self.device)
@@ -475,18 +482,10 @@ class experiment_maximum_discrepancy(experiment_base):
         # logging
         self.verbose = self.current_experiment.get("verbose", 1)
 
+        self.thresholding = self.current_experiment.get("thresholding", True)
+        self.perform_finetune = self.current_experiment.get("finetune", True)
         # _create_log_path_al(self.OOD_ratio)
 
-        # extra class
-        if self.current_experiment["exp_type"] == "extra_class":
-            self.extra_class_thresholding = self.current_experiment.get(
-                "extra_class_thresholding", 0.1
-            )
-
-            self.num_classes += 1
-            # self.set_model(
-            #     self.current_experiment.get("model", "base"), self.num_classes
-            # )
         self.oracle = self.current_experiment.get("oracle", "maximum_discrepancy")
         self.set_sampler(self.oracle)
         self.exp_name = self.current_experiment.get("exp_name", "maximum_discrepancy")
@@ -528,7 +527,8 @@ class experiment_maximum_discrepancy(experiment_base):
                 self.device,
             )
             self.test()
-            self.finetune(self.train_loader, self.pool_loader, num_epochs=5)
+            if self.perform_finetune:
+                self.finetune(self.train_loader, self.pool_loader, num_epochs=10)
             self.current_oracle_step += 1
             if len(self.pool_loader) > 0:
                 (
@@ -543,6 +543,7 @@ class experiment_maximum_discrepancy(experiment_base):
                     net=self.model,
                     predictions1=pool_predictions1,
                     predictions2=pool_predictions2,
+                    thresholding=self.thresholding,
                 )
 
                 (

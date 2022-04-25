@@ -153,14 +153,10 @@ def uncertainity_sampling_highest_entropy_maxium_discrepancy(
     predictions1=None,
     predictions2=None,
     weights=None,
+    thresholding=False,
 ):
-    """uncertainity_sampling_highest_entropy [Uses highest entropy to sample training data from the unlabelled pool]
-    [This function selects num_samples from the pool of  all the unlabelled data at random and add them to labelled training data assumes prediction is in shape (number_of_samples,num_classes)]
-    Args:
-        dataset_manager ([type]): [description]
-        number_samples ([type]): [description]
-        net ([type]): [description]
-        predictions ([type], optional): [description]. Defaults to None.
+    """
+    entropy but with discrepancy
     """
 
     status_manager = dataset_manager.status_manager
@@ -174,9 +170,38 @@ def uncertainity_sampling_highest_entropy_maxium_discrepancy(
         pool_samples_count > number_samples
     ), f"Number of samples to be labelled is less than the number of samples left in pool : {pool_samples_count} < {number_samples}"
 
+    # l1 of predictions
+    # min max -> 1-
+
+    l1_dist = np.sum(np.abs(predictions1 - predictions2), axis=1)
+    norm_l1_dist = (l1_dist - l1_dist.min()) / (l1_dist.max() - l1_dist.min())
+
     entropy1 = -np.sum(predictions1 * np.log(predictions1 + 1e-9), axis=1)
-    entropy2 = -np.sum(predictions1 * np.log(predictions1 + 1e-9), axis=1)
+    entropy2 = -np.sum(predictions2 * np.log(predictions2 + 1e-9), axis=1)
     entropy = (entropy1 + entropy2) / 2
+    entropy = entropy * norm_l1_dist
+    # -111
+
+    if thresholding:
+        inds_OoD = l1_dist > 1
+        temp_status_manager = status_manager[status_manager["status"] == 0].copy()
+        temp_status_manager["OoD"] = inds_OoD
+        temp_status_manager["entropy"] = entropy
+        temp_status_manager = temp_status_manager[temp_status_manager["OoD"]]
+        temp_status_manager.sort_values("entropy", inplace=True)
+        inds = temp_status_manager.index[-number_samples:]
+        #            print("entropy in predictions", temp_status_manager.entropy[inds])
+
+        #        print("entropy", entropy)
+        #        print("pred_inds", inds)
+
+        iteration = 1 + np.abs(status_manager["status"]).max()
+        status_manager["status"].loc[inds] = (
+            iteration * status_manager["source"].loc[inds]
+        )
+
+        return None
+
     if weights is not None:
         entropy = np.squeeze(weights) * entropy
 

@@ -118,6 +118,8 @@
           "exp_name": "max_disc-030",
           "oracle": "maximum_discrepancy",
           "model": "maximum_discrepancy",
+          "finetune": true,
+          "thresholding": true,
           "perform_experiment": true
         }
       ]
