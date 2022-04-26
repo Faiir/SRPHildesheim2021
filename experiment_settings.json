@@ -115,14 +115,14 @@
         },
         {
           "exp_type": "max_disc",
-          "exp_name": "max_disc-030",
+          "exp_name": "max_disc-030-hard",
           "oracle": "maximum_discrepancy",
           "model": "maximum_discrepancy",
           "perform_experiment": true
         },
         {
           "exp_type": "max_disc",
-          "exp_name": "max_disc-030",
+          "exp_name": "max_disc-030-soft",
           "oracle": "maximum_discrepancy",
           "model": "maximum_discrepancy",
           "thresholding": false,
