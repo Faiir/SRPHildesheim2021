@@ -132,9 +132,10 @@ def start_experiment(config, log_path):
                     basic_settings, exp_setting, log_path, writer
                 )
 
-            try:
+            
                 current_exp.perform_experiment()
                 current_exp
+            try:
                 gc.collect()
 
             except Exception as e:

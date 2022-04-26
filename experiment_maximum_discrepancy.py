@@ -318,7 +318,7 @@ class experiment_maximum_discrepancy(experiment_base):
                 loss_unsup = self.DiscrepancyLoss(u_out_1, u_out_2)
                 loss = loss_unsup + loss_sup
                 loss.backward()
-                self.optimizer.step()
+                optimizer.step() #changing so the same optimizer is given zero grad and then used to updated the model
 
             # validate skipp for now
             # self.model.eval()
@@ -483,6 +483,7 @@ class experiment_maximum_discrepancy(experiment_base):
         self.verbose = self.current_experiment.get("verbose", 1)
 
         self.thresholding = self.current_experiment.get("thresholding", True)
+        print(f'----- THRESHOLDING : {self.thresholding}')
         self.perform_finetune = self.current_experiment.get("finetune", True)
         # _create_log_path_al(self.OOD_ratio)
 
@@ -529,6 +530,8 @@ class experiment_maximum_discrepancy(experiment_base):
             self.test()
             if self.perform_finetune:
                 self.finetune(self.train_loader, self.pool_loader, num_epochs=10)
+
+
             self.current_oracle_step += 1
             if len(self.pool_loader) > 0:
                 (

@@ -117,7 +117,15 @@
           "exp_type": "max_disc",
           "exp_name": "max_disc-030",
           "oracle": "maximum_discrepancy",
-          "model": "base",
+          "model": "maximum_discrepancy",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-030",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": false,
           "perform_experiment": true
         }
       ]

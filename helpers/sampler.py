@@ -173,14 +173,19 @@ def uncertainity_sampling_highest_entropy_maxium_discrepancy(
     # l1 of predictions
     # min max -> 1-
 
-    l1_dist = np.sum(np.abs(predictions1 - predictions2), axis=1)
+    #l1_dist = np.sum(np.abs(predictions1 - predictions2), axis=1) ##doing it using np norm
+    l1_dist = np.linalg.norm(predictions1 - predictions2, ord=1)
     norm_l1_dist = (l1_dist - l1_dist.min()) / (l1_dist.max() - l1_dist.min())
+
+    ## Need to reverse the order as originally the largest value would be OoD and smallest would be iD, we want it 
+    ## the other way
+    norm_l1_dist = 1-norm_l1_dist
 
     entropy1 = -np.sum(predictions1 * np.log(predictions1 + 1e-9), axis=1)
     entropy2 = -np.sum(predictions2 * np.log(predictions2 + 1e-9), axis=1)
     entropy = (entropy1 + entropy2) / 2
-    entropy = entropy * norm_l1_dist
-    # -111
+    # entropy = entropy * norm_l1_dist
+    # I think we either scale it with the norm or do the thresholding.  
 
     if thresholding:
         inds_OoD = l1_dist > 1
@@ -190,30 +195,14 @@ def uncertainity_sampling_highest_entropy_maxium_discrepancy(
         temp_status_manager = temp_status_manager[temp_status_manager["OoD"]]
         temp_status_manager.sort_values("entropy", inplace=True)
         inds = temp_status_manager.index[-number_samples:]
-        #            print("entropy in predictions", temp_status_manager.entropy[inds])
 
-        #        print("entropy", entropy)
-        #        print("pred_inds", inds)
-
-        iteration = 1 + np.abs(status_manager["status"]).max()
-        status_manager["status"].loc[inds] = (
-            iteration * status_manager["source"].loc[inds]
-        )
-
-        return None
-
-    if weights is not None:
-        entropy = np.squeeze(weights) * entropy
-
-    inds = np.argsort(entropy)[-number_samples:]
-    inds = predictions_inds_random[inds]
-    #    print("entropy", entropy)
-    #    print("pred_inds", inds)
-    #    print("entropy in predictions", entropy[inds])
-    inds = status_manager[status_manager["status"] == 0].index[inds]
-    #    print("statusmanager inds",inds)
+    else:
+        entropy = norm_l1_dist * entropy
+        inds = np.argsort(entropy)[-number_samples:]
+        inds = predictions_inds_random[inds]
+        inds = status_manager[status_manager["status"] == 0].index[inds]
+    
     iteration = 1 + np.abs(status_manager["status"]).max()
-
     status_manager["status"].loc[inds] = iteration * status_manager["source"].loc[inds]
 
     return None
