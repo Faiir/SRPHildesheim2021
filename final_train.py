@@ -87,11 +87,13 @@ def train(
         )
     patience = kwargs.get("patience", int(epochs * 0.1))
     # early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
-
+    max_disc = kwargs.get("max_disc", False)
     for epoch in range(1, epochs + 1):
         if verbose > 0:
             print(f"\nEpoch: {epoch}")
-
+        correct_1 = 0
+        correct_2 = 0
+        total = 0
         train_loss = 0
         train_acc = 0
         for batch_idx, (data, target) in enumerate(train_loader):
@@ -100,18 +102,37 @@ def train(
                 data, target = data.to(device).float(), target.to(device).long()
 
                 optimizer.zero_grad(set_to_none=True)
-                yhat = model(data).to(device)
-                loss = criterion(yhat, target)
-                train_loss += loss.item()
-                train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
 
+                if max_disc:
+                    out_1, out_2 = model(data)
+                    out_1.to(device)
+                    out_2.to(device)
+                    loss = criterion(out_1, target) + criterion(out_2, target)
+                    _, pred_1 = torch.max(out_1.data, 1)
+                    _, pred_2 = torch.max(out_2.data, 1)
+                    total += target.size(0)
+                    correct_1 += (pred_1 == target).sum().item()
+                    correct_2 += (pred_2 == target).sum().item()
+                else:
+                  yhat = model(data).to(device)
+                  loss = criterion(yhat, target)
+                  
+                  train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
+                try:
+                    train_loss += loss.item()
+                except:
+                    print("loss item skipped loss")
                 loss.backward()
                 optimizer.step()
             else:
                 pass
 
         avg_train_loss = train_loss / len(train_loader)
-        avg_train_acc = train_acc / len(train_loader.dataset)
+
+        if max_disc:
+          avg_train_acc = ((correct_1 / total) + (correct_2 / total)) / 2
+        else:
+          avg_train_acc = train_acc / len(train_loader.dataset)
 
         if epoch % 1 == 0:
             pass
@@ -162,7 +183,7 @@ def train(
 
 # overrides test
 @torch.no_grad()
-def test(model, test_loader, device, criterion):
+def test(model, test_loader, device, criterion,max_disc=False):
     """test [computes loss of the test set]
 
     [extended_summary]
@@ -172,21 +193,53 @@ def test(model, test_loader, device, criterion):
     """
     test_loss = 0
     test_acc = 0
+    total = 0
+    correct_1 = 0
+    correct_2 = 0
     model.eval()
-    for (t_data, t_target) in test_loader:
-        t_data, t_target = (
-            t_data.to(device).float(),
-            t_target.to(device).long(),
+    if max_disc:
+        for (t_data, t_target) in test_loader:
+            t_data, t_target = (
+                t_data.to(device).float(),
+                t_target.to(device).long(),
+            )
+
+            t_output1, t_output2 = model(t_data)
+            t_output1.to(device).long()
+            t_output2.to(device).long()
+            # t_output.to(self.device).long()
+            t_loss = criterion(t_output1, t_target) + criterion(
+                t_output2, t_target
+            )
+            test_loss += t_loss
+            _, pred_1 = torch.max(t_output1.data, 1)
+            _, pred_2 = torch.max(t_output2.data, 1)
+            total += t_target.size(0)
+            correct_1 += (pred_1 == t_target).sum().item()
+            correct_2 += (pred_2 == t_target).sum().item()
+
+            # test_acc += torch.sum(torch.argmax(t_output, dim=1) == t_target).item()
+        avg_test_acc = (( correct_1 / total) + ( correct_2 / total)) / 2
+        # self.avg_test_acc = test_acc / len(self.test_loader.dataset)
+        avg_test_loss = test_loss.to("cpu").detach().numpy() / len(
+            test_loader
         )
+    else:
+      for (t_data, t_target) in test_loader:
+          t_data, t_target = (
+              t_data.to(device).float(),
+              t_target.to(device).long(),
+          )
 
-        t_output = model(t_data)
-        t_output.to(device).long()
-        t_loss = criterion(t_output, t_target)
-        test_loss += t_loss
-        test_acc += torch.sum(torch.argmax(t_output, dim=1) == t_target).item()
+          t_output = model(t_data)
+          t_output.to(device).long()
+          t_loss = criterion(t_output, t_target)
+          test_loss += t_loss
+          test_acc += torch.sum(torch.argmax(t_output, dim=1) == t_target).item()
 
-    avg_test_acc = test_acc / len(test_loader.dataset)
-    avg_test_loss = test_loss.to("cpu").detach().numpy() / len(test_loader)
+      avg_test_acc = test_acc / len(test_loader.dataset)
+      avg_test_loss = test_loss.to("cpu").detach().numpy() / len(test_loader)
+    
     return avg_test_acc, avg_test_loss
 
 
@@ -202,7 +255,7 @@ def final_training(log_dirs, config):
         pool_size = basic_settings.get("pool_size", 20000)
         OOD_ratio = basic_settings.get("OOD_ratio", 0.0)
         # training settings
-        epochs = 1  # 130  # basic_settings.get("epochs", 200)
+        epochs = 130  # basic_settings.get("epochs", 200)
         batch_size = basic_settings.get("batch_size", 128)
         weight_decay = basic_settings.get("weight_decay", 1e-4)
 
@@ -242,73 +295,85 @@ def final_training(log_dirs, config):
                 test_iD_size=None,
                 subclass=subclass,
             )
+
             if not exp_setting.get("perform_experiment", True):
                 continue
             else:
                 print("performing final training for: ", exp_name)
-            # data_manager.create_merged_data() TODO load the statusmanager from the path
-            check_path = os.path.join(
-                log_dir, "status_manager_dir", f"{exp_name}-result-statusmanager.csv"
-            )
-            print("loading statusmanager: ", check_path)
-            if os.path.exists(check_path):
-                data_manager.status_manager = pd.read_csv(check_path, index_col=0)
-                # self.data_manager.reset_pool()
-                data_manager.iter = 19
-                print("loaded statusmanager from file")
-            else:
-                print("couldn't load statusmanager aborting: f{exp_name}")
-                break
-            result_tup = create_dataloader(
-                data_manager, batch_size, 0.1, validation_source=None
-            )
-            train_loader = result_tup[0]
-            test_loader = result_tup[1]
-            # val_loader = result_tup[3]
+            
+            try:
+              # data_manager.create_merged_data() TODO load the statusmanager from the path
+              check_path = os.path.join(
+                  log_dir, "status_manager_dir", f"{exp_name}-result-statusmanager.csv"
+              )
+              exp_type = exp_setting.get("exp_type", "baseline")
+              if exp_type == "max_disc":
+                max_disc = True
+              else:
+                max_disc = False
 
-            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+              print("loading statusmanager: ", check_path)
+              if os.path.exists(check_path):
+                  data_manager.status_manager = pd.read_csv(check_path, index_col=0)
+                  # self.data_manager.reset_pool()
+                  data_manager.iter = 19
+                  print("loaded statusmanager from file")
+              else:
+                  print("couldn't load statusmanager aborting: f{exp_name}")
+                  break
+              result_tup = create_dataloader(
+                  data_manager, batch_size, 0.1, validation_source=None
+              )
+              train_loader = result_tup[0]
+              test_loader = result_tup[1]
+              # val_loader = result_tup[3]
 
-            model = get_model("base", num_classes=num_classes)
-            model.to(device)
-            optimizer = optim.SGD(
-                model.parameters(),
-                weight_decay=weight_decay,
-                lr=lr,
-                momentum=momentum,
-                nesterov=nesterov,
-            )
+              device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-            if device == "cuda":
-                torch.backends.cudnn.benchmark = True
+              model = get_model("base", num_classes=num_classes)
+              model.to(device)
+              optimizer = optim.SGD(
+                  model.parameters(),
+                  weight_decay=weight_decay,
+                  lr=lr,
+                  momentum=momentum,
+                  nesterov=nesterov,
+              )
 
-            model, avg_train_loss, avg_train_acc = train(
-                train_loader=train_loader,
-                val_loader=None,
-                optimizer=optimizer,
-                criterion=criterion,
-                device=device,
-                epochs=epochs,
-                model=model,
-                verbose=verbose,
-            )
-            avg_test_acc, avg_test_loss = test(model, test_loader, device, criterion)
+              if device == "cuda":
+                  torch.backends.cudnn.benchmark = True
 
-            print(
-                f"""Experiment: {exp_name},
-                    Final_trainingset size: {len(train_loader)},
-                    OOD_ratio: {OOD_ratio},
-                    Train-Accuracy: {avg_train_acc},
-                    Train-Loss: {avg_train_loss},
-                    Test-Accuracy: {avg_test_acc},
-                    Test-Loss: {avg_test_loss}"""
-            )
+              model, avg_train_loss, avg_train_acc = train(
+                  train_loader=train_loader,
+                  val_loader=None,
+                  optimizer=optimizer,
+                  criterion=criterion,
+                  device=device,
+                  epochs=epochs,
+                  model=model,
+                  verbose=verbose,
+                  max_disc=max_disc
+              )
+              avg_test_acc, avg_test_loss = test(model, test_loader, device, criterion)
 
-            with open(
-                os.path.join(log_dir, "final_result.csv"), "a", encoding="utf-8"
-            ) as result_file:
-                result_file.write(
-                    f"{exp_name},{len(train_loader.dataset)},{OOD_ratio},{avg_train_acc},{avg_train_loss},{avg_test_acc},{avg_test_loss}\n"
-                )
+              print(
+                  f"""Experiment: {exp_name},
+                      Final_trainingset size: {len(train_loader)},
+                      OOD_ratio: {OOD_ratio},
+                      Train-Accuracy: {avg_train_acc},
+                      Train-Loss: {avg_train_loss},
+                      Test-Accuracy: {avg_test_acc},
+                      Test-Loss: {avg_test_loss}"""
+              )
+
+              with open(
+                  os.path.join(log_dir, "final_result.csv"), "a", encoding="utf-8"
+              ) as result_file:
+                  result_file.write(
+                      f"{exp_name},{len(train_loader.dataset)},{OOD_ratio},{avg_train_acc},{avg_train_loss},{avg_test_acc},{avg_test_loss}\n"
+                  )
+            except Exception as e:
+              print(f"{exp_name} failed with Exceptopm {e}")
 
 
 def main():
