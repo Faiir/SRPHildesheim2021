@@ -90,27 +90,19 @@
           "perform_experiment": true
         },
         {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-00-ablation",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "extra_class",
-          "exp_name": "extra_class_hard-00-ablation",
-          "extra_class_thresholding": "hard",
-          "oracle": "highest-entropy",
-          "model": "base",
-          "perform_experiment": true
-        },
-        {
           "exp_type": "extra_class",
           "exp_name": "extra_class_soft-100-00-ablation",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-0-soft-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": false,
           "perform_experiment": true
         }
       ]
@@ -205,27 +197,19 @@
           "perform_experiment": true
         },
         {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-15-ablation",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "extra_class",
-          "exp_name": "extra_class_hard-15-ablation",
-          "extra_class_thresholding": "hard",
-          "oracle": "highest-entropy",
-          "model": "base",
-          "perform_experiment": true
-        },
-        {
           "exp_type": "extra_class",
           "exp_name": "extra_class_soft-100-15-ablation",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-0-soft-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": false,
           "perform_experiment": true
         }
       ]
@@ -320,27 +304,19 @@
           "perform_experiment": true
         },
         {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-30-ablation",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "extra_class",
-          "exp_name": "extra_class_hard-30-ablation",
-          "extra_class_thresholding": "hard",
-          "oracle": "highest-entropy",
-          "model": "base",
-          "perform_experiment": true
-        },
-        {
           "exp_type": "extra_class",
           "exp_name": "extra_class_soft-100-30-ablation",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-30-soft-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": false,
           "perform_experiment": true
         }
       ]
@@ -435,27 +411,19 @@
           "perform_experiment": true
         },
         {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-50-ablation",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "extra_class",
-          "exp_name": "extra_class_hard-50-ablation",
-          "extra_class_thresholding": "hard",
-          "oracle": "highest-entropy",
-          "model": "base",
-          "perform_experiment": true
-        },
-        {
           "exp_type": "extra_class",
           "exp_name": "extra_class_soft-100-50-ablation",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-50-soft-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": false,
           "perform_experiment": true
         }
       ]
@@ -550,27 +518,19 @@
           "perform_experiment": true
         },
         {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-70-ablation",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "extra_class",
-          "exp_name": "extra_class_hard-70-ablation",
-          "extra_class_thresholding": "hard",
-          "oracle": "highest-entropy",
-          "model": "base",
-          "perform_experiment": true
-        },
-        {
           "exp_type": "extra_class",
           "exp_name": "extra_class_soft-100-70-ablation",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-70-soft-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": false,
           "perform_experiment": true
         }
       ]
@@ -665,27 +625,19 @@
           "perform_experiment": true
         },
         {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-90-ablation",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "extra_class",
-          "exp_name": "extra_class_hard-90-ablation",
-          "extra_class_thresholding": "hard",
-          "oracle": "highest-entropy",
-          "model": "base",
-          "perform_experiment": true
-        },
-        {
           "exp_type": "extra_class",
           "exp_name": "extra_class_soft-90-ablation",
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-90-soft-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": false,
           "perform_experiment": true
         }
       ]
