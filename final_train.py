@@ -329,8 +329,13 @@ def final_training(log_dirs, config):
               # val_loader = result_tup[3]
 
               device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-              model = get_model("base", num_classes=num_classes)
+            
+              if not max_disc:
+                  model = get_model("base", num_classes=num_classes)
+              else:
+                  model = get_model("maximum_discrepancy", num_classes=num_classes)
+ 
+            
               model.to(device)
               optimizer = optim.SGD(
                   model.parameters(),
@@ -354,7 +359,7 @@ def final_training(log_dirs, config):
                   verbose=verbose,
                   max_disc=max_disc
               )
-              avg_test_acc, avg_test_loss = test(model, test_loader, device, criterion)
+              avg_test_acc, avg_test_loss = test(model, test_loader, device, criterion, max_disc=max_disc)
 
               print(
                   f"""Experiment: {exp_name},
