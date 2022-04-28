@@ -52,7 +52,7 @@
           "similarity": "C",
           "oracle": "highest-entropy",
           "do_pertubed_images": true,
-          "scaling_factor": "R",
+          "scaling_factor": "G",
           "model": "GenOdin",
           "bugged_and_working": false,
           "plotsettings": {
@@ -60,7 +60,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "looc",
@@ -68,7 +68,7 @@
           "similarity": "E",
           "oracle": "LOOC",
           "do_pertubed_images": true,
-          "scaling_factor": "R",
+          "scaling_factor": "G",
           "model": "LOOC",
           "bugged_and_working": true,
           "plotsettings": {
@@ -76,7 +76,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "ddu",
