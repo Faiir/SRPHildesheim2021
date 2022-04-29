@@ -22,7 +22,7 @@
           ]
         },
         "labelled_size": 1500,
-        "pool_size": 50000,
+        "pool_size": 38500,
         "OOD_ratio": 0.0,
         "epochs": 100,
         "batch_size": 64,
@@ -61,7 +61,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "looc",
@@ -77,7 +77,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "ddu",
@@ -87,7 +87,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
@@ -95,6 +95,22 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-0-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-0-hard-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
           "perform_experiment": true
         },
         {
@@ -103,7 +119,7 @@
           "oracle": "maximum_discrepancy",
           "model": "maximum_discrepancy",
           "thresholding": false,
-          "perform_experiment": true
+          "perform_experiment": false
         }
       ]
     },
@@ -129,7 +145,7 @@
           ]
         },
         "labelled_size": 1500,
-        "pool_size": 50000,
+        "pool_size": 35000,
         "OOD_ratio": 0.15,
         "epochs": 100,
         "batch_size": 64,
@@ -187,6 +203,14 @@
           "perform_experiment": true
         },
         {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-15-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
           "exp_type": "ddu",
           "exp_name": "ddu-cifar-100-15-ablation",
           "plots": false,
@@ -206,7 +230,15 @@
         },
         {
           "exp_type": "max_disc",
-          "exp_name": "max_disc-0-soft-ablation",
+          "exp_name": "max_disc-15-hard-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-15-soft-ablation",
           "oracle": "maximum_discrepancy",
           "model": "maximum_discrepancy",
           "thresholding": false,
@@ -259,7 +291,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "genodin",
@@ -275,7 +307,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "looc",
@@ -291,7 +323,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "ddu",
@@ -301,6 +333,14 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-30-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
           "perform_experiment": true
         },
         {
@@ -309,6 +349,14 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-30-hard-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
           "perform_experiment": true
         },
         {
@@ -317,7 +365,7 @@
           "oracle": "maximum_discrepancy",
           "model": "maximum_discrepancy",
           "thresholding": false,
-          "perform_experiment": true
+          "perform_experiment": false
         }
       ]
     },
@@ -366,7 +414,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "genodin",
@@ -382,7 +430,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "looc",
@@ -398,7 +446,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "ddu",
@@ -408,7 +456,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
@@ -416,6 +464,22 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-0-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-50-hard-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
           "perform_experiment": true
         },
         {
@@ -424,7 +488,7 @@
           "oracle": "maximum_discrepancy",
           "model": "maximum_discrepancy",
           "thresholding": false,
-          "perform_experiment": true
+          "perform_experiment": false
         }
       ]
     },
@@ -473,7 +537,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "genodin",
@@ -489,7 +553,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "looc",
@@ -505,7 +569,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "ddu",
@@ -515,7 +579,7 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "extra_class",
@@ -523,6 +587,22 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-70-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-70-hard-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
           "perform_experiment": true
         },
         {
@@ -531,7 +611,7 @@
           "oracle": "maximum_discrepancy",
           "model": "maximum_discrepancy",
           "thresholding": false,
-          "perform_experiment": true
+          "perform_experiment": false
         }
       ]
     },
@@ -580,7 +660,7 @@
           "oracle": "highest-entropy",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "genodin",
@@ -596,7 +676,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "looc",
@@ -612,7 +692,7 @@
             "density_plot": true,
             "layer_plot": false
           },
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "ddu",
@@ -622,6 +702,14 @@
           "oracle": "ddu-sampler",
           "spectral_normalization": true,
           "temp": 1.0,
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-0-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
           "perform_experiment": true
         },
         {
@@ -630,6 +718,14 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
+          "perform_experiment": false
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-90-hard-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
           "perform_experiment": true
         },
         {
@@ -638,7 +734,7 @@
           "oracle": "maximum_discrepancy",
           "model": "maximum_discrepancy",
           "thresholding": false,
-          "perform_experiment": true
+          "perform_experiment": false
         }
       ]
     }
