@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 # python imports
 from datetime import datetime
 import os
-from tqdm import tqdm
+
 import json
 import pandas as pd
 import gc
@@ -101,7 +101,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net, checkpoin
     if torch.cuda.is_available():
         cudnn.benchmark = True
 
-    for i in tqdm(range(oracle_steps)):
+    for i in range(oracle_steps):
 
         dataloader_tuple = create_dataloader(
             data_manager,
@@ -336,7 +336,6 @@ def start_experiment(config_path, log):
 
 import torch
 from torch import nn
-from tqdm import tqdm
 
 
 DOUBLE_INFO = torch.finfo(torch.double)
@@ -363,7 +362,7 @@ def get_embeddings(
 
     with torch.no_grad():
         start = 0
-        for data, label in tqdm(loader):
+        for data, label in loader:
             data = data.to(device)
             label = label.to(device)
 

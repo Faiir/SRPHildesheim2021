@@ -5,7 +5,7 @@
         "oracle_stepsize": 150,
         "oracle_steps": 20,
         "iD": "CIFAR10",
-        "OoD": ["A_CIFAR100_ood", "A_SVHN"],
+        "OoD": ["A_CIFAR100_ood", "SVHN"],
         "grayscale": false,
         "subclass": {
           "do_subclass": false,
@@ -36,7 +36,7 @@
           "oracle": "baseline",
           "model": "base",
           "plots": false,
-          "perform_experiment": false
+          "perform_experiment": true
         },
         {
           "exp_type": "baseline-ood",
@@ -48,27 +48,11 @@
         },
         {
           "exp_type": "genodin",
-          "exp_name": "genodin-changed-cifar-030",
-          "similarity": "C",
-          "oracle": "highest-entropy",
-          "do_pertubed_images": true,
-          "scaling_factor": "R",
-          "model": "GenOdin",
-          "bugged_and_working": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": false
-          },
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "genodin",
           "exp_name": "genodin-cifar-030",
           "similarity": "C",
           "oracle": "highest-entropy",
           "do_pertubed_images": true,
-          "scaling_factor": "G",
+          "scaling_factor": "R",
           "model": "GenOdin",
           "bugged_and_working": false,
           "plotsettings": {
@@ -104,14 +88,6 @@
           "temp": 1.0,
           "perform_experiment": true
         },
-        {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-030",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false,
-          "perform_experiment": true
-        },
 
         {
           "exp_type": "extra_class",
@@ -130,19 +106,11 @@
           "perform_experiment": true
         },
         {
-          "exp_type": "max_disc",
-          "exp_name": "max_disc-030-hard",
-          "oracle": "maximum_discrepancy",
-          "model": "maximum_discrepancy",
-          "thresholding": true,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "max_disc",
-          "exp_name": "max_disc-030-soft",
-          "oracle": "maximum_discrepancy",
-          "model": "maximum_discrepancy",
-          "thresholding": false,
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-030",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
           "perform_experiment": true
         }
       ]
@@ -171,7 +139,7 @@
         "labelled_size": 3000,
         "pool_size": 50000,
         "OOD_ratio": 0.3,
-        "epochs": 100,
+        "epochs": 50,
         "batch_size": 64,
         "weight_decay": 1e-4,
         "metric": "accuracy",
@@ -192,7 +160,7 @@
           "oracle": "baseline",
           "model": "base",
           "plots": false,
-          "perform_experiment": true
+          "perform_experiment": false
         },
         {
           "exp_type": "baseline-ood",
@@ -204,27 +172,11 @@
         },
         {
           "exp_type": "genodin",
-          "exp_name": "genodin-cifar-scaling-100-030-subclass",
-          "similarity": "C",
-          "oracle": "highest-entropy",
-          "do_pertubed_images": true,
-          "scaling_factor": "R",
-          "model": "GenOdin",
-          "bugged_and_working": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": false
-          },
-          "perform_experiment": true
-        },
-                {
-          "exp_type": "genodin",
           "exp_name": "genodin-cifar-100-030-subclass",
           "similarity": "C",
           "oracle": "highest-entropy",
           "do_pertubed_images": true,
-          "scaling_factor": "G",
+          "scaling_factor": "R",
           "model": "GenOdin",
           "bugged_and_working": false,
           "plotsettings": {
@@ -284,23 +236,6 @@
           "model": "base",
           "perform_experiment": true
         }
-        ,
-        {
-          "exp_type": "max_disc",
-          "exp_name": "max_disc-030-hard",
-          "oracle": "maximum_discrepancy",
-          "model": "maximum_discrepancy",
-          "thresholding": true,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "max_disc",
-          "exp_name": "max_disc-030-soft",
-          "oracle": "maximum_discrepancy",
-          "model": "maximum_discrepancy",
-          "thresholding": false,
-          "perform_experiment": true
-        }
       ]
     },
     {
@@ -308,7 +243,7 @@
         "oracle_stepsize": 50,
         "oracle_steps": 20,
         "iD": "CIFAR10",
-        "OoD": ["A_FashionMNIST", "A_MNIST"],
+        "OoD": ["A_FMNIST", "A_MNIST"],
         "grayscale": true,
         "subclass": {
           "do_subclass": false,
@@ -351,27 +286,11 @@
         },
         {
           "exp_type": "genodin",
-          "exp_name": "genodin-cifar-scaling-grayscale-030",
-          "similarity": "C",
-          "oracle": "highest-entropy",
-          "do_pertubed_images": true,
-          "scaling_factor": "R",
-          "model": "GenOdin",
-          "bugged_and_working": false,
-          "plotsettings": {
-            "do_plot": false,
-            "density_plot": true,
-            "layer_plot": false
-          },
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "genodin",
           "exp_name": "genodin-cifar-grayscale-030",
           "similarity": "C",
           "oracle": "highest-entropy",
           "do_pertubed_images": true,
-          "scaling_factor": "G",
+          "scaling_factor": "R",
           "model": "GenOdin",
           "bugged_and_working": false,
           "plotsettings": {
@@ -430,22 +349,6 @@
           "oracle": "highest-entropy",
           "model": "gram_resnet",
           "plots": false,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "max_disc",
-          "exp_name": "max_disc-030-hard",
-          "oracle": "maximum_discrepancy",
-          "model": "maximum_discrepancy",
-          "thresholding": true,
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "max_disc",
-          "exp_name": "max_disc-030-soft",
-          "oracle": "maximum_discrepancy",
-          "model": "maximum_discrepancy",
-          "thresholding": false,
           "perform_experiment": true
         }
       ]

@@ -83,7 +83,14 @@
           "temp": 1.0,
           "perform_experiment": true
         },
-
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-15-subclass",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
         {
           "exp_type": "extra_class",
           "exp_name": "extra_class_hard-15-subclass",
@@ -98,14 +105,6 @@
           "extra_class_thresholding": "soft",
           "oracle": "highest-entropy",
           "model": "base",
-          "perform_experiment": true
-        },
-        {
-          "exp_type": "gram",
-          "exp_name": "gram-cifar-15-subclass",
-          "oracle": "highest-entropy",
-          "model": "gram_resnet",
-          "plots": false,
           "perform_experiment": true
         }
       ]

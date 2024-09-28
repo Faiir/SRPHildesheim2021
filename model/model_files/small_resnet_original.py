@@ -193,15 +193,24 @@ class BasicBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, similarity=None, perform_layer_analysis=None, complex_g_func=False):
+    def __init__(
+        self,
+        block,
+        num_blocks,
+        num_classes=10,
+        similarity=None,
+        perform_layer_analysis=None,
+        complex_g_func=False,
+        maximum_discrepancy=False,
+    ):
         super(ResNet, self).__init__()
         self.in_planes = 16
         self.similarity = similarity
         self.softmax = nn.Softmax(dim=1)
         self.perform_layer_analysis = perform_layer_analysis
         self.complex_g_func = complex_g_func
-        
-
+        self.discrepancyModel = maximum_discrepancy
+        print("MAXIMUM DISCREPANCY: ", self.discrepancyModel)
         if self.similarity is None:
             print("INFO ----- ResNet has been initialized without a similarity measure")
             self.has_weighing_factor = False
@@ -219,17 +228,22 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 16, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
-        
 
         last_layer_dims = 64
         if self.perform_layer_analysis is not None:
-            print(f"INFO ---- perform_layer_analysis is turned on, only {self.perform_layer_analysis} dimension embeddings would be created\n\n")
+            print(
+                f"INFO ---- perform_layer_analysis is turned on, only {self.perform_layer_analysis} dimension embeddings would be created\n\n"
+            )
             last_layer_dims = self.perform_layer_analysis
             self.layer4 = nn.Linear(64, last_layer_dims)
 
-
         if self.similarity is None:
-            self.linear = nn.Linear(last_layer_dims, num_classes)
+            if not self.discrepancyModel:
+                self.linear = nn.Linear(last_layer_dims, num_classes)
+            else:
+                self.linear1 = nn.Linear(last_layer_dims, num_classes)
+                self.linear2 = nn.Linear(last_layer_dims, num_classes)
+
         else:
             if self.complex_g_func:
                 self.g_fc = nn.Linear(last_layer_dims, 64)
@@ -280,9 +294,17 @@ class ResNet(nn.Module):
             out = self.layer4(out)
 
         out_centroids = out
-        
+
         if self.similarity is None:
-            out = self.linear(out)
+            if not self.discrepancyModel:
+                out = self.linear(out)
+            else:
+                out1 = self.linear1(out)
+                out2 = self.linear2(out)
+                if apply_softmax:
+                    out1 = self.softmax(out1)
+                    out2 = self.softmax(out2)
+                return out1, out2
         else:
             h = self.h_func(out)
             if "E" in self.similarity:
@@ -311,8 +333,22 @@ class ResNet(nn.Module):
             return out
 
 
-def resnet20(num_classes, similarity, perform_layer_analysis=None, complex_g_func = False):
-    return ResNet(BasicBlock, [3, 3, 3], num_classes, similarity, perform_layer_analysis, complex_g_func)
+def resnet20(
+    num_classes,
+    similarity,
+    perform_layer_analysis=None,
+    complex_g_func=False,
+    maximum_discrepancy=False,
+):
+    return ResNet(
+        BasicBlock,
+        [3, 3, 3],
+        num_classes,
+        similarity,
+        perform_layer_analysis,
+        complex_g_func,
+        maximum_discrepancy,
+    )
 
 
 def resnet32(num_classes, similarity):

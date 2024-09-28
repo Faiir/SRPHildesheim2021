@@ -2,7 +2,9 @@ import argparse
 import gc
 import sys
 import os
+import ssl
 
+ssl._create_default_https_context = ssl._create_unverified_context
 import torch
 
 PACKAGE_PARENT = ".."
@@ -20,13 +22,16 @@ from robust_active_learning.experiment_ddu import experiment_ddu
 from robust_active_learning.experiment_genOdin import experiment_gen_odin
 from robust_active_learning.experiment_gram import experiment_gram
 from robust_active_learning.experiment_extraclass import experiment_extraclass
+from robust_active_learning.experiment_maximum_discrepancy import (
+    experiment_maximum_discrepancy,
+)
 from robust_active_learning.experiment_without_OoD import experiment_without_OoD
-from robust_active_learning.helpers.final_train import final_traing
+from robust_active_learning.final_train import final_training
 
 # import shutil
 import time
 
-final_training = False
+final_training_sett = False
 
 
 def create_log_dirs(log_path):
@@ -62,6 +67,21 @@ def start_experiment(config, log_path):
             )
         print("Logging Results under: ", log_path)
         create_log_dirs(log_path)
+        try:
+            if final_training_sett == True:
+                with open(
+                    os.path.join(os.getcwd(), "log_dirs.json"),
+                    mode="r+",
+                    encoding="utf-8",
+                ) as log_json:
+                    final_training_logs = json.load(log_json)
+                    final_training_logs["log_dirs"].append(log_path)
+                    log_json.seek(0)  # rewind
+                    json.dump(final_training_logs, log_json)
+                    print("added logdir")
+                    log_json.truncate()
+        except:
+            pass
         writer = SummaryWriter(os.path.join(log_path, "writer_dir"))
 
         basic_settings = experiment["basic_settings"]
@@ -107,26 +127,36 @@ def start_experiment(config, log_path):
                 current_exp = experiment_ddu(
                     basic_settings, exp_setting, log_path, writer
                 )
-            #try:
-            current_exp.perform_experiment()
-            del current_exp
-            gc.collect()
-        """
+            elif exp_type == "max_disc":
+                current_exp = experiment_maximum_discrepancy(
+                    basic_settings, exp_setting, log_path, writer
+                )
+
+            try:
+                current_exp.perform_experiment()
+                del current_exp
+                gc.collect()
+
             except Exception as e:
                 name = exp_setting["exp_name"]
                 print("\n\n")
-                print("**********"*12)
+                print("**********" * 12)
                 print(f"Experiment {name} failed with Exception {e}")
-                print("**********"*12)
+                print("**********" * 12)
                 print("\n\n")
-        """
 
         log_path = base_log_path
-    final_traing = False
-    if final_traing:
+    # final_training_sett = False
+    if final_training_sett:
         print("performing final training on the data_managers")
         try:
-            final_traing(log_path, config)
+            with open(
+                os.path.join(os.getcwd(), "log_dirs.json"),
+                mode="r+",
+                encoding="utf-8",
+            ) as log_json:
+                final_training_logs = json.load(log_json)
+            final_training(final_training_logs["log_dirs"], config)
         except:
             print("final training failed")
 
@@ -159,7 +189,7 @@ def main():
     args = parser.parse_args()
 
     if args.config is None:
-        args.config = os.path.join(".\exp-config.json")
+        args.config = os.path.join(".\experiment_settings.json")
 
     start_experiment(args.config, args.log)
 

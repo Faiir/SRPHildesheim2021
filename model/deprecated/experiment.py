@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 # python imports
 from datetime import datetime
 import os
-from tqdm import tqdm
+
 import json
 import pandas as pd
 import numpy as np
@@ -104,24 +104,35 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
     do_pertubed_images = param_dict["do_pertubed_images"]
     do_desity_plot = param_dict["do_desity_plot"]
     criterion = param_dict["criterion"]
-    model_name = param_dict['model_name']
+    model_name = param_dict["model_name"]
 
-
-
-    if param_dict.get("bugged_and_working",None) is None:
-        bugged_and_working = param_dict.get("bugged_and_working",True)
-        print(f"INFO ---- flag bugged_and_working is not set. Using default value of {bugged_and_working}")
-    else:  
+    if param_dict.get("bugged_and_working", None) is None:
+        bugged_and_working = param_dict.get("bugged_and_working", True)
+        print(
+            f"INFO ---- flag bugged_and_working is not set. Using default value of {bugged_and_working}"
+        )
+    else:
         bugged_and_working = param_dict["bugged_and_working"]
         print(f"INFO ---- flag bugged_and_working is set to {bugged_and_working}")
 
     OoD_extra_class = param_dict.get("OoD_extra_class", False)
     if OoD_extra_class:
-        extra_class_thresholding = param_dict.get("extra_class_thresholding","Not specified")
-        assert extra_class_thresholding in ["hard","soft"], f"Improper extra_class_thresholding flag provided : {extra_class_thresholding}"
-        print(f'INFO --- Training OoD as extra class with {extra_class_thresholding} Thresholding')
-        assert param_dict.get('similarity',None) is None, f"similarity must be None, found {param_dict.get('similarity',None)}"
-        assert oracle=="extra_class_entropy", f"Only extra_class_entropy oracle is supported found {oracle}"
+        extra_class_thresholding = param_dict.get(
+            "extra_class_thresholding", "Not specified"
+        )
+        assert extra_class_thresholding in [
+            "hard",
+            "soft",
+        ], f"Improper extra_class_thresholding flag provided : {extra_class_thresholding}"
+        print(
+            f"INFO --- Training OoD as extra class with {extra_class_thresholding} Thresholding"
+        )
+        assert (
+            param_dict.get("similarity", None) is None
+        ), f"similarity must be None, found {param_dict.get('similarity',None)}"
+        assert (
+            oracle == "extra_class_entropy"
+        ), f"Only extra_class_entropy oracle is supported found {oracle}"
 
     else:
         extra_class_thresholding = None
@@ -163,7 +174,7 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    for i in tqdm(range(oracle_steps)):
+    for i in range(oracle_steps):
         if do_tsne:
             tsne_plot = get_tsne_plot(data_manager, dataset, net, device)
             writer.add_figure(
@@ -195,15 +206,21 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
         else:
             criterion = nn.CrossEntropyLoss()
 
-        if model_name in ["gen_odin_conv","gen_odin_res","small_gen_odin_res","small_resnet_with_spec","base_small_resnet"]:
+        if model_name in [
+            "gen_odin_conv",
+            "gen_odin_res",
+            "small_gen_odin_res",
+            "small_resnet_with_spec",
+            "base_small_resnet",
+        ]:
             base_params = []
             gen_odin_params = []
             for name, param in net.named_parameters():
                 if name not in [
-                # "g_func.weight",
+                    # "g_func.weight",
                     "h_func.bias",
-                # "g_norm.weight",
-                # "g_norm.bias",
+                    # "g_norm.weight",
+                    # "g_norm.bias",
                     "h_func.weights",
                     "scaling_factor",
                 ]:
@@ -213,7 +230,6 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                         print("added name: ", name)
                     gen_odin_params.append(param)
 
-            
             optimizer = optim.SGD(
                 [
                     {"params": base_params},
@@ -222,7 +238,8 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 weight_decay=weight_decay,
                 lr=lr,
                 momentum=momentum,
-                nesterov=nesterov,)
+                nesterov=nesterov,
+            )
         else:
             optimizer = optim.SGD(
                 net.parameters(),
@@ -231,7 +248,6 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                 momentum=momentum,
                 nesterov=nesterov,
             )
-
 
         # optimizer = optim.SGD(
         #     net.parameters(),
@@ -259,9 +275,11 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
             trained_net, criterion, test_loader, device=device, verbose=verbose
         )
         if do_desity_plot:
-            if model_name not in ['base_small_resnet']:
-                print('\n\n\WARNING ---------------------------------------------------------------------------',\
-                        f'Doing density plots while using model {model_name} is not supported\n\n')
+            if model_name not in ["base_small_resnet"]:
+                print(
+                    "\n\n\WARNING ---------------------------------------------------------------------------",
+                    f"Doing density plots while using model {model_name} is not supported\n\n",
+                )
             pert_preds, gs, hs, targets = get_density_vals(
                 pool_loader,
                 val_loader,
@@ -293,21 +311,27 @@ def experiment(param_dict, oracle, data_manager, writer, dataset, net):
                     bugged_and_working=bugged_and_working,
                 )
 
-            if model_name=='gram_resnet':
+            if model_name == "gram_resnet":
                 from .model.model_files.gram_resnet import Detector
 
                 dector = Detector()
-                POWERS = range(1,11)
-                dector.compute_minmaxs(trained_net,train_loader,POWERS=POWERS)
-                pool_deviations = dector.compute_deviations(trained_net,val_loader,POWERS=POWERS)
+                POWERS = range(1, 11)
+                dector.compute_minmaxs(trained_net, train_loader, POWERS=POWERS)
+                pool_deviations = dector.compute_deviations(
+                    trained_net, val_loader, POWERS=POWERS
+                )
                 if validation_source is not None:
-                    validation = dector.compute_deviations(trained_net,val_loader,POWERS=POWERS)
-                    t95 = validation.mean(axis=0)+10**-7
-                    weighting_factors = (pool_deviations/t95[np.newaxis,:]).sum(axis=1)
-        
+                    validation = dector.compute_deviations(
+                        trained_net, val_loader, POWERS=POWERS
+                    )
+                    t95 = validation.mean(axis=0) + 10 ** -7
+                    weighting_factors = (pool_deviations / t95[np.newaxis, :]).sum(
+                        axis=1
+                    )
+
                 weighting_factors = np.exp(-weighting_factors)
 
-            if (weighting_factors is not None) and (len(weighting_factors)==0):
+            if (weighting_factors is not None) and (len(weighting_factors) == 0):
 
                 weighting_factors = None
 

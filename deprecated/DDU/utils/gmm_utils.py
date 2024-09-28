@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-from tqdm import tqdm
 
 
 DOUBLE_INFO = torch.finfo(torch.double)
@@ -27,7 +26,7 @@ def get_embeddings(
 
     with torch.no_grad():
         start = 0
-        for data, label in tqdm(loader):
+        for data, label in loader:
             data = data.to(device)
             label = label.to(device)
 
@@ -70,7 +69,7 @@ def gmm_evaluate(net, gaussians_model, loader, device, num_classes, storage_devi
 
     with torch.no_grad():
         start = 0
-        for data, label in tqdm(loader):
+        for data, label in loader:
             data = data.to(device)
             label = label.to(device)
 

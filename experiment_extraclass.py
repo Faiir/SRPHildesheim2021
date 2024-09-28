@@ -10,7 +10,7 @@ from numpy.random import sample
 import pandas as pd
 from scipy.sparse import construct
 from torch.utils.tensorboard.writer import SummaryWriter
-from tqdm import tqdm
+
 
 # torch
 import torch
@@ -130,7 +130,7 @@ class experiment_extraclass(experiment_base):
         patience = kwargs.get("patience", int(self.epochs * 0.1))
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
-        for epoch in tqdm(range(1, self.epochs + 1)):
+        for epoch in range(1, self.epochs + 1):
             if self.verbose > 0:
                 print(f"\nEpoch: {epoch}")
 
@@ -144,7 +144,11 @@ class experiment_extraclass(experiment_base):
                     optimizer.zero_grad(set_to_none=True)
                     yhat = self.model(data).to(device)
                     loss = criterion(yhat, target)
-                    train_loss += loss.item()
+                    try:
+                        train_loss += loss.item()
+                    except:
+                        print("loss item skipped loss")
+                    # train_loss += loss.item()
                     train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
 
                     loss.backward()
@@ -415,16 +419,15 @@ class experiment_extraclass(experiment_base):
         self.current_oracle_step = 0
         self.data_manager.OoD_extra_class = True
 
-        
         for oracle_s in range(self.oracle_steps):
             self.set_model(self.current_experiment.get("model", "base"))
             self.create_dataloader()
             self.create_optimizer()
 
-# Keeping it here In case you get the target out of bound error again
-#            for ii in self.data_manager.datasets_dict:
-#                print(f'{ii} : {np.unique(self.data_manager.datasets_dict[ii].targets)}')
-#                print(self.data_manager.datasets_dict[ii].targets)
+            # Keeping it here In case you get the target out of bound error again
+            #            for ii in self.data_manager.datasets_dict:
+            #                print(f'{ii} : {np.unique(self.data_manager.datasets_dict[ii].targets)}')
+            #                print(self.data_manager.datasets_dict[ii].targets)
 
             self.train(
                 self.train_loader,

@@ -7,7 +7,7 @@ import json
 import numpy as np
 import pandas as pd
 from torch.utils.tensorboard.writer import SummaryWriter
-from tqdm import tqdm
+
 
 # torch
 import torch
@@ -150,7 +150,7 @@ class experiment_ddu(experiment_base):
         patience = kwargs.get("patience", int(self.epochs * 0.1))
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
-        for epoch in tqdm(range(1, self.epochs + 1)):
+        for epoch in range(1, self.epochs + 1):
             if self.verbose > 0:
                 print(f"\nEpoch: {epoch}")
 
@@ -164,7 +164,10 @@ class experiment_ddu(experiment_base):
                     optimizer.zero_grad(set_to_none=True)
                     yhat = self.model(data).to(device)
                     loss = criterion(yhat, target)
-                    train_loss += loss.item()
+                    try:
+                        train_loss += loss.item()
+                    except:
+                        print("loss item skipped loss")
                     train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
 
                     loss.backward()
@@ -296,7 +299,7 @@ class experiment_ddu(experiment_base):
 
         with torch.no_grad():
             start = 0
-            for data, label in tqdm(self.train_loader):
+            for data, label in self.train_loader:
                 data = data.to(self.device)
                 label = label.to(self.device)
 
@@ -341,7 +344,7 @@ class experiment_ddu(experiment_base):
 
         with torch.no_grad():
             start = 0
-            for data, label in tqdm(self.pool_loader):
+            for data, label in self.pool_loader:
                 data = data.to(self.device)
                 label = label.to(self.device)
 
@@ -519,9 +522,9 @@ class experiment_ddu(experiment_base):
             self.data_manager.create_merged_data(path=save_path)
             print("created new statusmanager")
         self.current_oracle_step = 0
-        
+
         for oracle_s in range(self.oracle_steps):
-            self.set_model("DDU") # hardcoded till we add larger models
+            self.set_model("DDU")  # hardcoded till we add larger models
             result_tup = self.create_dataloader()
             self.create_optimizer()
 

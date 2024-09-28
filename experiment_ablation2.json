@@ -1,0 +1,598 @@
+{
+  "experiments": [
+    {
+      "basic_settings": {
+        "oracle_stepsize": 300,
+        "oracle_steps": 10,
+        "iD": "CIFAR100",
+        "OoD": ["A_CIFAR100_ood", "A_CIFAR10_ood"],
+        "grayscale": false,
+        "subclass": {
+          "do_subclass": true,
+          "iD_classes": [
+            0, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23,
+            24, 26, 27, 28, 29, 31, 32, 33, 34, 36, 37, 38, 39, 41, 42, 43, 44,
+            46, 47, 48, 49, 51, 52, 53, 54, 56, 57, 58, 59, 61, 62, 63, 64, 66,
+            67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 81, 82, 83, 84, 86, 87,
+            88, 89, 91, 92, 93, 94, 96, 97, 98, 99
+          ],
+          "OoD_classes": [
+            1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
+            85, 90, 95
+          ]
+        },
+        "labelled_size": 1000,
+        "pool_size": 40000,
+        "OOD_ratio": 0.3,
+        "epochs": 100,
+        "batch_size": 64,
+        "weight_decay": 1e-4,
+        "metric": "accuracy",
+        "lr": 0.1,
+        "nesterov": false,
+        "momentum": 0.9,
+        "lr_sheduler": true,
+        "num_classes": 80,
+        "validation_split": 0.1,
+        "validation_source": "test",
+        "criterion": "crossentropy",
+        "verbose": 1
+      },
+      "exp_settings": [
+        {
+          "exp_type": "baseline-ood",
+          "exp_name": "baseline-cifar-100-1k-OOD-ablation",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "genodin",
+          "exp_name": "genodin-cifar-100-1k-ablation",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": true,
+            "layer_plot": false
+          },
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "ddu",
+          "exp_name": "ddu-cifar-100-1k-ablation",
+          "plots": false,
+          "model": "DDU",
+          "oracle": "ddu-sampler",
+          "spectral_normalization": true,
+          "temp": 1.0,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_soft-100-1k-ablation",
+          "extra_class_thresholding": "soft",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-1k-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-hard-1k-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
+          "perform_experiment": true
+        }
+      ]
+    },
+    {
+      "basic_settings": {
+        "oracle_stepsize": 300,
+        "oracle_steps": 10,
+        "iD": "CIFAR100",
+        "OoD": ["A_CIFAR100_ood", "A_CIFAR10_ood"],
+        "grayscale": false,
+        "subclass": {
+          "do_subclass": true,
+          "iD_classes": [
+            0, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23,
+            24, 26, 27, 28, 29, 31, 32, 33, 34, 36, 37, 38, 39, 41, 42, 43, 44,
+            46, 47, 48, 49, 51, 52, 53, 54, 56, 57, 58, 59, 61, 62, 63, 64, 66,
+            67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 81, 82, 83, 84, 86, 87,
+            88, 89, 91, 92, 93, 94, 96, 97, 98, 99
+          ],
+          "OoD_classes": [
+            1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
+            85, 90, 95
+          ]
+        },
+        "labelled_size": 2000,
+        "pool_size": 40000,
+        "OOD_ratio": 0.3,
+        "epochs": 100,
+        "batch_size": 64,
+        "weight_decay": 1e-4,
+        "metric": "accuracy",
+        "lr": 0.1,
+        "nesterov": false,
+        "momentum": 0.9,
+        "lr_sheduler": true,
+        "num_classes": 80,
+        "validation_split": 0.1,
+        "validation_source": "test",
+        "criterion": "crossentropy",
+        "verbose": 1
+      },
+      "exp_settings": [
+        {
+          "exp_type": "baseline-ood",
+          "exp_name": "baseline-cifar-100-2k-OOD-ablation",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "genodin",
+          "exp_name": "genodin-cifar-100-2k-ablation",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": true,
+            "layer_plot": false
+          },
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "ddu",
+          "exp_name": "ddu-cifar-100-2k-ablation",
+          "plots": false,
+          "model": "DDU",
+          "oracle": "ddu-sampler",
+          "spectral_normalization": true,
+          "temp": 1.0,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_soft-100-2k-ablation",
+          "extra_class_thresholding": "soft",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-2k-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-hard-2k-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
+          "perform_experiment": true
+        }
+      ]
+    },
+    {
+      "basic_settings": {
+        "oracle_stepsize": 300,
+        "oracle_steps": 10,
+        "iD": "CIFAR100",
+        "OoD": ["A_CIFAR100_ood", "A_CIFAR10_ood"],
+        "grayscale": false,
+        "subclass": {
+          "do_subclass": true,
+          "iD_classes": [
+            0, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23,
+            24, 26, 27, 28, 29, 31, 32, 33, 34, 36, 37, 38, 39, 41, 42, 43, 44,
+            46, 47, 48, 49, 51, 52, 53, 54, 56, 57, 58, 59, 61, 62, 63, 64, 66,
+            67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 81, 82, 83, 84, 86, 87,
+            88, 89, 91, 92, 93, 94, 96, 97, 98, 99
+          ],
+          "OoD_classes": [
+            1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
+            85, 90, 95
+          ]
+        },
+        "labelled_size": 4000,
+        "pool_size": 40000,
+        "OOD_ratio": 0.3,
+        "epochs": 100,
+        "batch_size": 64,
+        "weight_decay": 1e-4,
+        "metric": "accuracy",
+        "lr": 0.1,
+        "nesterov": false,
+        "momentum": 0.9,
+        "lr_sheduler": true,
+        "num_classes": 80,
+        "validation_split": 0.1,
+        "validation_source": "test",
+        "criterion": "crossentropy",
+        "verbose": 1
+      },
+      "exp_settings": [
+        {
+          "exp_type": "baseline-ood",
+          "exp_name": "baseline-cifar-100-1k-OOD-ablation",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "genodin",
+          "exp_name": "genodin-cifar-100-4k-ablation",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": true,
+            "layer_plot": false
+          },
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "ddu",
+          "exp_name": "ddu-cifar-100-4k-ablation",
+          "plots": false,
+          "model": "DDU",
+          "oracle": "ddu-sampler",
+          "spectral_normalization": true,
+          "temp": 1.0,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_soft-100-4k-ablation",
+          "extra_class_thresholding": "soft",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-4k-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-hard-4k-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
+          "perform_experiment": true
+        }
+      ]
+    },
+    {
+      "basic_settings": {
+        "oracle_stepsize": 300,
+        "oracle_steps": 10,
+        "iD": "CIFAR100",
+        "OoD": ["A_CIFAR100_ood", "A_CIFAR10_ood"],
+        "grayscale": false,
+        "subclass": {
+          "do_subclass": true,
+          "iD_classes": [
+            0, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23,
+            24, 26, 27, 28, 29, 31, 32, 33, 34, 36, 37, 38, 39, 41, 42, 43, 44,
+            46, 47, 48, 49, 51, 52, 53, 54, 56, 57, 58, 59, 61, 62, 63, 64, 66,
+            67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 81, 82, 83, 84, 86, 87,
+            88, 89, 91, 92, 93, 94, 96, 97, 98, 99
+          ],
+          "OoD_classes": [
+            1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
+            85, 90, 95
+          ]
+        },
+        "labelled_size": 8000,
+        "pool_size": 40000,
+        "OOD_ratio": 0.3,
+        "epochs": 100,
+        "batch_size": 64,
+        "weight_decay": 1e-4,
+        "metric": "accuracy",
+        "lr": 0.1,
+        "nesterov": false,
+        "momentum": 0.9,
+        "lr_sheduler": true,
+        "num_classes": 80,
+        "validation_split": 0.1,
+        "validation_source": "test",
+        "criterion": "crossentropy",
+        "verbose": 1
+      },
+      "exp_settings": [
+        {
+          "exp_type": "baseline-ood",
+          "exp_name": "baseline-cifar-100-8k-OOD-ablation",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "genodin",
+          "exp_name": "genodin-cifar-100-8k-ablation",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": true,
+            "layer_plot": false
+          },
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "ddu",
+          "exp_name": "ddu-cifar-100-8k-ablation",
+          "plots": false,
+          "model": "DDU",
+          "oracle": "ddu-sampler",
+          "spectral_normalization": true,
+          "temp": 1.0,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_soft-100-8k-ablation",
+          "extra_class_thresholding": "soft",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-8k-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-hard-8k-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
+          "perform_experiment": true
+        }
+      ]
+    },
+    {
+      "basic_settings": {
+        "oracle_stepsize": 300,
+        "oracle_steps": 10,
+        "iD": "CIFAR100",
+        "OoD": ["A_CIFAR100_ood", "A_CIFAR10_ood"],
+        "grayscale": false,
+        "subclass": {
+          "do_subclass": true,
+          "iD_classes": [
+            0, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23,
+            24, 26, 27, 28, 29, 31, 32, 33, 34, 36, 37, 38, 39, 41, 42, 43, 44,
+            46, 47, 48, 49, 51, 52, 53, 54, 56, 57, 58, 59, 61, 62, 63, 64, 66,
+            67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 81, 82, 83, 84, 86, 87,
+            88, 89, 91, 92, 93, 94, 96, 97, 98, 99
+          ],
+          "OoD_classes": [
+            1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
+            85, 90, 95
+          ]
+        },
+        "labelled_size": 16000,
+        "pool_size": 30000,
+        "OOD_ratio": 0.3,
+        "epochs": 100,
+        "batch_size": 64,
+        "weight_decay": 1e-4,
+        "metric": "accuracy",
+        "lr": 0.1,
+        "nesterov": false,
+        "momentum": 0.9,
+        "lr_sheduler": true,
+        "num_classes": 80,
+        "validation_split": 0.1,
+        "validation_source": "test",
+        "criterion": "crossentropy",
+        "verbose": 1
+      },
+      "exp_settings": [
+        {
+          "exp_type": "baseline-ood",
+          "exp_name": "baseline-cifar-100-16k-OOD-ablation",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "genodin",
+          "exp_name": "genodin-cifar-100-16k-ablation",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": true,
+            "layer_plot": false
+          },
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "ddu",
+          "exp_name": "ddu-cifar-100-16k-ablation",
+          "plots": false,
+          "model": "DDU",
+          "oracle": "ddu-sampler",
+          "spectral_normalization": true,
+          "temp": 1.0,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_soft-100-16k-ablation",
+          "extra_class_thresholding": "soft",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-16k-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-hard-16k-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
+          "perform_experiment": true
+        }
+      ]
+    },
+    {
+      "basic_settings": {
+        "oracle_stepsize": 300,
+        "oracle_steps": 10,
+        "iD": "CIFAR100",
+        "OoD": ["A_CIFAR100_ood", "A_CIFAR10_ood"],
+        "grayscale": false,
+        "subclass": {
+          "do_subclass": true,
+          "iD_classes": [
+            0, 2, 3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19, 21, 22, 23,
+            24, 26, 27, 28, 29, 31, 32, 33, 34, 36, 37, 38, 39, 41, 42, 43, 44,
+            46, 47, 48, 49, 51, 52, 53, 54, 56, 57, 58, 59, 61, 62, 63, 64, 66,
+            67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 81, 82, 83, 84, 86, 87,
+            88, 89, 91, 92, 93, 94, 96, 97, 98, 99
+          ],
+          "OoD_classes": [
+            1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
+            85, 90, 95
+          ]
+        },
+        "labelled_size": 32000,
+        "pool_size": 9000,
+        "OOD_ratio": 0.3,
+        "epochs": 100,
+        "batch_size": 64,
+        "weight_decay": 1e-4,
+        "metric": "accuracy",
+        "lr": 0.1,
+        "nesterov": false,
+        "momentum": 0.9,
+        "lr_sheduler": true,
+        "num_classes": 80,
+        "validation_split": 0.1,
+        "validation_source": "test",
+        "criterion": "crossentropy",
+        "verbose": 1
+      },
+      "exp_settings": [
+        {
+          "exp_type": "baseline-ood",
+          "exp_name": "baseline-cifar-100-32k-OOD-ablation",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "genodin",
+          "exp_name": "genodin-cifar-100-32k-ablation",
+          "similarity": "C",
+          "oracle": "highest-entropy",
+          "do_pertubed_images": true,
+          "scaling_factor": "R",
+          "model": "GenOdin",
+          "bugged_and_working": false,
+          "plotsettings": {
+            "do_plot": false,
+            "density_plot": true,
+            "layer_plot": false
+          },
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "ddu",
+          "exp_name": "ddu-cifar-100-32k-ablation",
+          "plots": false,
+          "model": "DDU",
+          "oracle": "ddu-sampler",
+          "spectral_normalization": true,
+          "temp": 1.0,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "extra_class",
+          "exp_name": "extra_class_soft-100-32k-ablation",
+          "extra_class_thresholding": "soft",
+          "oracle": "highest-entropy",
+          "model": "base",
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "gram",
+          "exp_name": "gram-cifar-32k-ablation",
+          "oracle": "highest-entropy",
+          "model": "gram_resnet",
+          "plots": false,
+          "perform_experiment": true
+        },
+        {
+          "exp_type": "max_disc",
+          "exp_name": "max_disc-hard-32k-ablation",
+          "oracle": "maximum_discrepancy",
+          "model": "maximum_discrepancy",
+          "thresholding": true,
+          "perform_experiment": true
+        }
+      ]
+    }
+  ]
+}

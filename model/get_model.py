@@ -67,6 +67,12 @@ def get_model(
         )
     elif model_name == "gram_resnet":
         return get_gram_resnet(num_classes=kwargs.get("num_classes", 10))
+    elif model_name == "maximum_discrepancy":
+        return resnet20(
+            num_classes=kwargs.get("num_classes", 10),
+            similarity=None,
+            maximum_discrepancy=kwargs.get("maximum_discrepancy", True),
+        )
     else:
         raise ValueError(f"Model {model_name} not found")
     # if model_name == "base":

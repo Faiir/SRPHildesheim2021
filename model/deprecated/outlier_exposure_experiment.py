@@ -16,10 +16,10 @@ import torchvision
 # python imports
 from datetime import datetime
 import os
-from tqdm import tqdm
+
 import json
 import pandas as pd
-from tqdm import tqdm
+
 from project.data.datahandler_for_array import get_dataloader
 
 
@@ -57,7 +57,7 @@ def outlier_exposure_experiment(data_manager, writer, net, verbose=0, **kwargs):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     data_manager.reset_pool()
 
-    for i in tqdm(range(oracle_steps)):
+    for i in range(oracle_steps):
 
         train_loader, test_loader, pool_loader = get_dataloader(
             data_manager, batch_size=batch_size

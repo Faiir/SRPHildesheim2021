@@ -1,5 +1,13 @@
 from typing import Dict, List, Union
 
+""" 
+
+Credit for Code from: https://github.com/Mephisto405/Unsupervised-Out-of-Distribution-Detection-by-Maximum-Classifier-Discrepancy
+Paper: https://arxiv.org/pdf/1908.04951v1.pdf 
+Title: Unsupervised Out-of-Distribution Detection by Maximum Classifier Discrepancy
+Authors: Qing Yu Kiyoharu Aizawa
+"""
+
 # python
 import datetime
 import os
@@ -17,7 +25,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary
-
+import torch.optim.lr_scheduler as lr_scheduler
 from .helpers.measures import accuracy, auroc, f1
 
 
@@ -62,7 +70,7 @@ def _create_log_path_al(log_dir: str = ".", OOD_ratio: float = 0.0) -> None:
     return log_path
 
 
-class experiment_active_learning(experiment_base):
+class experiment_maximum_discrepancy(experiment_base):
     def __init__(
         self,
         basic_settings: Dict,
@@ -136,19 +144,31 @@ class experiment_active_learning(experiment_base):
 
             train_loss = 0
             train_acc = 0
+            correct_1 = 0
+            correct_2 = 0
+            total = 0
             for batch_idx, (data, target) in enumerate(train_loader):
                 if len(data) > 1:
                     self.model.train()
                     data, target = data.to(device).float(), target.to(device).long()
 
                     optimizer.zero_grad(set_to_none=True)
-                    yhat = self.model(data).to(device)
-                    loss = criterion(yhat, target)
+                    # yhat = self.model(data).to(device)
+                    out_1, out_2 = self.model(data)
+                    out_1.to(device)
+                    out_2.to(device)
+                    loss = self.criterion(out_1, target) + self.criterion(out_2, target)
+                    # loss = criterion(yhat, target)
                     try:
                         train_loss += loss.item()
                     except:
                         print("loss item skipped loss")
-                    train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
+                    _, pred_1 = torch.max(out_1.data, 1)
+                    _, pred_2 = torch.max(out_2.data, 1)
+                    total += target.size(0)
+                    correct_1 += (pred_1 == target).sum().item()
+                    correct_2 += (pred_2 == target).sum().item()
+                    # train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
 
                     loss.backward()
                     optimizer.step()
@@ -156,12 +176,16 @@ class experiment_active_learning(experiment_base):
                     pass
 
             avg_train_loss = train_loss / len(train_loader)
-            avg_train_acc = train_acc / len(train_loader.dataset)
+            avg_train_acc = ((100 * correct_1 / total) + (100 * correct_2 / total)) / 2
+            # avg_train_acc = train_acc / len(train_loader.dataset)
 
             if epoch % 1 == 0:
                 if validation:
                     val_loss = 0
                     val_acc = 0
+                    v_correct_1 = 0
+                    v_correct_2 = 0
+
                     self.model.eval()  # prep self.model for evaluation
                     with torch.no_grad():
                         for vdata, vtarget in val_loader:
@@ -169,15 +193,25 @@ class experiment_active_learning(experiment_base):
                                 vdata.to(device).float(),
                                 vtarget.to(device).long(),
                             )
-                            voutput = self.model(vdata)
-                            vloss = criterion(voutput, vtarget)
+                            voutput1, voutput2 = self.model(vdata)
+                            vloss = criterion(voutput1, vtarget) + criterion(
+                                voutput2, vtarget
+                            )
                             val_loss += vloss.item()
-                            val_acc += torch.sum(
-                                torch.argmax(voutput, dim=1) == vtarget
-                            ).item()
 
+                            _, v_pred_1 = torch.max(voutput1.data, 1)
+                            _, v_pred_2 = torch.max(voutput2.data, 1)
+                            val_acc += vtarget.size(0)
+                            v_correct_1 += (v_pred_1 == vtarget).sum().item()
+                            v_correct_2 += (v_pred_2 == vtarget).sum().item()
+                            # val_acc += torch.sum(
+                            #     torch.argmax(voutput1, dim=1) == vtarget
+                            # ).item()
+                    avg_val_acc = (
+                        (100 * v_correct_1 / val_acc) + (100 * v_correct_2 / val_acc)
+                    ) / 2
                     avg_val_loss = val_loss / len(self.val_loader)
-                    avg_val_acc = val_acc / len(self.val_loader.dataset)
+                    # avg_val_acc = val_acc / len(self.val_loader.dataset)
 
                     early_stopping(avg_val_loss, self.model)
                     if kwargs.get("lr_sheduler", True):
@@ -218,6 +252,9 @@ class experiment_active_learning(experiment_base):
         """
         test_loss = 0
         test_acc = 0
+        total = 0
+        correct_1 = 0
+        correct_2 = 0
         self.model.eval()
         for (t_data, t_target) in self.test_loader:
             t_data, t_target = (
@@ -225,16 +262,68 @@ class experiment_active_learning(experiment_base):
                 t_target.to(self.device).long(),
             )
 
-            t_output = self.model(t_data)
-            t_output.to(self.device).long()
-            t_loss = self.criterion(t_output, t_target)
+            t_output1, t_output2 = self.model(t_data)
+            t_output1.to(self.device).long()
+            t_output2.to(self.device).long()
+            # t_output.to(self.device).long()
+            t_loss = self.criterion(t_output1, t_target) + self.criterion(
+                t_output2, t_target
+            )
             test_loss += t_loss
-            test_acc += torch.sum(torch.argmax(t_output, dim=1) == t_target).item()
+            _, pred_1 = torch.max(t_output1.data, 1)
+            _, pred_2 = torch.max(t_output2.data, 1)
+            total += t_target.size(0)
+            correct_1 += (pred_1 == t_target).sum().item()
+            correct_2 += (pred_2 == t_target).sum().item()
 
-        self.avg_test_acc = test_acc / len(self.test_loader.dataset)
+            # test_acc += torch.sum(torch.argmax(t_output, dim=1) == t_target).item()
+        self.avg_test_acc = ((100 * correct_1 / total) + (100 * correct_2 / total)) / 2
+        # self.avg_test_acc = test_acc / len(self.test_loader.dataset)
         self.avg_test_loss = test_loss.to("cpu").detach().numpy() / len(
             self.test_loader
         )  # return avg testloss
+
+    def finetune(self, trainloader, poolloader, num_epochs=10, sheduler=None):
+        best_roc = 0.0
+        print("Fine-tuning-discrepancy-loss")
+        for epoch in range(num_epochs):
+            # sheduler.step()
+            self.model.train()
+            pool_loder_iterator = iter(poolloader)
+            # maybe iterate over entire pool?
+            optimizer = optim.SGD(
+                self.model.parameters(),
+                weight_decay=self.weight_decay,
+                lr=self.lr,
+                momentum=self.momentum,
+                nesterov=self.nesterov,
+            )
+            for batch_idx, (data, target) in enumerate(trainloader):
+                unsup_data, _ = next(
+                    pool_loder_iterator
+                )  # poolloader[batch_idx % len(poolloader.dataset)]
+                unsup_data = unsup_data.to(self.device).float()
+                data, target = (
+                    data.to(self.device).float(),
+                    target.to(self.device).long(),
+                )
+                optimizer.zero_grad()
+                out_1, out_2 = self.model(data)
+                out_1 = out_1.to(self.device)
+                out_2 = out_2.to(self.device)
+                loss_sup = self.criterion(out_1, target) + self.criterion(out_2, target)
+                u_out_1, u_out_2 = self.model(unsup_data)
+                u_out_1 = u_out_1.to(self.device)
+                u_out_2 = u_out_2.to(self.device)
+                loss_unsup = self.DiscrepancyLoss(u_out_1, u_out_2)
+                loss = loss_unsup + loss_sup
+                loss.backward()
+                optimizer.step() #changing so the same optimizer is given zero grad and then used to updated the model
+
+            # validate skipp for now
+            # self.model.eval()
+            # labels = torch.zeros((2000, )).cuda() # a big tensor
+            # dists = torch.zeros((2000, )).cuda() # discrepancy (or distance)
 
     # overrides save_settings
     def save_settings(self) -> None:
@@ -287,12 +376,18 @@ class experiment_active_learning(experiment_base):
             from .helpers.sampler import extra_class_sampler
 
             self.sampler = extra_class_sampler(self.extra_class_thresholding)
+        elif sampler == "maximum_discrepancy":
+            from .helpers.sampler import (
+                uncertainity_sampling_highest_entropy_maxium_discrepancy,
+            )
+
+            self.sampler = uncertainity_sampling_highest_entropy_maxium_discrepancy
 
     # overrides set_model
     def set_model(self, model_name) -> None:
-        if model_name == "base":
+        if model_name == "maximum_discrepancy":
             self.model = get_model(
-                model_name, num_classes=self.num_classes
+                model_name, num_classes=self.num_classes, maximum_discrepancy=True
             )  # needs rewrite maybe
         else:
             raise NotImplementedError
@@ -307,15 +402,18 @@ class experiment_active_learning(experiment_base):
         )
 
     def pool_predictions(self, pool_loader) -> Union[np.ndarray, np.ndarray]:
-        yhat = []
+        yhat1 = []
+        yhat2 = []
         labels_list = []
         for (data, labels) in pool_loader:
-            pred = self.model(data.to(self.device).float(), apply_softmax=True)
-            yhat.append(pred.to("cpu").detach().numpy())
+            pred1, pred2 = self.model(data.to(self.device).float(), apply_softmax=True)
+            yhat1.append(pred1.to("cpu").detach().numpy())
+            yhat2.append(pred2.to("cpu").detach().numpy())
             labels_list.append(labels)
-        predictions = np.concatenate(yhat)
+        predictions1 = np.concatenate(yhat1)
+        predictions2 = np.concatenate(yhat2)
         labels_list = np.concatenate(labels_list)
-        return predictions, labels_list
+        return predictions1, predictions2, labels_list
 
     def create_dataloader(self) -> None:
         result_tup = create_dataloader(
@@ -338,8 +436,20 @@ class experiment_active_learning(experiment_base):
             nesterov=self.nesterov,
         )
 
+    def DiscrepancyLoss(self, input_1, input_2, m=1.2):
+        soft_1 = nn.functional.softmax(input_1, dim=1)
+        soft_2 = nn.functional.softmax(input_2, dim=1)
+        entropy_1 = -soft_1 * nn.functional.log_softmax(input_1, dim=1)
+        entropy_2 = -soft_2 * nn.functional.log_softmax(input_2, dim=1)
+        entropy_1 = torch.sum(entropy_1, dim=1)
+        entropy_2 = torch.sum(entropy_2, dim=1)
+
+        loss = torch.nn.ReLU()(m - torch.mean(entropy_1 - entropy_2))
+        return loss
+
     def create_criterion(self) -> None:
         self.criterion = nn.CrossEntropyLoss()
+        self.unsup_criterion = self.DiscrepancyLoss
 
     # overrides load_settings
     def load_settings(self) -> None:
@@ -349,12 +459,12 @@ class experiment_active_learning(experiment_base):
         self.iD = self.current_experiment.get("iD", "Cifar10")
         self.OoD = self.current_experiment.get("OoD", ["Fashion_MNIST"])
         self.labelled_size = self.current_experiment.get("labelled_size", 3000)
-        self.pool_size = self.current_experiment.get("pool_size", 20000)
+        self.pool_size = self.current_experiment.get("pool_size", 50000)
         self.OOD_ratio = self.current_experiment.get("OOD_ratio", 0.0)
 
         # training settings
         self.epochs = self.current_experiment.get("epochs", 100)
-        self.batch_size = self.current_experiment.get("batch_size", 128)
+        self.batch_size = self.current_experiment.get("batch_size", 64)
         self.weight_decay = self.current_experiment.get("weight_decay", 1e-4)
         self.metric = self.current_experiment.get("metric", 10)
         self.lr = self.current_experiment.get("lr", 0.1)
@@ -372,21 +482,14 @@ class experiment_active_learning(experiment_base):
         # logging
         self.verbose = self.current_experiment.get("verbose", 1)
 
+        self.thresholding = self.current_experiment.get("thresholding", True)
+        print(f'----- THRESHOLDING : {self.thresholding}')
+        self.perform_finetune = self.current_experiment.get("finetune", True)
         # _create_log_path_al(self.OOD_ratio)
 
-        # extra class
-        if self.current_experiment["exp_type"] == "extra_class":
-            self.extra_class_thresholding = self.current_experiment.get(
-                "extra_class_thresholding", 0.1
-            )
-
-            self.num_classes += 1
-            # self.set_model(
-            #     self.current_experiment.get("model", "base"), self.num_classes
-            # )
-        self.oracle = self.current_experiment.get("oracle", "highest-entropy")
+        self.oracle = self.current_experiment.get("oracle", "maximum_discrepancy")
         self.set_sampler(self.oracle)
-        self.exp_name = self.current_experiment.get("exp_name", "standard_name")
+        self.exp_name = self.current_experiment.get("exp_name", "maximum_discrepancy")
 
     # overrides perform_experiment
     def perform_experiment(self):
@@ -425,11 +528,15 @@ class experiment_active_learning(experiment_base):
                 self.device,
             )
             self.test()
+            if self.perform_finetune:
+                self.finetune(self.train_loader, self.pool_loader, num_epochs=10)
+
 
             self.current_oracle_step += 1
             if len(self.pool_loader) > 0:
                 (
-                    pool_predictions,
+                    pool_predictions1,
+                    pool_predictions2,
                     pool_labels_list,
                 ) = self.pool_predictions(self.pool_loader)
 
@@ -437,11 +544,17 @@ class experiment_active_learning(experiment_base):
                     self.data_manager,
                     number_samples=self.oracle_stepsize,
                     net=self.model,
-                    predictions=pool_predictions,
+                    predictions1=pool_predictions1,
+                    predictions2=pool_predictions2,
+                    thresholding=self.thresholding,
                 )
 
-                test_predictions, test_labels = self.pool_predictions(self.test_loader)
-
+                (
+                    test_predictions1,
+                    test_predictions2,
+                    test_labels,
+                ) = self.pool_predictions(self.test_loader)
+                test_predictions = (test_predictions1 + test_predictions2) / 2
                 test_accuracy = accuracy(test_labels, test_predictions)
                 f1_score = f1(test_labels, test_predictions)
 

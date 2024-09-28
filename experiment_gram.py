@@ -9,7 +9,7 @@ import numpy as np
 from numpy.random import sample
 import pandas as pd
 from torch.utils.tensorboard.writer import SummaryWriter
-from tqdm import tqdm
+
 
 # torch
 import torch
@@ -129,7 +129,7 @@ class experiment_gram(experiment_base):
         patience = kwargs.get("patience", int(self.epochs * 0.1))
         early_stopping = EarlyStopping(patience, verbose=True, delta=1e-6)
 
-        for epoch in tqdm(range(1, self.epochs + 1)):
+        for epoch in range(1, self.epochs + 1):
             if self.verbose > 0:
                 print(f"\nEpoch: {epoch}")
 
@@ -143,7 +143,10 @@ class experiment_gram(experiment_base):
                     optimizer.zero_grad(set_to_none=True)
                     yhat = self.model(data).to(device)
                     loss = criterion(yhat, target)
-                    train_loss += loss.item()
+                    try:
+                        train_loss += loss.item()
+                    except:
+                        print("loss item skipped loss")
                     train_acc += torch.sum(torch.argmax(yhat, dim=1) == target).item()
 
                     loss.backward()
@@ -452,20 +455,20 @@ class experiment_gram(experiment_base):
 
                 pool_weighting_list = pool_weighting_list / pool_weighting_list.max()
                 pool_weighting_list = 1 - pool_weighting_list
-                print(
-                    "pool_weighting_list",
-                    pool_weighting_list.min(),
-                    pool_weighting_list.max(),
-                )
+                # print(
+                #     "pool_weighting_list",
+                #     pool_weighting_list.min(),
+                #     pool_weighting_list.max(),
+                # )
                 source_labels = self.data_manager.get_pool_source_labels()
                 iD_Prob = pool_weighting_list
-                auroc_score = auroc(
-                    iD_Prob,
-                    source_labels,
-                    self.writer,
-                    self.current_oracle_step,
-                    plot_auc=True,
-                )
+                # auroc_score = auroc(
+                #     iD_Prob,
+                #     source_labels,
+                #     self.writer,
+                #     self.current_oracle_step,
+                #     plot_auc=True,
+                # )
 
                 self.sampler(
                     self.data_manager,
@@ -489,10 +492,10 @@ class experiment_gram(experiment_base):
                     "test_accuracy": test_accuracy,
                     "train_accuracy": self.avg_train_acc_hist,
                     "f1": f1_score,
-                    "Pool_AUROC": auroc_score,
+                    # "Pool_AUROC": auroc_score,
                 }
 
-                print(dict_to_add)
+                # print(dict_to_add)
                 # if self.metric.lower() == "auroc":
                 #     auroc_score = auroc(self.data_manager, oracle_s)
 
